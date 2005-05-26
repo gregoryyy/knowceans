@@ -1,4 +1,32 @@
 /*
+ * Copyright (c) 2005 Gregor Heinrich.  All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ *
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in
+ *    the documentation and/or other materials provided with the
+ *    distribution.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESSED 
+ * OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE 
+ * ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY 
+ * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL 
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE 
+ * GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS 
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER 
+ * IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR 
+ * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN 
+ * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ */
+/*
  * Created on May 26, 2005
  */
 package org.knowceans.util;
@@ -8,25 +36,34 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.HashMap;
+import java.util.TreeMap;
 import java.util.Vector;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
  * Arguments is a convenience class that reads command line arguments for main
- * and validates them against a given format.The general grammar of a
+ * and validates them against a given format. The general grammar of a
  * commandline is:
  * <p>
- * <code>
- * commandline ::= command " " options arguments
- * </code> Here the options
- * follow the grammar: <code>
- * options   ::= ( option " " )+
- * option    ::= "-" name (" " value)?
- * name      ::= <LITERAL>  
- * arguments ::= ( argument )+ 
- * argument  ::= value
- * </code>
+ * 
+ * <pre>
+ *      commandline ::= command &quot; &quot; options arguments
+ * </pre>
+ * 
+ * <p>
+ * Here the options and arguments follow the grammar:
+ * <p>
+ * 
+ * <pre>
+ *             options   ::= ( option &quot; &quot; )+
+ *             option    ::= &quot;-&quot; name (&quot; &quot; value)?
+ *             name      ::= &lt;LITERAL&gt;  
+ *             arguments ::= ( argument )+ 
+ *             argument  ::= value
+ *             value     ::= &lt;LITERAL&gt; | &quot;&quot;&quot;( &lt;LITERAL&gt; | &quot; &quot; )+ &quot;&quot;&quot;
+ * </pre>
+ * 
  * with some value. These values can be restricted to specific formats, which is
  * done using a format string
  * 
@@ -34,16 +71,16 @@ import java.util.regex.Pattern;
  */
 public class Arguments {
 
-    String optionFormat = "(\\w+)(=([ifbspu0]))?";
+    String optionFormat = "(\\w+)(=([ilfdbspu0]))?";
 
-    String types = "ifbspu";
+    String types = "ilfdbspu";
 
     String argFormat = "[" + types + "]";
 
     /**
      * contains the option types
      */
-    HashMap<String, String> optionTypes = new HashMap<String, String>();
+    TreeMap<String, Character> optionTypes = new TreeMap<String, Character>();
 
     /**
      * contains the argument types of required arguments
@@ -65,10 +102,10 @@ public class Arguments {
     int maxArgs = 0;
 
     public static void main(String[] args) {
-        String[] commandline = "-xserv .4 -s xxx -v -words 34 -f -g 1.2 -t http://www.ud path path2 true"
+        String[] commandline = "-xserv .4 -s test -v -words 34 -f \"test object\" -g 1.2 -t http://www.ud path path2 true"
             .split(" ");
 
-        String format = "xserv=f words=i f=0 g=f s=p v=0 r=0 t=u";
+        String format = "xserv=f words=i f=s g=f s=p v=0 r=0 t=u";
         String types = "pp|bb";
         Arguments arg = new Arguments(format, types);
         arg.parse(commandline);
@@ -79,6 +116,7 @@ public class Arguments {
         System.out.println(arg.getOptions());
         System.out.println(arg.getArguments());
         System.out.println(arg.maxArgs);
+        System.out.println(arg);
     }
 
     /**
@@ -102,17 +140,18 @@ public class Arguments {
      */
     public Object getOption(String string) throws IllegalArgumentException {
         Object obj = options.get(string);
-        String type = optionTypes.get(string);
+        Character type = optionTypes.get(string);
         if (obj == null && type == null) {
             throw new IllegalArgumentException("Option " + string + " unknown.");
         }
-        if (type.equals("0")) {
+        if (type == '0') {
             if (obj == null)
                 obj = Boolean.FALSE;
         }
         return obj;
     }
 
+    // jan 3532872
     /**
      * Same as getOption, but allows default value (whose type is NOT checked).
      * 
@@ -180,23 +219,27 @@ public class Arguments {
      * this constructor.
      * <p>
      * The format string for the options is composed of the following grammar:
-     * <code>
-     * foptions   ::= ( option )*
-     * foption    ::= name=format
-     * fname      ::= <LITERAL>
-     * fotype     ::= ( i | f | b | u | p | s | 0 )
-     * </code>
+     * 
+     * <pre>
+     *             foptions   ::= ( option )*
+     *             foption    ::= name=format
+     *             fname      ::= &lt;LITERAL&gt;
+     *             fotype     ::= ( i | f | b | u | p | s | 0 )
+     * </pre>
+     * 
      * The literals of format correspond to the types int/long, float/double,
      * boolean, java.net.URL, java.io.File, java.lang.String and 0 for
      * unparametrised options
      * <p>
      * The format string for the arguments is composed of the following grammar:
-     * <code>
-     * farguments    ::= requiredargs "|" optionalargs
-     * frequiredargs ::= ( format )+
-     * foptionalargs ::= ( format )+
-     * fatype        ::= ( i | f | b | u | p | s )
-     * </code>
+     * 
+     * <pre>
+     *             farguments    ::= frequiredargs &quot;|&quot; foptionalargs
+     *             frequiredargs ::= ( fatype )+
+     *             foptionalargs ::= ( fatype )+
+     *             fatype        ::= ( i | f | b | u | p | s )
+     * </pre>
+     * 
      * Note in the format specification that empty arguments are not possible.
      * 
      * @param optformat
@@ -205,9 +248,12 @@ public class Arguments {
         Matcher m = Pattern.compile(optionFormat).matcher(optformat);
         while (m.find()) {
             String type = m.group(3) != null ? m.group(3) : "0";
-            optionTypes.put(m.group(1), type);
+            optionTypes.put(m.group(1), type.charAt(0));
         }
         minArgs = argtypes.indexOf('|');
+        if (minArgs == -1) {
+            minArgs = argtypes.length();
+        }
         m = Pattern.compile(argFormat).matcher(argtypes);
         while (m.find()) {
             argTypes.append(m.group(0));
@@ -234,10 +280,6 @@ public class Arguments {
                     throw new IllegalArgumentException(
                         "Options do not comply with format. "
                             + "Check option parameters.");
-                if (nargs > maxArgs) {
-                    throw new IllegalArgumentException(
-                        "Too many arguments. Check parameters and format.");
-                }
                 char type = argTypes.charAt(nargs);
                 Object argument = getObject(a[i], type);
                 if (argument == null) {
@@ -247,7 +289,7 @@ public class Arguments {
                 arguments.add(argument);
                 nargs++;
             }
-            String type = optionTypes.get(option);
+            Character type = optionTypes.get(option);
             if (type == null) {
                 throw new IllegalArgumentException("Option " + option
                     + " unknown.");
@@ -255,9 +297,22 @@ public class Arguments {
             if (nargs > 0)
                 continue;
             // read the parameter (if still reading options)
-            if (!type.equals("0")) {
+            if (type != '0') {
                 i++;
-                Object param = getObject(a[i], type.charAt(0));
+
+                String value = "";
+                // consume quoted parameters
+                if (a[i].startsWith("\"")) {
+                    a[i] = a[i].substring(1);
+                    while (!a[i].endsWith("\"")) {
+                        value += a[i] + " ";
+                        i++;
+                    }
+                    a[i] = a[i].substring(0, a[i].length() - 1);
+                }
+                value += a[i];
+
+                Object param = getObject(value, type);
                 if (param == null) {
                     throw new IllegalArgumentException("Option " + option
                         + " has not required type " + type + ".");
@@ -285,11 +340,15 @@ public class Arguments {
             if (type == 'b') {
                 obj = Boolean.valueOf(string);
             } else if (type == 'f') {
+                obj = Float.valueOf(string);
+            } else if (type == 'd') {
                 obj = Double.valueOf(string);
+            } else if (type == 'i') {
+                obj = Integer.valueOf(string);
+            } else if (type == 'l') {
+                obj = Long.valueOf(string);
             } else if (type == 's') {
                 obj = string;
-            } else if (type == 'i') {
-                obj = Long.valueOf(string);
             } else if (type == 'u') {
                 obj = new URL(string);
             } else if (type == 'p') {
@@ -305,5 +364,57 @@ public class Arguments {
                 + string);
         }
         return obj;
+    }
+
+    /**
+     * describe the current arguments set
+     */
+    public String toString() {
+        StringBuffer sb = new StringBuffer();
+        sb.append("Argument grammar:\n");
+        sb.append("\nOptions:\n");
+        for (String key : optionTypes.keySet()) {
+            sb.append("  ").append("-").append(key).append(" : ").append(
+                type(optionTypes.get(key))).append("\n");
+        }
+        if (minArgs > 0)
+            sb.append("\nRequired argument types:\n");
+        else 
+            sb.append("\nNo required argument types.\n");
+        for (int i = 0; i < minArgs; i++) {
+            sb.append("  ").append(i + 1).append(" : ").append(
+                type(argTypes.charAt(i))).append("\n");
+        }
+        if (maxArgs - minArgs > 0)
+            sb.append("\nOptional argument types:\n");
+        else 
+            sb.append("\nNo optional argument types.\n");
+        for (int i = minArgs; i < argTypes.length(); i++) {
+            sb.append("  ").append(i + 1).append(" : ").append(
+                type(argTypes.charAt(i))).append("\n");
+        }
+        return sb.toString();
+    }
+
+    public String type(char c) {
+        if (c == 'i')
+            return "int";
+        if (c == 'l')
+            return "long";
+        if (c == 'f')
+            return "float";
+        if (c == 'd')
+            return "double";
+        if (c == 'p')
+            return "java.io.File";
+        if (c == 'u')
+            return "java.net.URL";
+        if (c == '0')
+            return "(no value)";
+        if (c == 'b')
+            return "boolean";
+        if (c == 's')
+            return "java.lang.String";
+        return "(unknown)";
     }
 }
