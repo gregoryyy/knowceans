@@ -33,7 +33,9 @@
 	<target name="source-distribution" depends="init">
 		<zip destfile="knowceans-tools-src-${DSTAMP}.zip">
 			<fileset dir=".">
-				<include name="src/org/knowceans/**/*.java" />
+				<include name="src/org/knowceans/map/*.java" />
+				<include name="src/org/knowceans/util/*.java" />
+  				<include name="src/org/knowceans/sandbox/*.java" />
 				<include name=".classpath" />
 				<include name=".project" />
 				<include name="license.txt" />
