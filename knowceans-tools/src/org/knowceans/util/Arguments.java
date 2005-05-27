@@ -1,30 +1,21 @@
 /*
- * Copyright (c) 2005 Gregor Heinrich.  All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
- *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- *
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- *
- * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESSED 
- * OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
- * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE 
- * ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY 
- * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL 
- * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE 
- * GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS 
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER 
- * IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR 
- * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN 
- * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
+ * Copyright (c) 2005 Gregor Heinrich. All rights reserved. Redistribution and
+ * use in source and binary forms, with or without modification, are permitted
+ * provided that the following conditions are met: 1. Redistributions of source
+ * code must retain the above copyright notice, this list of conditions and the
+ * following disclaimer. 2. Redistributions in binary form must reproduce the
+ * above copyright notice, this list of conditions and the following disclaimer
+ * in the documentation and/or other materials provided with the distribution.
+ * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESSED OR
+ * IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+ * MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO
+ * EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+ * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
+ * OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+ * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
+ * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
+ * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 /*
  * Created on May 26, 2005
@@ -46,41 +37,46 @@ import java.util.regex.Pattern;
  * and validates them against a given format. The general grammar of a
  * commandline is:
  * <p>
- * 
- * <pre>
- *      commandline ::= command &quot; &quot; options arguments
- * </pre>
- * 
+ * <code>
+ * commandline ::= command &quot; &quot; options arguments
+ * </code>
  * <p>
  * Here the options and arguments follow the grammar:
  * <p>
- * 
- * <pre>
- *             options   ::= ( option &quot; &quot; )+
- *             option    ::= &quot;-&quot; name (&quot; &quot; value)?
- *             name      ::= &lt;LITERAL&gt;  
- *             arguments ::= ( argument )+ 
- *             argument  ::= value
- *             value     ::= &lt;LITERAL&gt; | &quot;&quot;&quot;( &lt;LITERAL&gt; | &quot; &quot; )+ &quot;&quot;&quot;
- * </pre>
- * 
- * with some value. These values can be restricted to specific formats, which is
- * done using a format string
+ * <code>
+ * options   ::= ( option &quot; &quot; )+
+ * option    ::= &quot;-&quot; name (&quot; &quot; value)?
+ * name      ::= &lt;LITERAL&gt;  
+ * arguments ::= ( argument )+ 
+ * argument  ::= value
+ * value     ::= &lt;LITERAL&gt; | &quot;&quot;&quot;( &lt;LITERAL&gt; | &quot; &quot; )+ &quot;&quot;&quot;
+ * </code>
+ * with some value. Values can be restricted to specific formats, which is done
+ * using a format string. Known types are int, float, long, double, boolean,
+ * String, File and URL. String and File values can contain spaces if put within
+ * quotes.
  * 
  * @author heinrich
  */
 public class Arguments {
 
-    String optionFormat = "(\\w+)(=([ilfdbspu0]))?";
+    String helpFormat = "\\s*(\\{([^\\}]+)\\})?";
 
     String types = "ilfdbspu";
 
-    String argFormat = "[" + types + "]";
+    String optionFormat = "(\\w+)(=([" + types + "0]))?" + helpFormat;
+
+    String argFormat = "([" + types + "])" + helpFormat;
 
     /**
      * contains the option types
      */
     TreeMap<String, Character> optionTypes = new TreeMap<String, Character>();
+
+    /**
+     * contains help information
+     */
+    TreeMap<String, String> help = new TreeMap<String, String>();
 
     /**
      * contains the argument types of required arguments
@@ -102,14 +98,19 @@ public class Arguments {
     int maxArgs = 0;
 
     public static void main(String[] args) {
-        String[] commandline = "-xserv .4 -s test -v -words 34 -f \"test object\" -g 1.2 -t http://www.ud path path2 true"
+        String[] commandline = "-xserverstarttime .4 -s test -v -words 34 -f \"test object\" -g 1.2 -t http://www.ud path path2 true"
             .split(" ");
 
-        String format = "xserv=f words=i f=s g=f s=p v=0 r=0 t=u";
-        String types = "pp|bb";
+        String format = "xserverstarttime=f {xserv test constant} " + //
+            "words=i {number of words}" + //
+            "f=s {file string} " + //
+            "g=f {global weight} " + //
+            "s=p {output file} " + //
+            "v=0 {verbose} " + "r=0 {reloadable\n(for the server)} t=u";
+        String types = "p {infile} p {outfile} | b {use patterns} b {debug}";
         Arguments arg = new Arguments(format, types);
         arg.parse(commandline);
-        System.out.println(arg.getOption("xserv", .5));
+        System.out.println(arg.getOption("xserverstarttime", .5));
         System.out.println(arg.getOption("g"));
         System.out.println(arg.getOption("t"));
         System.out.println(arg.getOption("v"));
@@ -117,6 +118,64 @@ public class Arguments {
         System.out.println(arg.getArguments());
         System.out.println(arg.maxArgs);
         System.out.println(arg);
+    }
+
+    /**
+     * Initialise the arguments parser with a format string and an argument type
+     * specification. For the options and arguments, the formats are defined by
+     * this constructor.
+     * <p>
+     * The format string for the options is composed of the following grammar:
+     * <code>
+     * foptions   ::= ( option )*
+     * foption    ::= name=fotype " "? ( "{" fhelp "}" )?
+     * fname      ::= &lt;LITERAL&gt;
+     * fotype     ::= ( i | l | f | d | b | u | p | s | 0 )
+     * fhelp      ::= &lt;LITERAL&gt;
+     * </code>
+     * The literals of fotype correspond to the types int, float, long, double,
+     * boolean, java.net.URL, java.io.File (p), java.lang.String, and void (0)
+     * for unparametrised options
+     * <p>
+     * The format string for the arguments is composed of the following grammar:
+     * <code>
+     * farguments    ::= frequiredargs &quot;|&quot; foptionalargs
+     * frequiredargs ::= ( fatype " "? ( "{" fhelp "}" )? )+
+     * foptionalargs ::= ( fatype " "? ( "{" fhelp "}" )? )+)+
+     * fatype        ::= ( i | l | f | d | b | u | p | s )
+     * fhelp      ::= &lt;LITERAL&gt;
+     * </code>
+     * Note in the format specification that empty arguments are not possible.
+     * The help strings can include line breaks "\n".
+     * 
+     * @param optformat
+     */
+    public Arguments(String optformat, String argtypes) {
+        Matcher m = Pattern.compile(optionFormat).matcher(optformat);
+        while (m.find()) {
+            String type = m.group(3) != null ? m.group(3) : "0";
+            optionTypes.put(m.group(1), type.charAt(0));
+            String desc = m.group(5);
+            if (desc != null) {
+                help.put(m.group(1), desc);
+            }
+        }
+        minArgs = argtypes.replaceAll(" ", "").replaceAll("\\{[^\\}]+\\}", "")
+            .indexOf('|');
+        if (minArgs == -1) {
+            minArgs = argtypes.length();
+        }
+        m = Pattern.compile(argFormat).matcher(argtypes);
+        int narg = 1;
+        while (m.find()) {
+            argTypes.append(m.group(1));
+            String desc = m.group(3);
+            if (desc != null) {
+                help.put(Integer.toString(narg), desc);
+                narg++;
+            }
+        }
+        maxArgs = argTypes.length();
     }
 
     /**
@@ -211,54 +270,6 @@ public class Arguments {
             return defaultValue;
         }
         return obj;
-    }
-
-    /**
-     * Initialise the arguments parser with a format string and an argument type
-     * specification. For the options and arguments, the formats are defined by
-     * this constructor.
-     * <p>
-     * The format string for the options is composed of the following grammar:
-     * 
-     * <pre>
-     *             foptions   ::= ( option )*
-     *             foption    ::= name=format
-     *             fname      ::= &lt;LITERAL&gt;
-     *             fotype     ::= ( i | f | b | u | p | s | 0 )
-     * </pre>
-     * 
-     * The literals of format correspond to the types int/long, float/double,
-     * boolean, java.net.URL, java.io.File, java.lang.String and 0 for
-     * unparametrised options
-     * <p>
-     * The format string for the arguments is composed of the following grammar:
-     * 
-     * <pre>
-     *             farguments    ::= frequiredargs &quot;|&quot; foptionalargs
-     *             frequiredargs ::= ( fatype )+
-     *             foptionalargs ::= ( fatype )+
-     *             fatype        ::= ( i | f | b | u | p | s )
-     * </pre>
-     * 
-     * Note in the format specification that empty arguments are not possible.
-     * 
-     * @param optformat
-     */
-    public Arguments(String optformat, String argtypes) {
-        Matcher m = Pattern.compile(optionFormat).matcher(optformat);
-        while (m.find()) {
-            String type = m.group(3) != null ? m.group(3) : "0";
-            optionTypes.put(m.group(1), type.charAt(0));
-        }
-        minArgs = argtypes.indexOf('|');
-        if (minArgs == -1) {
-            minArgs = argtypes.length();
-        }
-        m = Pattern.compile(argFormat).matcher(argtypes);
-        while (m.find()) {
-            argTypes.append(m.group(0));
-        }
-        maxArgs = argTypes.length();
     }
 
     /**
@@ -371,29 +382,67 @@ public class Arguments {
      */
     public String toString() {
         StringBuffer sb = new StringBuffer();
-        sb.append("Argument grammar:\n");
+        sb
+            .append("Runtime argument order: <options> <required arguments> <optional arguments>\n");
         sb.append("\nOptions:\n");
+        int maxOption = 0;
+        for (String a : optionTypes.keySet()) {
+            maxOption = Math.max(maxOption, a.length());
+        }
+        maxOption += 8;
         for (String key : optionTypes.keySet()) {
-            sb.append("  ").append("-").append(key).append(" : ").append(
-                type(optionTypes.get(key))).append("\n");
+            sb.append("  ").append("-").append(key);
+            spacePad(sb, maxOption);
+            sb.append(type(optionTypes.get(key)));
+            addDescription(sb, key, maxOption + 10);
+            sb.append("\n");
+
         }
         if (minArgs > 0)
-            sb.append("\nRequired argument types:\n");
-        else 
-            sb.append("\nNo required argument types.\n");
-        for (int i = 0; i < minArgs; i++) {
-            sb.append("  ").append(i + 1).append(" : ").append(
-                type(argTypes.charAt(i))).append("\n");
-        }
-        if (maxArgs - minArgs > 0)
-            sb.append("\nOptional argument types:\n");
-        else 
-            sb.append("\nNo optional argument types.\n");
-        for (int i = minArgs; i < argTypes.length(); i++) {
-            sb.append("  ").append(i + 1).append(" : ").append(
-                type(argTypes.charAt(i))).append("\n");
+            sb.append("\nRequired arguments:\n");
+        else
+            sb.append("\nNo required arguments.\n");
+        for (int i = 0; i < maxArgs; i++) {
+            if (i == minArgs) {
+                if (maxArgs - minArgs > 0)
+                    sb.append("\nOptional arguments:\n");
+                else
+                    sb.append("\nNo optional arguments.\n");
+            }
+            sb.append("  ").append(i + 1);
+            spacePad(sb, maxOption);
+            sb.append(type(argTypes.charAt(i)));
+            addDescription(sb, Integer.toString(i + 1), maxOption + 10);
+            sb.append("\n");
         }
         return sb.toString();
+    }
+
+    /**
+     * @param sb
+     * @param key
+     */
+    private void addDescription(StringBuffer sb, String key, int position) {
+        String desc = help.get(key);
+        if (desc == null)
+            return;
+        String[] lines = desc.split("\n");
+        for (int i = 0; i < lines.length; i++) {
+            spacePad(sb, position);
+            sb.append("# ").append(lines[i]);
+            if (i < lines.length - 1)
+                sb.append("\n");
+        }
+    }
+
+    /**
+     * @return
+     */
+    public void spacePad(StringBuffer b, int length) {
+        int linelength = b.length() - b.lastIndexOf("\n");
+        for (int i = 0; i < length - linelength; i++) {
+            b.append(' ');
+        }
     }
 
     public String type(char c) {
@@ -406,15 +455,18 @@ public class Arguments {
         if (c == 'd')
             return "double";
         if (c == 'p')
-            return "java.io.File";
+            // return "java.io.File";
+            return "filename";
         if (c == 'u')
-            return "java.net.URL";
+            // return "java.net.URL";
+            return "url";
         if (c == '0')
-            return "(no value)";
+            return "(void)";
         if (c == 'b')
             return "boolean";
         if (c == 's')
-            return "java.lang.String";
+            // return "java.lang.String";
+            return "string";
         return "(unknown)";
     }
 }
