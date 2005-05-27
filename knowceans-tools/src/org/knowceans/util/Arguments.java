@@ -295,7 +295,7 @@ public class Arguments {
     /**
      * Returns the argument with index i and null if i is compliant with the
      * format but not specified at commandline. Arguments start at the
-     * index 1, index 0 is the user directory and class called.
+     * index 1, index 0 returns a the full name of the main class.
      * 
      * @param i
      * @return
@@ -303,8 +303,7 @@ public class Arguments {
      */
     public Object getArgument(int i) throws IllegalArgumentException {
         if (i == 0) {
-            String userdir = System.getProperty("user.dir");
-            
+            return getMainClass();
         }
         if (i > argTypes.length()) {
             throw new IllegalArgumentException("Format supports only "
@@ -318,6 +317,55 @@ public class Arguments {
             System.out.println((i + 1) + " = " + obj);
         }
         return obj;
+    }
+    
+    /**
+     * The full call string of the program, including the classpath 
+     * and working directory.
+     * TODO: parameterless options are printed with boolean value...
+     * 
+     * @param format true to format lines.
+     * @return
+     */
+    public String getCallString(boolean format) {
+        String linesep = format ? "\n\t" : "";
+        StringBuffer path = new StringBuffer(System.getProperty("user.dir"));
+        String classpath = System.getProperty("java.class.path");
+        path.append(File.separatorChar + "java -cp "+ linesep); 
+        path.append(classpath.replaceAll(File.pathSeparator, File.pathSeparator + linesep) + linesep);
+        path.append(linesep).append(" ");
+        path.append(getMainClass());
+        path.append(linesep).append(" ");
+        for (String key : options.keySet()) {
+            String param = "";
+            // VerifyError...
+            // if (optionTypes.get(key) != '0') {
+            // param += options.get(key).toString();
+            // }
+            path.append(linesep + "-" + key + " " + options.get(key) + " ");
+        }
+        path.append(linesep);
+        for (Object arg : arguments) {
+            path.append(linesep).append(arg).append(" ");
+        }
+        return path.toString();
+    }
+
+    /**
+     * Determines the main class type.
+     * 
+     * @return
+     */
+    public String getMainClass() {
+        String clazz = null;
+        try {
+            throw new Exception();
+        } catch (Exception e) {
+            StackTraceElement[] t = e.getStackTrace();
+            clazz = t[t.length - 1].getClassName();    
+        }
+        return clazz;
+
     }
 
     /**
@@ -483,27 +531,29 @@ public class Arguments {
         if (helptext != null) {
             sb.append(helptext).append("\n\n");
         }
-        sb
-            .append("Runtime argument order: <options> <required arguments> <optional arguments>\n");
-        sb.append("\nOptions:\n");
-        int maxOption = 0;
-        for (String a : optionTypes.keySet()) {
-            String syn = synonyms.get(a);
-            int len = (syn == null) ? 0 : syn.length() + 3; 
-            maxOption = Math.max(maxOption, a.length() + len);
-        }
-        maxOption += 8;
-        for (String key : optionTypes.keySet()) {
-            sb.append("  ").append("-").append(key);
-            String syn = synonyms.get(key);
-            if (syn != null)
-                sb.append(" | -").append(syn);
-            spacePad(sb, maxOption);
-            sb.append(type(optionTypes.get(key)));
-            addDescription(sb, key, maxOption + 10);
-            sb.append("\n");
+        sb.append(getMainClass()
+            + " <options> <required arguments> <optional arguments>\n");
+        int maxOption = 8;
+        if (optionTypes.size() > 0) {
+            sb.append("\nOptions:\n");
+            for (String a : optionTypes.keySet()) {
+                String syn = synonyms.get(a);
+                int len = (syn == null) ? 0 : syn.length() + 3;
+                maxOption = Math.max(maxOption, a.length() + len);
+            }
+            maxOption += 8;
+            for (String key : optionTypes.keySet()) {
+                sb.append("  ").append("-").append(key);
+                String syn = synonyms.get(key);
+                if (syn != null)
+                    sb.append(" | -").append(syn);
+                spacePad(sb, maxOption);
+                sb.append(type(optionTypes.get(key)));
+                addDescription(sb, key, maxOption + 10);
+                sb.append("\n");
 
-        }
+            }
+        } 
         if (minArgs > 0)
             sb.append("\nRequired arguments:\n");
         else
