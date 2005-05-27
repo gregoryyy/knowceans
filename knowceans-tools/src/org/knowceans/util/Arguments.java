@@ -294,21 +294,26 @@ public class Arguments {
 
     /**
      * Returns the argument with index i and null if i is compliant with the
-     * format but not specified at commandline.
+     * format but not specified at commandline. Arguments start at the
+     * index 1, index 0 is the user directory and class called.
      * 
      * @param i
      * @return
      * @throws IllegalArgumentException
      */
     public Object getArgument(int i) throws IllegalArgumentException {
-        if (i > argTypes.length() - 1) {
+        if (i == 0) {
+            String userdir = System.getProperty("user.dir");
+            
+        }
+        if (i > argTypes.length()) {
             throw new IllegalArgumentException("Format supports only "
                 + maxArgs + " arguments, not " + (i + 1) + ".");
         }
-        if (i > arguments.size() - 1) {
+        if (i > arguments.size()) {
             return null;
         }
-        Object obj = arguments.get(i);
+        Object obj = arguments.get(i - 1);
         if (debug) {
             System.out.println((i + 1) + " = " + obj);
         }
