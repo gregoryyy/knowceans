@@ -37,20 +37,20 @@ import java.util.regex.Pattern;
  * and validates them against a given format. The general grammar of a
  * commandline is:
  * <p>
- * <code>
+ * <pre>
  * commandline ::= command &quot; &quot; options arguments
- * </code>
+ * </pre>
  * <p>
  * Here the options and arguments follow the grammar:
  * <p>
- * <code>
+ * <pre>
  * options   ::= ( option &quot; &quot; )+
  * option    ::= &quot;-&quot; name (&quot; &quot; value)?
  * name      ::= &lt;LITERAL&gt;  
  * arguments ::= ( argument )+ 
  * argument  ::= value
  * value     ::= &lt;LITERAL&gt; | &quot;&quot;&quot;( &lt;LITERAL&gt; | &quot; &quot; )+ &quot;&quot;&quot;
- * </code>
+ * </pre>
  * with some value. Values can be restricted to specific formats, which is done
  * using a format string. Known types are int, float, long, double, boolean,
  * String, File and URL. String and File values can contain spaces if put within
@@ -126,29 +126,29 @@ public class Arguments {
      * this constructor.
      * <p>
      * The format string for the options is composed of the following grammar:
-     * <code>
+     * <pre>
      * foptions   ::= ( option )*
      * foption    ::= name=fotype " "? ( "{" fhelp "}" )?
      * fname      ::= &lt;LITERAL&gt;
      * fotype     ::= ( i | l | f | d | b | u | p | s | 0 )
      * fhelp      ::= &lt;LITERAL&gt;
-     * </code>
+     * </pre>
      * The literals of fotype correspond to the types int, float, long, double,
      * boolean, java.net.URL, java.io.File (p), java.lang.String, and void (0)
      * for unparametrised options
      * <p>
      * The format string for the arguments is composed of the following grammar:
-     * <code>
+     * <pre>
      * farguments    ::= frequiredargs &quot;|&quot; foptionalargs
      * frequiredargs ::= ( fatype " "? ( "{" fhelp "}" )? )+
      * foptionalargs ::= ( fatype " "? ( "{" fhelp "}" )? )+)+
      * fatype        ::= ( i | l | f | d | b | u | p | s )
      * fhelp      ::= &lt;LITERAL&gt;
-     * </code>
-     * Note in the format specification that empty arguments are not possible.
+     * </pre>
      * The help strings can include line breaks "\n".
      * 
-     * @param optformat
+     * @param optformat format string for options
+     * @param argtypes format string for arguments
      */
     public Arguments(String optformat, String argtypes) {
         Matcher m = Pattern.compile(optionFormat).matcher(optformat);
@@ -160,11 +160,6 @@ public class Arguments {
                 help.put(m.group(1), desc);
             }
         }
-        minArgs = argtypes.replaceAll(" ", "").replaceAll("\\{[^\\}]+\\}", "")
-            .indexOf('|');
-        if (minArgs == -1) {
-            minArgs = argtypes.length();
-        }
         m = Pattern.compile(argFormat).matcher(argtypes);
         int narg = 1;
         while (m.find()) {
@@ -174,6 +169,12 @@ public class Arguments {
                 help.put(Integer.toString(narg), desc);
                 narg++;
             }
+        }
+        String typechars = argtypes.replaceAll(" ", "").replaceAll(
+            "\\{[^\\}]+\\}", "");
+        minArgs = typechars.indexOf('|');
+        if (minArgs == -1) {
+            minArgs = argTypes.length();
         }
         maxArgs = argTypes.length();
     }
@@ -273,26 +274,30 @@ public class Arguments {
     }
 
     /**
-     * parses the command line arguments string whose values can be found with
-     * the getOption and getArgument methods afterwards.
+     * Parses the command line arguments string whose values can be found with
+     * the getOption and getArgument methods afterwards. Further, if option -?
+     * is not specified in the format string, the help string (accessible via
+     * toString()) is output to stdout and System.exit(0) called.
      * 
-     * @param a
+     * @param args
+     *            the argument string, typically directly that of a main method.
      * @throws IllegalArgumentException
+     *             if the commandline arguments do not match the given format.
      */
-    public void parse(String[] a) throws IllegalArgumentException {
+    public void parse(String[] args) throws IllegalArgumentException {
         int nargs = 0;
         boolean needsparam = false;
         String option = "";
-        for (int i = 0; i < a.length; i++) {
-            if (a[i].startsWith("-")) {
-                option = a[i].substring(1, a[i].length());
+        for (int i = 0; i < args.length; i++) {
+            if (args[i].startsWith("-")) {
+                option = args[i].substring(1, args[i].length());
             } else {
                 if (nargs > argTypes.length() - 1)
                     throw new IllegalArgumentException(
                         "Options do not comply with format. "
                             + "Check option parameters.");
                 char type = argTypes.charAt(nargs);
-                Object argument = getObject(a[i], type);
+                Object argument = getObject(args[i], type);
                 if (argument == null) {
                     throw new IllegalArgumentException("Option " + option
                         + " has not required type " + type + ".");
@@ -302,8 +307,13 @@ public class Arguments {
             }
             Character type = optionTypes.get(option);
             if (type == null) {
-                throw new IllegalArgumentException("Option " + option
-                    + " unknown.");
+                if (option.equals("?")) {
+                    System.out.println(this);
+                    System.exit(0);
+                } else {
+                    throw new IllegalArgumentException("Option " + option
+                        + " unknown.");
+                }
             }
             if (nargs > 0)
                 continue;
@@ -313,15 +323,15 @@ public class Arguments {
 
                 String value = "";
                 // consume quoted parameters
-                if (a[i].startsWith("\"")) {
-                    a[i] = a[i].substring(1);
-                    while (!a[i].endsWith("\"")) {
-                        value += a[i] + " ";
+                if (args[i].startsWith("\"")) {
+                    args[i] = args[i].substring(1);
+                    while (!args[i].endsWith("\"")) {
+                        value += args[i] + " ";
                         i++;
                     }
-                    a[i] = a[i].substring(0, a[i].length() - 1);
+                    args[i] = args[i].substring(0, args[i].length() - 1);
                 }
-                value += a[i];
+                value += args[i];
 
                 Object param = getObject(value, type);
                 if (param == null) {
