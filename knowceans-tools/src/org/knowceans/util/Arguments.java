@@ -22,8 +22,11 @@
  */
 package org.knowceans.util;
 
+import java.io.BufferedOutputStream;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.PrintStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.HashMap;
@@ -63,6 +66,10 @@ import java.util.regex.Pattern;
  * using a format string. Known types are int, float, long, double, boolean,
  * String, File and URL. String and File values can contain spaces if put within
  * quotes.
+ * <p>
+ * TODO: add functionality to redirect output streams
+ * TODO: check for duplicate keys
+ * TODO: resolve problem with command line monitor getCallString()
  * 
  * @author heinrich
  */
@@ -77,7 +84,11 @@ public class Arguments {
     String optionFormat = "([\\w\\d_-]+(\\|[\\w\\d_-]+)?)(=([" + types + "0]))?" + helpFormat;
 
     String argFormat = "([" + types + "])" + helpFormat;
+    
+    PrintStream stdout = null;
 
+    PrintStream stderr = null;
+    
     /**
      * contains the option types
      */
@@ -314,7 +325,7 @@ public class Arguments {
         }
         Object obj = arguments.get(i - 1);
         if (debug) {
-            System.out.println((i + 1) + " = " + obj);
+            System.out.println((i) + " = " + obj);
         }
         return obj;
     }
@@ -388,7 +399,11 @@ public class Arguments {
      * Parses the command line arguments string whose values can be found with
      * the getOption and getArgument methods afterwards. Further, if option -?
      * is not specified in the format string, the help string (accessible via
-     * toString()) is output to stdout and System.exit(0) called.
+     * toString()) is output to stdout and System.exit(0) called. The same works
+     * for -stdout and a file where the output is sent to, -stderr, -stdouterr, 
+     * and -stdin work accordingly. With stream redirection case, it is 
+     * necessary to call the close() method at the end of the program's 
+     * main routine.
      * 
      * @param args
      *            the argument string, typically directly that of a main method.
@@ -423,7 +438,49 @@ public class Arguments {
                 if (option.equals("?")) {
                     System.out.println(this);
                     System.exit(0);
-                } else {
+                } else if (option.equals("stdout")) {
+                    i++;
+                    String outfile = args[i];
+                    try {
+                        stdout = new PrintStream(new BufferedOutputStream(
+                            new FileOutputStream(outfile)));
+                        System.setOut(stdout);
+                    } catch (Exception e) {
+                        throw new IllegalArgumentException("Unable to redirect stdout to "
+                            + outfile);
+                    }
+                    continue;
+                } else if (option.equals("stderr")) {
+                    i++;
+                    String outfile = args[i];
+                    try {
+                        stderr = new PrintStream(new BufferedOutputStream(
+                            new FileOutputStream(outfile)));
+                        System.setErr(stderr);
+                    } catch (Exception e) {
+                        throw new IllegalArgumentException("Unable to redirect stderr to "
+                            + outfile);
+                    }
+                    continue;
+                } else if (option.equals("stdouterr")) {
+                    i++;
+                    String outfile = args[i];
+                    try {
+                        stdout = new PrintStream(new BufferedOutputStream(
+                            new FileOutputStream(outfile)));
+                        System.setOut(stdout);
+                        System.setErr(stdout);
+                    } catch (Exception e) {
+                        throw new IllegalArgumentException("Unable to redirect stderr to "
+                            + outfile);
+                    }
+                    continue;
+                } else if (option.equals("stdin")) {
+                    System.out.println("Stdin redirection not implemented yet.");
+                    i++;
+                    continue;
+                }
+                else {
                     throw new IllegalArgumentException("Option " + option
                         + " unknown.");
                 }
@@ -640,5 +697,17 @@ public class Arguments {
     public void help(String string) {
         
         helptext = string;
+    }
+    
+    /**
+     * This method must be called if output redirection is used.
+     */
+    public void close() {
+        if (stdout != null) {
+            stdout.close();
+        }
+        if (stderr != null) {
+            stderr.close();
+        }
     }
 }
