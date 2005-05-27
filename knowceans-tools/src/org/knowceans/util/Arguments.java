@@ -37,20 +37,28 @@ import java.util.regex.Pattern;
  * and validates them against a given format. The general grammar of a
  * commandline is:
  * <p>
+ * 
  * <pre>
- * commandline ::= command &quot; &quot; options arguments
+ * 
+ *  commandline ::= command &quot; &quot; options arguments
+ *  
  * </pre>
+ * 
  * <p>
  * Here the options and arguments follow the grammar:
  * <p>
+ * 
  * <pre>
- * options   ::= ( option &quot; &quot; )+
- * option    ::= &quot;-&quot; name (&quot; &quot; value)?
- * name      ::= &lt;LITERAL&gt;  
- * arguments ::= ( argument )+ 
- * argument  ::= value
- * value     ::= &lt;LITERAL&gt; | &quot;&quot;&quot;( &lt;LITERAL&gt; | &quot; &quot; )+ &quot;&quot;&quot;
+ * 
+ *  options   ::= ( option &quot; &quot; )+
+ *  option    ::= &quot;-&quot; name (&quot; &quot; value)?
+ *  name      ::= &lt;LITERAL&gt;  
+ *  arguments ::= ( argument )+ 
+ *  argument  ::= value
+ *  value     ::= &lt;LITERAL&gt; | &quot;&quot;&quot;( &lt;LITERAL&gt; | &quot; &quot; )+ &quot;&quot;&quot;
+ *  
  * </pre>
+ * 
  * with some value. Values can be restricted to specific formats, which is done
  * using a format string. Known types are int, float, long, double, boolean,
  * String, File and URL. String and File values can contain spaces if put within
@@ -60,11 +68,13 @@ import java.util.regex.Pattern;
  */
 public class Arguments {
 
+    private boolean debug = false;
+    
     String helpFormat = "\\s*(\\{([^\\}]+)\\})?";
 
     String types = "ilfdbspu";
 
-    String optionFormat = "(\\w+)(=([" + types + "0]))?" + helpFormat;
+    String optionFormat = "([\\w\\d_-]+(\\|[\\w\\d_-]+)?)(=([" + types + "0]))?" + helpFormat;
 
     String argFormat = "([" + types + "])" + helpFormat;
 
@@ -77,11 +87,21 @@ public class Arguments {
      * contains help information
      */
     TreeMap<String, String> help = new TreeMap<String, String>();
+    
+    /**
+     * help text.
+     */
+    String helptext = null;
 
     /**
      * contains the argument types of required arguments
      */
     StringBuffer argTypes = new StringBuffer();
+
+    /**
+     * stores synonyms.
+     */
+    HashMap<String, String> synonyms = new HashMap<String, String>();
 
     /**
      * contains the arguments
@@ -126,38 +146,53 @@ public class Arguments {
      * this constructor.
      * <p>
      * The format string for the options is composed of the following grammar:
+     * 
      * <pre>
-     * foptions   ::= ( option )*
-     * foption    ::= name=fotype " "? ( "{" fhelp "}" )?
-     * fname      ::= &lt;LITERAL&gt;
-     * fotype     ::= ( i | l | f | d | b | u | p | s | 0 )
-     * fhelp      ::= &lt;LITERAL&gt;
+     * 
+     *  foptions   ::= ( option )*
+     *  foption    ::= name ( &quot;|&quot; name )? &quot;=&quot; fotype &quot; &quot;? ( &quot;{&quot; fhelp &quot;}&quot; )?
+     *  fname      ::= &lt;LITERAL&gt;
+     *  fotype     ::= ( i | l | f | d | b | u | p | s | 0 )
+     *  fhelp      ::= &lt;LITERAL&gt;
+     *  
      * </pre>
+     * 
      * The literals of fotype correspond to the types int, float, long, double,
      * boolean, java.net.URL, java.io.File (p), java.lang.String, and void (0)
      * for unparametrised options
      * <p>
      * The format string for the arguments is composed of the following grammar:
+     * 
      * <pre>
-     * farguments    ::= frequiredargs &quot;|&quot; foptionalargs
-     * frequiredargs ::= ( fatype " "? ( "{" fhelp "}" )? )+
-     * foptionalargs ::= ( fatype " "? ( "{" fhelp "}" )? )+)+
-     * fatype        ::= ( i | l | f | d | b | u | p | s )
-     * fhelp      ::= &lt;LITERAL&gt;
+     * 
+     *  farguments    ::= frequiredargs &quot;|&quot; foptionalargs
+     *  frequiredargs ::= ( fatype &quot; &quot;? ( &quot;{&quot; fhelp &quot;}&quot; )? )+
+     *  foptionalargs ::= ( fatype &quot; &quot;? ( &quot;{&quot; fhelp &quot;}&quot; )? )+)+
+     *  fatype        ::= ( i | l | f | d | b | u | p | s )
+     *  fhelp      ::= &lt;LITERAL&gt;
+     *  
      * </pre>
+     * 
      * The help strings can include line breaks "\n".
      * 
-     * @param optformat format string for options
-     * @param argtypes format string for arguments
+     * @param optformat
+     *            format string for options
+     * @param argtypes
+     *            format string for arguments
      */
     public Arguments(String optformat, String argtypes) {
         Matcher m = Pattern.compile(optionFormat).matcher(optformat);
         while (m.find()) {
-            String type = m.group(3) != null ? m.group(3) : "0";
-            optionTypes.put(m.group(1), type.charAt(0));
-            String desc = m.group(5);
+            String[] keys = m.group(1).split("\\|");
+            if (keys.length > 1) {
+                synonyms.put(keys[0], keys[1]);
+                synonyms.put(keys[1], keys[0]);
+            }
+            String type = m.group(4) != null ? m.group(4) : "0";
+            optionTypes.put(keys[0], type.charAt(0));
+            String desc = m.group(6);
             if (desc != null) {
-                help.put(m.group(1), desc);
+                help.put(keys[0], desc);
             }
         }
         m = Pattern.compile(argFormat).matcher(argtypes);
@@ -177,6 +212,18 @@ public class Arguments {
             minArgs = argTypes.length();
         }
         maxArgs = argTypes.length();
+    }
+    
+    /**
+     * same as 2-argument constructor, but sets a help text. 
+     * 
+     * @param optformat
+     * @param argtypes
+     * @param helptext
+     */
+    public Arguments(String optformat, String argtypes, String helptext) {
+        this(optformat, argtypes);
+        help(helptext);
     }
 
     /**
@@ -199,8 +246,12 @@ public class Arguments {
      * @throws IllegalArgumentException
      */
     public Object getOption(String string) throws IllegalArgumentException {
-        Object obj = options.get(string);
-        Character type = optionTypes.get(string);
+        String voption = getVOption(string);
+        if (voption == null) {
+            throw new IllegalArgumentException("Option " + string + " unknown.");
+        }
+        Object obj = options.get(voption);
+        Character type = optionTypes.get(voption);
         if (obj == null && type == null) {
             throw new IllegalArgumentException("Option " + string + " unknown.");
         }
@@ -224,7 +275,10 @@ public class Arguments {
         throws IllegalArgumentException {
         Object obj = getOption(string);
         if (obj == null) {
-            return defaultValue;
+            obj = defaultValue;
+        }
+        if (debug) {
+            System.out.println(string.replaceFirst("^\\-","") + " = " + obj);
         }
         return obj;
     }
@@ -254,7 +308,11 @@ public class Arguments {
         if (i > arguments.size() - 1) {
             return null;
         }
-        return arguments.get(i);
+        Object obj = arguments.get(i);
+        if (debug) {
+            System.out.println((i + 1) + " = " + obj);
+        }
+        return obj;
     }
 
     /**
@@ -305,8 +363,10 @@ public class Arguments {
                 arguments.add(argument);
                 nargs++;
             }
-            Character type = optionTypes.get(option);
-            if (type == null) {
+            if (nargs > 0)
+                continue;            
+            String voption = getVOption(option);
+            if (voption == null) {
                 if (option.equals("?")) {
                     System.out.println(this);
                     System.exit(0);
@@ -315,8 +375,8 @@ public class Arguments {
                         + " unknown.");
                 }
             }
-            if (nargs > 0)
-                continue;
+            Character type = optionTypes.get(voption);
+
             // read the parameter (if still reading options)
             if (type != '0') {
                 i++;
@@ -338,9 +398,9 @@ public class Arguments {
                     throw new IllegalArgumentException("Option " + option
                         + " has not required type " + type + ".");
                 }
-                options.put(option, param);
+                options.put(voption, param);
             } else {
-                options.put(option, Boolean.TRUE);
+                options.put(voption, Boolean.TRUE);
             }
         }
         if (nargs < minArgs) {
@@ -348,6 +408,29 @@ public class Arguments {
                 "Number of required arguments is " + minArgs + ", but only "
                     + nargs + " given.");
         }
+    }
+
+    /**
+     * get the main variant of the option.
+     * 
+     * @param option
+     * @return
+     */
+    private String getVOption(String option) {
+        Character c = optionTypes.get(option);
+
+        if (c != null) 
+            return option;
+
+        String voption = synonyms.get(option);
+        if (voption == null) 
+            return null;
+        
+        c = optionTypes.get(voption);
+        if (c != null) 
+            return voption;
+            
+        return null;
     }
 
     /**
@@ -392,16 +475,24 @@ public class Arguments {
      */
     public String toString() {
         StringBuffer sb = new StringBuffer();
+        if (helptext != null) {
+            sb.append(helptext).append("\n\n");
+        }
         sb
             .append("Runtime argument order: <options> <required arguments> <optional arguments>\n");
         sb.append("\nOptions:\n");
         int maxOption = 0;
         for (String a : optionTypes.keySet()) {
-            maxOption = Math.max(maxOption, a.length());
+            String syn = synonyms.get(a);
+            int len = (syn == null) ? 0 : syn.length() + 3; 
+            maxOption = Math.max(maxOption, a.length() + len);
         }
         maxOption += 8;
         for (String key : optionTypes.keySet()) {
             sb.append("  ").append("-").append(key);
+            String syn = synonyms.get(key);
+            if (syn != null)
+                sb.append(" | -").append(syn);
             spacePad(sb, maxOption);
             sb.append(type(optionTypes.get(key)));
             addDescription(sb, key, maxOption + 10);
@@ -478,5 +569,21 @@ public class Arguments {
             // return "java.lang.String";
             return "string";
         return "(unknown)";
+    }
+
+    /**
+     * @param b
+     */
+    public void debug(boolean b) {
+        
+        debug = b;
+    }
+
+    /**
+     * @param string
+     */
+    public void help(String string) {
+        
+        helptext = string;
     }
 }
