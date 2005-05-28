@@ -588,8 +588,14 @@ public class Arguments {
         if (helptext != null) {
             sb.append(helptext).append("\n\n");
         }
-        sb.append(getMainClass()
-            + " <options> <required arguments> <optional arguments>\n");
+        sb.append(getMainClass());
+        if (optionTypes.size() > 0)
+            sb.append(" <options>");
+        if (minArgs > 0)
+            sb.append(" <required arguments>");
+        if (maxArgs > minArgs)
+            sb.append(" <optional arguments>");
+        sb.append("\n");
         int maxOption = 8;
         if (optionTypes.size() > 0) {
             sb.append("\nOptions:\n");
