@@ -128,6 +128,11 @@ public class Arguments {
 
     int maxArgs = 0;
 
+    /**
+     * allow redirection of input/output streams
+     */
+    private boolean redirect = false;
+
     public static void main(String[] args) {
         String[] commandline = "-xserverstarttime .4 -s test -v -words 34 -f \"test object\" -g 1.2 -t http://www.ud path path2 true"
             .split(" ");
@@ -401,9 +406,9 @@ public class Arguments {
      * is not specified in the format string, the help string (accessible via
      * toString()) is output to stdout and System.exit(0) called. The same works
      * for -stdout and a file where the output is sent to, -stderr, -stdouterr, 
-     * and -stdin work accordingly. With stream redirection case, it is 
-     * necessary to call the close() method at the end of the program's 
-     * main routine.
+     * and -stdin work accordingly. Stream redirection must be explicitly enabled
+     * by calling redirect(true) and, at the end of the program, to call
+     * the close() method.
      * 
      * @param args
      *            the argument string, typically directly that of a main method.
@@ -438,7 +443,7 @@ public class Arguments {
                 if (option.equals("?")) {
                     System.out.println(this);
                     System.exit(0);
-                } else if (option.equals("stdout")) {
+                } else if (option.equals("stdout") && redirect) {
                     i++;
                     String outfile = args[i];
                     try {
@@ -450,7 +455,7 @@ public class Arguments {
                             + outfile);
                     }
                     continue;
-                } else if (option.equals("stderr")) {
+                } else if (option.equals("stderr") && redirect) {
                     i++;
                     String outfile = args[i];
                     try {
@@ -462,7 +467,7 @@ public class Arguments {
                             + outfile);
                     }
                     continue;
-                } else if (option.equals("stdouterr")) {
+                } else if (option.equals("stdouterr") && redirect) {
                     i++;
                     String outfile = args[i];
                     try {
@@ -475,7 +480,7 @@ public class Arguments {
                             + outfile);
                     }
                     continue;
-                } else if (option.equals("stdin")) {
+                } else if (option.equals("stdin") && redirect) {
                     System.out.println("Stdin redirection not implemented yet.");
                     i++;
                     continue;
@@ -617,6 +622,29 @@ public class Arguments {
 
             }
         } 
+        
+        if (!optionTypes.containsKey("?")) {
+            sb.append("  ").append("-?");
+            spacePad(sb, maxOption);
+            sb.append("(void)    # this synopsis");
+            sb.append("\n");
+        }
+        
+        if (redirect) {
+            sb.append("  ").append("-stdout");
+            spacePad(sb, maxOption);
+            sb.append("filename  # redirect stdout");
+            sb.append("\n");
+            sb.append("  ").append("-stderr");
+            spacePad(sb, maxOption);
+            sb.append("filename  # redirect stderr");
+            sb.append("\n");
+            sb.append("  ").append("-stdouterr");
+            spacePad(sb, maxOption);
+            sb.append("filename  # redirect stdout + stderr");
+            sb.append("\n");
+        }
+        
         if (minArgs > 0)
             sb.append("\nRequired arguments:\n");
         else
@@ -715,5 +743,15 @@ public class Arguments {
         if (stderr != null) {
             stderr.close();
         }
+    }
+
+    /**
+     * Enable / disable redirection of pipe streams
+     * 
+     * @param b
+     */
+    public void redirect(boolean b) {
+        
+        redirect = b;
     }
 }
