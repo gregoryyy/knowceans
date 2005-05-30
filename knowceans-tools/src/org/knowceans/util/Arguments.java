@@ -26,6 +26,7 @@ import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.io.PrintStream;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -67,7 +68,6 @@ import java.util.regex.Pattern;
  * String, File and URL. String and File values can contain spaces if put within
  * quotes.
  * <p>
- * TODO: add functionality to redirect output streams
  * TODO: check for duplicate keys
  * TODO: resolve problem with command line monitor getCallString()
  * 
@@ -75,7 +75,48 @@ import java.util.regex.Pattern;
  */
 public class Arguments {
 
+    /**
+     * TeeStream splits output to two PrintStreams. 
+     *
+     * @author heinrich
+     */
+    class TeeStream extends PrintStream {
+
+        PrintStream stream2 = null;
+        /**
+         * @param out
+         */
+        public TeeStream(OutputStream out1, OutputStream out2) {
+            super(out1, true);
+            stream2 = new PrintStream(out2, true);
+        }
+
+        public void close() {
+            super.close();
+            stream2.close();
+        }
+
+        public void flush() {
+            super.flush();
+            stream2.flush();
+        }
+
+        public void write(int b) {
+            byte[] buf = new byte[1];
+            buf[0] = (byte)b;
+            write(buf, 0, 1);
+        }
+
+        public void write(byte[] b, int off, int len) {
+            super.write(b, off, len);
+            stream2.write(b, off, len);
+        }
+        
+    }
+
     private boolean debug = false;
+    
+    private boolean tee = true;
     
     String helpFormat = "\\s*(\\{([^\\}]+)\\})?";
 
@@ -123,6 +164,8 @@ public class Arguments {
      * contains the options
      */
     HashMap<String, Object> options = new HashMap<String, Object>();
+    
+    String variable = null;
 
     int minArgs = 0;
 
@@ -132,6 +175,8 @@ public class Arguments {
      * allow redirection of input/output streams
      */
     private boolean redirect = false;
+
+    private boolean allowVariable = false;
 
     public static void main(String[] args) {
         String[] commandline = "-xserverstarttime .4 -s test -v -words 34 -f \"test object\" -g 1.2 -t http://www.ud path path2 true"
@@ -409,6 +454,10 @@ public class Arguments {
      * and -stdin work accordingly. Stream redirection must be explicitly enabled
      * by calling redirect(true) and, at the end of the program, to call
      * the close() method.
+     * <p>
+     * Another important possibility is the option -$, which allows to set a variable
+     * that can be used afterwards in the option and argument values by using $@.
+     * Enable this using the variable(true);
      * 
      * @param args
      *            the argument string, typically directly that of a main method.
@@ -428,6 +477,9 @@ public class Arguments {
                         "Options do not comply with format. "
                             + "Check option parameters.");
                 char type = argTypes.charAt(nargs);
+                if (allowVariable && variable != null) {
+                    args[i] = replaceVariable(args[i]);
+                }
                 Object argument = getObject(args[i], type);
                 if (argument == null) {
                     throw new IllegalArgumentException("Option " + option
@@ -447,8 +499,9 @@ public class Arguments {
                     i++;
                     String outfile = args[i];
                     try {
-                        stdout = new PrintStream(new BufferedOutputStream(
-                            new FileOutputStream(outfile)));
+                        BufferedOutputStream bos = new BufferedOutputStream(
+                            new FileOutputStream(replaceVariable(outfile)));
+                        stdout = tee ? new TeeStream(bos, System.out) : new PrintStream(bos, true);
                         System.setOut(stdout);
                     } catch (Exception e) {
                         throw new IllegalArgumentException("Unable to redirect stdout to "
@@ -459,8 +512,9 @@ public class Arguments {
                     i++;
                     String outfile = args[i];
                     try {
-                        stderr = new PrintStream(new BufferedOutputStream(
-                            new FileOutputStream(outfile)));
+                        BufferedOutputStream bos = new BufferedOutputStream(
+                            new FileOutputStream(replaceVariable(outfile)));
+                        stderr = tee ? new TeeStream(bos, System.out) : new PrintStream(bos);
                         System.setErr(stderr);
                     } catch (Exception e) {
                         throw new IllegalArgumentException("Unable to redirect stderr to "
@@ -471,8 +525,9 @@ public class Arguments {
                     i++;
                     String outfile = args[i];
                     try {
-                        stdout = new PrintStream(new BufferedOutputStream(
-                            new FileOutputStream(outfile)));
+                        BufferedOutputStream bos = new BufferedOutputStream(
+                            new FileOutputStream(replaceVariable(outfile)));
+                        stdout = tee ? new TeeStream(bos, System.out) : new PrintStream(bos);
                         System.setOut(stdout);
                         System.setErr(stdout);
                     } catch (Exception e) {
@@ -484,8 +539,11 @@ public class Arguments {
                     System.out.println("Stdin redirection not implemented yet.");
                     i++;
                     continue;
-                }
-                else {
+                } else if (option.equals("$") && allowVariable) {
+                    i++;
+                    variable = args[i];
+                    continue;
+                } else {
                     throw new IllegalArgumentException("Option " + option
                         + " unknown.");
                 }
@@ -507,7 +565,7 @@ public class Arguments {
                     args[i] = args[i].substring(0, args[i].length() - 1);
                 }
                 value += args[i];
-
+                value = replaceVariable(value);
                 Object param = getObject(value, type);
                 if (param == null) {
                     throw new IllegalArgumentException("Option " + option
@@ -523,6 +581,21 @@ public class Arguments {
                 "Number of required arguments is " + minArgs + ", but only "
                     + nargs + " given.");
         }
+    }
+
+    /**
+     * @param value
+     * @return
+     */
+    private String replaceVariable(String value) {
+        if (allowVariable && value != null) {
+            int rep = value.indexOf("$@");
+            if (rep != -1) {
+                value = value.substring(0, rep) + variable + value.substring(rep + 2);
+            }
+            
+        }
+        return value;
     }
 
     /**
@@ -594,35 +667,39 @@ public class Arguments {
             sb.append(helptext).append("\n\n");
         }
         sb.append(getMainClass());
-        if (optionTypes.size() > 0)
-            sb.append(" <options>");
+        //if (optionTypes.size() > 0)
+        sb.append(" <options>");
         if (minArgs > 0)
             sb.append(" <required arguments>");
         if (maxArgs > minArgs)
             sb.append(" <optional arguments>");
         sb.append("\n");
         int maxOption = 8;
-        if (optionTypes.size() > 0) {
-            sb.append("\nOptions:\n");
-            for (String a : optionTypes.keySet()) {
-                String syn = synonyms.get(a);
-                int len = (syn == null) ? 0 : syn.length() + 3;
-                maxOption = Math.max(maxOption, a.length() + len);
-            }
-            maxOption += 8;
-            for (String key : optionTypes.keySet()) {
-                sb.append("  ").append("-").append(key);
-                String syn = synonyms.get(key);
-                if (syn != null)
-                    sb.append(" | -").append(syn);
-                spacePad(sb, maxOption);
-                sb.append(type(optionTypes.get(key)));
-                addDescription(sb, key, maxOption + 10);
-                sb.append("\n");
-
-            }
-        } 
         
+        sb.append("\nOptions:\n");
+        for (String a : optionTypes.keySet()) {
+            String syn = synonyms.get(a);
+            int len = (syn == null) ? 0 : syn.length() + 3;
+            maxOption = Math.max(maxOption, a.length() + len);
+        }
+        maxOption += 8;
+        for (String key : optionTypes.keySet()) {
+            sb.append("  ").append("-").append(key);
+            String syn = synonyms.get(key);
+            if (syn != null)
+                sb.append(" | -").append(syn);
+            spacePad(sb, maxOption);
+            sb.append(type(optionTypes.get(key)));
+            addDescription(sb, key, maxOption + 10);
+            sb.append("\n");
+
+        }
+        if (allowVariable ) {
+            sb.append("  ").append("-$");
+            spacePad(sb, maxOption);
+            sb.append("string    # a variable that farther right replaces $@");
+            sb.append("\n");
+        }
         if (!optionTypes.containsKey("?")) {
             sb.append("  ").append("-?");
             spacePad(sb, maxOption);
@@ -746,7 +823,7 @@ public class Arguments {
     }
 
     /**
-     * Enable / disable redirection of pipe streams
+     * Enable / disable redirection of pipe streams (default = disabled)
      * 
      * @param b
      */
@@ -754,4 +831,25 @@ public class Arguments {
         
         redirect = b;
     }
+
+    /**
+     * Enable / disable variable replacement (default = disabled).
+     * 
+     * @param b
+     */
+    public void variable(boolean b) {
+        
+        allowVariable = b;
+    }
+
+    /**
+     * Enable / disable output duplication (default = enabled).
+     * 
+     * @param b
+     */
+    public void tee(boolean b) {
+        
+        tee = b;
+    }
+
 }
