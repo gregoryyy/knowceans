@@ -68,7 +68,6 @@ import java.util.regex.Pattern;
  * String, File and URL. String and File values can contain spaces if put within
  * quotes.
  * <p>
- * TODO: check for duplicate keys
  * TODO: resolve problem with command line monitor getCallString()
  * 
  * @author heinrich
@@ -249,6 +248,12 @@ public class Arguments {
                 synonyms.put(keys[0], keys[1]);
                 synonyms.put(keys[1], keys[0]);
             }
+            
+            for (String key : keys) {
+                if (optionTypes.containsKey(key))
+                    throw new IllegalArgumentException("option " + key + " is duplicate in format specification.");
+            }
+                
             String type = m.group(4) != null ? m.group(4) : "0";
             optionTypes.put(keys[0], type.charAt(0));
             String desc = m.group(6);
@@ -453,7 +458,8 @@ public class Arguments {
      * for -stdout and a file where the output is sent to, -stderr, -stdouterr, 
      * and -stdin work accordingly. Stream redirection must be explicitly enabled
      * by calling redirect(true) and, at the end of the program, to call
-     * the close() method.
+     * the close() method. By default, streams are duplicated to stdout / stderr
+     * to allow monitoring, disable stream duplication by calling tee(false).
      * <p>
      * Another important possibility is the option -$, which allows to set a variable
      * that can be used afterwards in the option and argument values by using $@.
@@ -469,7 +475,7 @@ public class Arguments {
         boolean needsparam = false;
         String option = "";
         for (int i = 0; i < args.length; i++) {
-            if (args[i].startsWith("-")) {
+            if (args[i].startsWith("-") && nargs == 0) {
                 option = args[i].substring(1, args[i].length());
             } else {
                 if (nargs > argTypes.length() - 1)
