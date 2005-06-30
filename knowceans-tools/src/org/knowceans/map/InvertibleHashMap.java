@@ -93,13 +93,14 @@ public class InvertibleHashMap<X, Y> extends HashMap<X, Y> {
      * the (forward) key is removed from the set of (forward) keys that match
      * the corresponding (forward) value (inverse key).
      */
-    public Y remove(X key) {
+    //public Y remove(X key) {
+    public Y remove(Object key) {
         // Remove the inverse mapping and return the value mapped by key.
         Y val = super.remove(key);
         inverse.remove(val, key);
         return val;
     }
-
+    
     /**
      * gets keys for a value as a Set.
      * 

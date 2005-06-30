@@ -135,7 +135,8 @@ public class BijectiveTreeMap<X, Y> extends TreeMap<X, Y> implements
      * removes the key and its value from the map. In the inverse map, the value
      * is removed. Returns the value
      */
-    public Y remove(X key) {
+    //public Y remove(X key) {
+    public Y remove(Object key) {
         Y val = super.remove(key);
         if (val != null)
             inverse.remove(val);

@@ -1,0 +1,2 @@
+System output to stdout
+System output to stderr

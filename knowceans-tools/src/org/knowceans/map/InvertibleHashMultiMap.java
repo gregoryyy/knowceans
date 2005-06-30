@@ -41,8 +41,9 @@ import java.util.Set;
  * 
  * @author heinrich
  */
-public class InvertibleHashMultiMap<X, Y> extends HashMultiMap<X, Y> implements
-    IInvertibleMultiMap<X, Y> {
+public class InvertibleHashMultiMap<X, Y> extends HashMultiMap<X, Y> 
+    //implements IInvertibleMultiMap<X, Y> 
+{
 
     /**
      * Comment for <code>serialVersionUID</code>
