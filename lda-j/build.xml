@@ -38,7 +38,7 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 	<target name="cc" depends="javah"> 
 	-->
 	<target name="cc">
-		<exec dir="c:/bin/cygwin/bin/" executable="c:/bin/cygwin/bin/gcc">
+		<exec dir="${env.CYGWIN_HOME}/bin/" executable="${env.CYGWIN_HOME}/bin/gcc">
 			<arg value="-mno-cygwin" />
 			<arg value="-I" />
 			<arg value="${env.JAVA_HOME}/include" />
