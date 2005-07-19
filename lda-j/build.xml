@@ -18,12 +18,40 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 
 <project name="lda-j" default="all">
 
-	<target name="all" depends="source-distribution,jar,bin-distribution">
+	<property environment="env"/>
+	
+	<target name="all" depends="source-distribution,jar,bin-distribution,cc">
 	</target>
 
 	<target name="jar">
 		<jar jarfile="./lda-j.jar" basedir="./bin" excludes="**/*.java" />
 	</target>
+
+	<!-- compile JNI code -->
+	<!--	
+	<target name="javah">
+		<javah classpath="bin" outputFile="cokus.h" verbose="yes">
+			<class name="org.knowceans.util.CokusNative" />
+		</javah>
+	</target>
+
+	<target name="cc" depends="javah"> 
+	-->
+	<target name="cc">
+		<exec dir="c:/bin/cygwin/bin/" executable="c:/bin/cygwin/bin/gcc">
+			<arg value="-mno-cygwin" />
+			<arg value="-I" />
+			<arg value="${env.JAVA_HOME}/include" />
+			<arg value="-I" />
+			<arg value="${env.JAVA_HOME}/include/win32" />
+			<arg value="-shared" />
+			<arg value="-Wl,--add-stdcall-alias" />
+			<arg value="-o" />
+			<arg value="${basedir}/mtcokus.dll" />
+			<arg value="${basedir}/native/cokus.c" />
+		</exec>
+	</target>
+	<!-- /compile JNI code -->
 
 	<target name="init">
 		<tstamp>

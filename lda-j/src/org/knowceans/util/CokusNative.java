@@ -41,4 +41,12 @@ public class CokusNative implements Serializable {
 
     public static native int cokusrand();
 
+    public static void main(String[] args) {
+
+        cokusseed(4357);
+        for (int i = 0; i < 50; i++) {
+            int a = cokusrand();
+            System.out.println(a & 0xFFFFFFFFl);
+        }
+    }
 }

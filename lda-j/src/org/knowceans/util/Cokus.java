@@ -222,7 +222,7 @@ public class Cokus {
         cokusseed(4357);
         for (int i = 0; i < 50; i++) {
             int a = cokusrand();
-            System.out.println((long) a & 0xFFFFFFFFl);
+            System.out.println(a & 0xFFFFFFFFl);
         }
     }
 }
