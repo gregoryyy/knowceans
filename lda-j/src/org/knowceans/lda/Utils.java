@@ -24,16 +24,22 @@
  */
 package org.knowceans.lda;
 
+import static java.lang.Math.exp;
+import static java.lang.Math.log;
+
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import static java.lang.Math.*;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
+import java.util.zip.ZipOutputStream;
 
 /**
  * Utility functions
@@ -109,6 +115,18 @@ public class Utils {
             - .5 * lnx + HALFLN2PI;
     }
 
+    public static double fgamma(double x) {
+        return Math.exp(lgamma(x));
+    }
+
+    public static long faculty(long n) {
+        return (long) fgamma(n + 1);
+    }
+    
+    public static long faculty(int n) {
+        return (long) fgamma(n + 1);
+    }
+
     public static double log_gamma(double x) {
         double z;
         assert x > 0;
@@ -123,7 +141,6 @@ public class Utils {
         return z;
     }
 
-
     static NumberFormat nf = new DecimalFormat("0.00000");
 
     /**
@@ -137,7 +154,20 @@ public class Utils {
 
     }
 
-    
+    public static void main(String[] args) {
+        double[][] a = { {25, 4, 1, 5}, {34, 3, 23, 55}};
+        saveBinaryMatrix("test.zip", a);
+        double[][] b = loadBinaryMatrix("test.zip");
+        for (int i = 0; i < b.length; i++) {
+            for (int j = 0; j < b[i].length; j++) {
+                if (j > 0)
+                    System.out.print(" ");
+                System.out.print(b[i][j]);
+            }
+            System.out.println();
+        }
+    }
+
     /**
      * loads a matrix from a binary file
      * 
@@ -149,9 +179,20 @@ public class Utils {
         double[][] a = null;
         int i = 0, j = 0;
         try {
-            DataInputStream dis = new DataInputStream(new BufferedInputStream(
-                new FileInputStream(filename)));
 
+            DataInputStream dis = null;
+
+            if (filename.endsWith(".zip")) {
+
+                ZipFile f = new ZipFile(filename);
+                dis = new DataInputStream(new BufferedInputStream(f
+                    .getInputStream(f.getEntry(filename.substring(0, filename
+                        .length() - 3)
+                        + "bin"))));
+            } else {
+                dis = new DataInputStream(new BufferedInputStream(
+                    new FileInputStream(filename)));
+            }
             m = dis.readInt();
             n = dis.readInt();
             a = new double[m][n];
@@ -170,17 +211,27 @@ public class Utils {
     }
 
     /**
-     * writes matrix to binary file.
+     * writes matrix to binary file. If the file name ends with zip
      * 
      * @param filename
      * @param a
      */
     public static void saveBinaryMatrix(String filename, double[][] a) {
         int i = 0, j = 0;
-        try {
-            DataOutputStream dis = new DataOutputStream(
-                new BufferedOutputStream(new FileOutputStream(filename)));
 
+        DataOutputStream dis = null;
+        try {
+            if (filename.endsWith(".zip")) {
+                ZipOutputStream zip = new ZipOutputStream(new FileOutputStream(
+                    filename));
+                zip.putNextEntry(new ZipEntry(filename.substring(0, filename
+                    .length() - 3)
+                    + "bin"));
+                dis = new DataOutputStream(new BufferedOutputStream(zip));
+            } else {
+                dis = new DataOutputStream(new BufferedOutputStream(
+                    new FileOutputStream(filename)));
+            }
             dis.writeInt(a.length);
             dis.writeInt(a[0].length);
             for (i = 0; i < a.length; i++) {
@@ -189,11 +240,11 @@ public class Utils {
                 }
             }
             dis.close();
-
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
         } catch (IOException e) {
             System.err.println(i + " " + j);
             e.printStackTrace();
         }
     }
-
 }
