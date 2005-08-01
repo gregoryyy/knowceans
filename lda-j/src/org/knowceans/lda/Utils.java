@@ -31,6 +31,7 @@ import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -122,7 +123,7 @@ public class Utils {
     public static long faculty(long n) {
         return (long) fgamma(n + 1);
     }
-    
+
     public static long faculty(int n) {
         return (long) fgamma(n + 1);
     }
@@ -185,9 +186,10 @@ public class Utils {
             if (filename.endsWith(".zip")) {
 
                 ZipFile f = new ZipFile(filename);
+                String name = new File(filename).getName();
                 dis = new DataInputStream(new BufferedInputStream(f
-                    .getInputStream(f.getEntry(filename.substring(0, filename
-                        .length() - 3)
+                    .getInputStream(f.getEntry(name.substring(0,
+                        name.length() - 3)
                         + "bin"))));
             } else {
                 dis = new DataInputStream(new BufferedInputStream(
@@ -224,8 +226,9 @@ public class Utils {
             if (filename.endsWith(".zip")) {
                 ZipOutputStream zip = new ZipOutputStream(new FileOutputStream(
                     filename));
-                zip.putNextEntry(new ZipEntry(filename.substring(0, filename
-                    .length() - 3)
+                String name = new File(filename).getName();
+                zip.putNextEntry(new ZipEntry(name.substring(0,
+                    name.length() - 3)
                     + "bin"));
                 dis = new DataOutputStream(new BufferedOutputStream(zip));
             } else {
