@@ -33,7 +33,7 @@
  * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  */
-package org.knowceans.sandbox;
+package org.knowceans.util;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -47,7 +47,7 @@ import java.util.Vector;
  * strategy is conservative, which means, duplication between a modifying
  * argument and an existing element will result in avoiding the modification.
  * 
- * @version EXPERIMENTAL
+ * @version rc1
  * @author heinrich TODO: test. Compare performance to TreeSet.
  */
 public class SetVector<E> extends Vector<E> implements Set<E> {
