@@ -97,7 +97,7 @@ public class InvertibleHashMap<X, Y> extends HashMap<X, Y> {
     public Y remove(Object key) {
         // Remove the inverse mapping and return the value mapped by key.
         Y val = super.remove(key);
-        inverse.remove(val, key);
+        inverse.remove(val, (X) key);
         return val;
     }
     

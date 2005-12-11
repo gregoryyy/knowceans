@@ -5,7 +5,8 @@
  * Window - Preferences - Java - Code Generation - Code and Comments
  */
 /*
- * Copyright (c) 2003 Gregor Heinrich.  All rights reserved.
+ * Copyright (c) 2003-5 Gregor Heinrich.  All rights reserved. This class 
+ * is part of the knowceans experimental software package, org.knowceans.*.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -34,25 +35,22 @@
  */
 package org.knowceans.sandbox;
 
+import java.util.Arrays;
 import java.util.Collection;
-import java.util.Iterator;
+import java.util.List;
 import java.util.Set;
 import java.util.Vector;
 
 /**
- * A Collection that implements both the List and the Set interface.
- * Based on the implementation of Vector, this class ensures uniqueness of
- * items. The strategy is conservative, which means, duplication between a
- * modifying argument and an existing element will result in avoiding the
- * modification.
+ * A Collection that implements both the List and the Set interface. Based on
+ * the implementation of Vector, this class ensures uniqueness of items. The
+ * strategy is conservative, which means, duplication between a modifying
+ * argument and an existing element will result in avoiding the modification.
  * 
  * @version EXPERIMENTAL
- * @author heinrich
- * 
- * TODO: test. Compare performance to TreeSet.
- *
+ * @author heinrich TODO: test. Compare performance to TreeSet.
  */
-public class SetVector extends Vector implements Set {
+public class SetVector<E> extends Vector<E> implements Set<E> {
 
     /**
      * Comment for <code>serialVersionUID</code>
@@ -83,24 +81,23 @@ public class SetVector extends Vector implements Set {
 
     /**
      * Initialise the SetVector, getting rid of duplicate elements where
-     * duplicates 
+     * duplicates
+     * 
      * @param c
      */
-    public SetVector(Collection c) {
+    public SetVector(Collection<E> c) {
         super();
-        for (Iterator it = c.iterator(); it.hasNext();) {
-            Object element = it.next();
+        for (E element : c) {
             if (!super.contains(element))
                 super.add(element);
         }
     }
 
     /**
-     * adds a new element at index i iff this element does not
-     * exist yet in the object. (does not return if the addition was
-     * successful).
+     * adds a new element at index i iff this element does not exist yet in the
+     * object. (does not return if the addition was successful).
      */
-    public void add(int index, Object o) {
+    public void add(int index, E o) {
         if (!super.contains(o))
             super.add(index, o);
     }
@@ -108,15 +105,15 @@ public class SetVector extends Vector implements Set {
     /**
      * same as add(Object).
      */
-    public synchronized void addElement(Object obj) {
+    public synchronized void addElement(E obj) {
         add(obj);
     }
 
     /**
-     * adds a new element at the end of the list iff this element does not
-     * exist yet in the object.
+     * adds a new element at the end of the list iff this element does not exist
+     * yet in the object.
      */
-    public boolean add(Object o) {
+    public synchronized boolean add(E o) {
         if (!super.contains(o))
             return super.add(o);
         else
@@ -126,50 +123,56 @@ public class SetVector extends Vector implements Set {
     /**
      * same add add(int, Object).
      */
-    public synchronized void insertElementAt(Object obj, int index) {
+    public synchronized void insertElementAt(E obj, int index) {
+        if (!super.contains(obj)) {
+            super.insertElementAt(obj, index);
+        }
         add(index, obj);
-    }
-    /**
-     * add all elements from the Collection that are not
-     * contained yet in the SetVector to the end of the object.
-     * If there is a duplicate, the old element is kept and the new one 
-     * ignored, preserving the order of the collection. Use remove() to make sure 
-     * the collection is inserted entirely.
-     * 
-     * @return true if the SetVector is changed.
-     */
-    public boolean addAll(Collection c) {
-        return addAll(0, c);
     }
 
     /**
-     * add all elements from the Collection at the index that are not
-     * contained yet in the SetVector. If there is a duplicate,
-     * the old element is kept and the new one ignored, preserving
-     * the order of the collection. Use remove() to make sure 
-     * the collection is inserted entirely.
+     * add all elements from the Collection that are not contained yet in the
+     * SetVector to the end of the object. If there is a duplicate, the old
+     * element is kept and the new one ignored, preserving the order of the
+     * collection. Use remove() to make sure the collection is inserted
+     * entirely.
+     * 
      * @return true if the SetVector is changed.
      */
-    public synchronized boolean addAll(int index, Collection c) {
-        for (Iterator it = c.iterator(); it.hasNext();) {
-            Object element = it.next();
-            if (super.contains(element))
-                it.remove();
+    public boolean addAll(Collection< ? extends E> c) {
+        return addAll(size(), c);
+    }
+
+    /**
+     * add all elements from the Collection at the index that are not contained
+     * yet in the SetVector. If there is a duplicate, the old element is kept
+     * and the new one ignored, preserving the order of the collection. Use
+     * remove() to make sure the collection is inserted entirely.
+     * 
+     * @return true if the SetVector is changed.
+     */
+    public synchronized boolean addAll(int index, Collection< ? extends E> c) {
+        boolean changed = false;
+        for (E element : c) {
+            if (!super.contains(element)) {
+                super.insertElementAt(element, index);
+                changed = true;
+                index++;
+            }
         }
-        return super.addAll(index, c);
+        return changed;
     }
 
     /**
      * Replaces the element at the specified position in this Vector with the
      * specified element iff the element uniqueness is obeyed by this operation.
-     *
+     * 
      * @param index index of element to replace.
      * @param element element to be stored at the specified position.
-     * @return the element previously at the specified position or null if the 
-     * Set already contains the element.
-     * 
+     * @return the element previously at the specified position or null if the
+     *         Set already contains the element.
      */
-    public synchronized Object set(int index, Object element) {
+    public synchronized E set(int index, E element) {
         if (!super.contains(element))
             return super.set(index, element);
         else
@@ -179,12 +182,27 @@ public class SetVector extends Vector implements Set {
     /**
      * Replaces the element at the specified position in this Vector with the
      * specified element iff the element uniqueness is obeyed by this operation.
-     *
+     * 
      * @param index index of element to replace.
      * @param element element to be stored at the specified position.
      */
-    public synchronized void setElementAt(Object obj, int index) {
-        set(index, obj);
+    public synchronized void setElementAt(E obj, int index) {
+        if (!super.contains(obj))
+            super.set(index, obj);
     }
 
+    public static void main(String[] args) {
+        Integer[] a = {1, 4, 3, 5, 4, 3};
+        SetVector<Integer> sv = new SetVector<Integer>(Arrays.asList(a));
+        System.out.println(sv);
+
+        Integer[] b = {7, 6, 5, 4, 3, 3, 2, 1};
+        sv.addAll(Arrays.asList(b));
+        System.out.println(sv);
+        
+        sv.add(9);
+        
+        sv.add(7);
+        System.out.println(sv);
+    }
 }
