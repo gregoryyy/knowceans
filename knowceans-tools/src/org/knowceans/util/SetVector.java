@@ -85,7 +85,7 @@ public class SetVector<E> extends Vector<E> implements Set<E> {
      * 
      * @param c
      */
-    public SetVector(Collection<E> c) {
+    public SetVector(Collection< ? extends E> c) {
         super();
         for (E element : c) {
             if (!super.contains(element))
