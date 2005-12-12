@@ -43,7 +43,7 @@ import java.util.Vector;
 /**
  * A Collection that implements both the List and the Set interface. Based on
  * the implementation of Vector, this class ensures uniqueness of items. The
- * strategy is conservative, which means, duplication between a modifying
+ * strategy is conservative, which means duplication between a modifying
  * argument and an existing element will result in avoiding the modification.
  * 
  * @version rc1
@@ -198,9 +198,9 @@ public class SetVector<E> extends Vector<E> implements Set<E> {
         Integer[] b = {7, 6, 5, 4, 3, 3, 2, 1};
         sv.addAll(Arrays.asList(b));
         System.out.println(sv);
-        
+
         sv.add(9);
-        
+
         sv.add(7);
         System.out.println(sv);
     }
