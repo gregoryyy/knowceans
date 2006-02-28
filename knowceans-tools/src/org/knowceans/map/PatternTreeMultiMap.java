@@ -39,16 +39,20 @@ import java.util.regex.Pattern;
  * In relational terms, this class implements a m:n relation, but without
  * reverse lookup.
  * <p>
+ * This multimap supports wildcard and pattern search, however based on full
+ * iteration of the mapEntries. (TODO: put in better algorithm for wildcard
+ * expansion).
+ * <p>
  * 
  * @author heinrich
  */
-public class TreeMultiMap<X, Y> extends TreeMap<X, Set<Y>> implements
-    IMultiMap<X, Y> {
+public class PatternTreeMultiMap<X, Y> extends TreeMultiMap<X, Y> implements
+    IPatternMap<X, Set<Y>> {
 
     /**
-     * Comment for <code>serialVersionUID</code>
+     * 
      */
-    private static final long serialVersionUID = 3257282530712500021L;
+    private static final long serialVersionUID = -5212171919009125506L;
 
     /**
      * if pattern and wildcards match case insensitive
@@ -63,80 +67,84 @@ public class TreeMultiMap<X, Y> extends TreeMap<X, Set<Y>> implements
     /**
      * 
      */
-    public TreeMultiMap() {
+    public PatternTreeMultiMap() {
         super();
     }
 
-    public TreeMultiMap(Comparator c) {
+    public PatternTreeMultiMap(Comparator c) {
         super(c);
     }
 
-    public TreeMultiMap(Map m) {
+    public PatternTreeMultiMap(Map m) {
         super(m);
     }
 
     public static void main(String[] args) {
-        TreeMultiMap<String, Integer> b = new TreeMultiMap<String, Integer>();
-        b.add("a", 1);
-        b.add("b", 2);
-        b.add("aa", 1);
-        b.add("c", 3);
-        b.add("b", 22);
-        System.out.println(b);
-        b.add("d", 4);
-        Map m = new TreeMap<String, Set<Integer>>(b);
-        System.out.println(m);
-        Map n = new InvertibleHashMap<String, Set<Integer>>();
-        b.remove("aa");
-        b.remove("b", 22);
-        System.out.println(b);
+        PatternTreeMultiMap<String, Integer> b = new PatternTreeMultiMap<String, Integer>();
+
     }
+
 
     /**
-     * add a value to the set of values for a key.
-     */
-    public void add(X key, Y value) {
-        Set<Y> values = get(key);
-        if (values == null) {
-            values = new HashSet<Y>();
-            put(key, values);
-        }
-        values.add(value);
-    }
-
-    /**
-     * put a complete Set of values to a key. <br>
-     * To prevent ClassCastException in {@link #add}, we must ensure that only
-     * Sets ever get put into this map. Using JSR14, this would not be a
-     * problem.
-     */
-    public Set<Y> put(X key, Set<Y> value) {
-        return super.put(key, value);
-    }
-
-    /**
-     * remove one value out of the set of values for one key. (the remove (key)
-     * method removes the complete key and set of values.
-     */
-    public void remove(X key, Y value) {
-        Set values = (Set) get(key);
-        if (values == null) {
-            return;
-        }
-        values.remove(value);
-        if (values.isEmpty()) {
-            remove(key);
-        }
-    }
-
-    /*
-     * (non-Javadoc)
+     * get all entries that match a specific pattern. This implementation uses
+     * complete iteration over all entries and returns a Hashtable
      * 
-     * @see org.knowceans.map.IMultiMap#getInverse(java.lang.Object)
+     * @param pattern
+     * @return
      */
-    public Set<X> getInverse(Y value) {
-        // TODO Auto-generated method stub
-        return null;
+    public Hashtable<X, Set<Y>> getPattern(String pattern) {
+        Hashtable<X, Set<Y>> result = new Hashtable<X, Set<Y>>();
+        Pattern p;
+        if (patternCaseInsensitive)
+            p = Pattern.compile(pattern, Pattern.CASE_INSENSITIVE);
+        else
+            p = Pattern.compile(pattern);
+
+        for (Map.Entry<X, Set<Y>> element : entrySet()) {
+            Matcher m = p.matcher((CharSequence) element.getKey().toString());
+
+            if (patternMustMatch && m.matches()) {
+                result.put(element.getKey(), element.getValue());
+            } else if (m.find()) {
+                result.put(element.getKey(), element.getValue());
+            }
+        }
+        return result;
+    }
+
+    /**
+     * return all entries that match a specific wildcard.
+     */
+    public Hashtable<X, Set<Y>> getWildcard(String wildcard) {
+        return getPattern(wildcard.replaceAll("\\*", ".*"));
+    }
+
+    /**
+     * @return
+     */
+    public boolean isPatternCaseInsensitive() {
+        return patternCaseInsensitive;
+    }
+
+    /**
+     * @return
+     */
+    public boolean isPatternMustMatch() {
+        return patternMustMatch;
+    }
+
+    /**
+     * @param b
+     */
+    public void setPatternCaseInsensitive(boolean b) {
+        patternCaseInsensitive = b;
+    }
+
+    /**
+     * @param b
+     */
+    public void setPatternMustMatch(boolean b) {
+        patternMustMatch = b;
     }
 
 }

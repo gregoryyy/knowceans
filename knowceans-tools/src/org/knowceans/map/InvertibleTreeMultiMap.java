@@ -24,6 +24,7 @@
 
 package org.knowceans.map;
 
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.Map;
@@ -41,21 +42,20 @@ import java.util.Set;
  * 
  * @author heinrich
  */
-public class InvertibleHashMultiMap<X, Y> extends HashMultiMap<X, Y>
+public class InvertibleTreeMultiMap<X, Y> extends TreeMultiMap<X, Y>
 // implements IInvertibleMultiMap<X, Y>
 {
 
     /**
      * Comment for <code>serialVersionUID</code>
      */
-    private static final long serialVersionUID = 3257288049812388151L;
-
+    private static final long serialVersionUID = -4060547918794757464L;
     /**
      * keeps all inverse mappings, for each value that appears in the forward
      * values, one key is created that maps to the set of keys that point to it
      * in the forward map.
      */
-    private HashMultiMap<Y, X> inverse = new HashMultiMap<Y, X>();
+    private HashMultiMap<Y, X> inverse;
 
     /**
      * some simple tests and demonstration for HashMultiMap
@@ -63,10 +63,11 @@ public class InvertibleHashMultiMap<X, Y> extends HashMultiMap<X, Y>
      * @param args
      */
     public static void main(String[] args) {
-        InvertibleHashMultiMap<String, Integer> m = new InvertibleHashMultiMap<String, Integer>();
+        InvertibleTreeMultiMap<String, Integer> m = new InvertibleTreeMultiMap<String, Integer>();
+        m.add("c", 3);
         m.add("a", 1);
         m.add("b", 2);
-        m.add("c", 3);
+
         Set<Integer> d = new HashSet<Integer>();
         d.add(4);
         d.add(14);
@@ -74,17 +75,45 @@ public class InvertibleHashMultiMap<X, Y> extends HashMultiMap<X, Y>
         m.add("bb", 2);
         System.out.println(m);
         System.out.println(m.getInverse());
-        Map<String, Set<Integer>> e = m.getPattern("b+");
-        m.put("d", d);
-        Map<Integer, Set<String>> f = m.getPatternInverse("^1$|24");
-        System.out.println(e + "\n" + f);
-        m.remove("d");
-        Map<Integer, Set<String>> g = m.getPatternInverse(".");
-
-        System.out.println(g);
 
     }
 
+    /**
+     * 
+     */
+    public InvertibleTreeMultiMap() {
+        super();
+        inverse = new HashMultiMap<Y, X>();
+    }
+
+    /**
+     * @param c
+     */
+    public InvertibleTreeMultiMap(Comparator c) {
+        super(c);
+        inverse = new HashMultiMap<Y, X>();
+    }
+
+    /**
+     * @param m
+     */
+    public InvertibleTreeMultiMap(Map m) {
+        super(m);
+        inverse = new HashMultiMap<Y, X>();
+    }
+
+
+    /**
+     * @param inverse allow to set an inverse map that could be a tree map with
+     *        its own comparator.
+     * @param m
+     */
+    public InvertibleTreeMultiMap(Map m, HashMultiMap<Y, X> inverse) {
+        super(m);
+        this.inverse = inverse;
+    }
+
+    
     /**
      * adds the value to the key's value set and the key to the value's key set.
      */
@@ -176,39 +205,6 @@ public class InvertibleHashMultiMap<X, Y> extends HashMultiMap<X, Y>
 
     public IMultiMap<Y, X> getInverse() {
         return inverse;
-    }
-
-    /**
-     * Returns inverse pattern mapping, specifically for string values in the
-     * map.
-     * 
-     * @see HashMultiMap#getPattern();
-     * @param a
-     * @return
-     */
-    public Hashtable<Y, Set<X>> getPatternInverse(String a) {
-        return inverse.getPattern(a);
-    }
-
-    /**
-     * Returns inverse wildcard mapping, specifically for string values in the
-     * map.
-     * 
-     * @see HashMultiMap#getPattern();
-     * @param a
-     * @return
-     */
-    public Hashtable<Y, Set<X>> getWildcardInverse(String a) {
-        return inverse.getWildcard(a);
-    }
-
-    /**
-     * returns the keys of the inverse map. Use this preferably over values().
-     * 
-     * @return
-     */
-    public Set<Y> getInverseKeys() {
-        return inverse.keySet();
     }
 
 }
