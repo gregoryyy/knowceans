@@ -82,6 +82,14 @@ public class InvertibleTreeMap<X, Y> extends TreeMap<X, Y> {
         inverse = new HashMultiMap<Y, X>();
     }
 
+    // /**
+    // * create a multimap with an inverse. FIXME: problems with remove
+    // */
+    // public InvertibleTreeMap(IMultiMap<Y, X> inverse) {
+    // super();
+    // this.inverse = inverse;
+    // }
+
     /**
      * put a new key-value pair. In the inverse map, the (forward) key needs to
      * be removed from the Set that is pointed to by its old value, and the key
