@@ -43,6 +43,8 @@ public class PatternString implements CharSequence, MatchResult {
 
     public static void main(String[] args) {
         PatternString p = new PatternString("teststringTest");
+        
+        System.out.println(p.debugPatternString("(test(.+))"));
 
         PatternString q = p.substitute("(test)", "$1$1xx", "i");
         System.out.println(p.debugString());
@@ -66,7 +68,13 @@ public class PatternString implements CharSequence, MatchResult {
             System.out.println("XXX");
         }
         q.reset();
-        q.find("test");
+        
+        q.find("(\\w.\\w)");
+        while(q.found()) {
+            System.out.println(q.group(1));
+            q.findNext();
+        }
+        
         q.reset();
         if (q.perl("s/test/sss/i")) {
             System.out.println(4);
@@ -144,7 +152,7 @@ public class PatternString implements CharSequence, MatchResult {
         }
         int flags = getPerlFlags(s.group(4));
 
-        System.out.println(s.debugString());
+        // System.out.println(s.debugString());
 
         if (s.group(1) == null) {
             find(s.group(2), flags);
@@ -329,9 +337,12 @@ public class PatternString implements CharSequence, MatchResult {
      * @return
      */
     private String replaceNext(String replacement) {
+        found = false;
         StringBuffer sb = new StringBuffer();
-        if (m.find())
+        if (m.find()) {
             m.appendReplacement(sb, replacement);
+            found = true;
+        }
         m.appendTail(sb);
         return sb.toString();
     }
@@ -342,11 +353,13 @@ public class PatternString implements CharSequence, MatchResult {
      * replaceRemaining()
      * 
      * @param replacement
-     * @return
+     * @return true if at least one replacement has been done.
      */
     private String replaceRemaining(String replacement) {
+        found = false;
         // this is like in matcher, only the reset()
         boolean result = m.find();
+        found = result;
         if (result) {
             StringBuffer sb = new StringBuffer();
             do {
@@ -630,7 +643,7 @@ public class PatternString implements CharSequence, MatchResult {
     public StringBuffer debugPatternString(String pattern) {
         StringBuffer b = new StringBuffer();
 
-        StringBuffer[] bb = groupsStrings();
+        StringBuffer[] bb = groupsStrings(pattern);
         b.append("() =  ").append(bb[1]);
         b.append("\nre = '").append(pattern).append("'\n");
         b.append("(? =  ").append(bb[0]).append("\n");
@@ -643,11 +656,11 @@ public class PatternString implements CharSequence, MatchResult {
      * 
      * @return
      */
-    private StringBuffer[] groupsStrings() {
+    private StringBuffer[] groupsStrings(String pattern) {
 
-        List<int[]> a = getGroupBounds();
+        List<int[]> a = getGroupBounds(pattern);
 
-        int len = m.pattern().pattern().length();
+        int len = pattern.length();
         // two buffers for real and non-capturing groups
         StringBuffer[] aa = new StringBuffer[2];
         aa[0] = new StringBuffer();
@@ -667,7 +680,7 @@ public class PatternString implements CharSequence, MatchResult {
         return aa;
     }
 
-    private List<int[]> getGroupBounds() {
+    private List<int[]> getGroupBounds(String pattern) {
 
         // the stack contains the groups in
         // elements like this [start, end, type], type = 1 and 0 for
@@ -675,7 +688,7 @@ public class PatternString implements CharSequence, MatchResult {
         Stack<int[]> pp = new Stack<int[]>();
         Vector<int[]> qq = new Vector<int[]>();
 
-        PatternString s = new PatternString(m.pattern().toString());
+        PatternString s = new PatternString(pattern);
 
         // neg lookbehind and pos lookahead for escapes, special group
         // to capture non-capturing groups
@@ -695,13 +708,14 @@ public class PatternString implements CharSequence, MatchResult {
                 qq.add(a);
             } else {
                 // closing parenthesis.
+                
                 if (pp.isEmpty()) {
                     System.out.println("Too many closing parentheses.");
-                    continue;
+                    qq.add(new int[]{-1, s.start(), 0});
+                } else {
+                    int[] a = pp.pop();
+                    a[1] = s.start();
                 }
-                int[] a = pp.pop();
-                a[1] = s.start();
-
             }
 
             s.findNext();
