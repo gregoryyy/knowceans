@@ -42,58 +42,16 @@ import java.util.regex.Pattern;
 public class PatternString implements CharSequence, MatchResult {
 
     public static void main(String[] args) {
-        PatternString p = new PatternString("teststringTest");
-        
-        System.out.println(p.debugPatternString("(test(.+))"));
 
-        PatternString q = p.substitute("(test)", "$1$1xx", "i");
-        System.out.println(p.debugString());
-        System.out.println(q);
-        if (q.match("test.*", "i")) {
-            System.out.println(1);
+        String a = "ein langer string mit mit xxx";
+        PatternString p = PatternString.create(a);
+        PatternString q = p.find("lang...");
+        if (p.found()) {
+            System.out.println(p.start());
             System.out.println(q);
         }
-        q.reset();
-        System.out.println(q);
-        q.find("test.*", "");
-        if (q.found()) {
-            System.out.println(2);
-            System.out.println(q.group());
-            System.out.println("XXX");
-        }
-        q.findNext();
-        if (q.found()) {
-            System.out.println(3);
-            System.out.println(q.group());
-            System.out.println("XXX");
-        }
-        q.reset();
-        
-        q.find("(\\w.\\w)");
-        while(q.found()) {
-            System.out.println(q.group(1));
-            q.findNext();
-        }
-        
-        q.reset();
-        if (q.perl("s/test/sss/i")) {
-            System.out.println(4);
-            System.out.println(q.getText());
-        }
 
     }
-
-    private void reset() {
-        m.reset();
-    }
-
-    private StringBuffer text;
-
-    private Matcher m;
-
-    private int flags;
-
-    private boolean found;
 
     /**
      * Create a PatternString from the input, with an empty matcher.
@@ -124,6 +82,24 @@ public class PatternString implements CharSequence, MatchResult {
     }
 
     /**
+     * convenience method to get a pattern string.
+     * 
+     * @param s
+     * @return
+     */
+    public static PatternString create(String s) {
+        return new PatternString(s);
+    }
+
+    private StringBuffer text;
+
+    private Matcher m;
+
+    private int flags;
+
+    private boolean found;
+
+    /**
      * Perform the command in a perl specification on this and return this,
      * e.g., <code>this =~ s/exp/subs/flags</code> will call substitute(exp,
      * subs, flags).
@@ -142,7 +118,7 @@ public class PatternString implements CharSequence, MatchResult {
 
         // parse patter and escap the / char
         s.match("([sm])?" + "/" + "((?:[\\\\][/]|[^/])+)" + "/" + "(?:"
-            + "((?:[\\\\][/]|[^/])*)" + "/" + ")?" + "([\\w]+)", "");
+            + "((?:[\\\\][/]|[^/])*)" + "/" + ")?" + "([\\w]*)", "");
         // TODO: allow flexible / char, e.g., #. The test below does not
         // work, and [\2] is not allowed as a rule
         // s.find("([sm])?" + "([\\W])" + "((?:\\\\\\2|[^/])+)" + "\\2" + "(?:"
@@ -394,6 +370,13 @@ public class PatternString implements CharSequence, MatchResult {
      */
     public PatternString substituteAll(String expression, String replacement) {
         return substitute(expression, replacement, 0, true);
+    }
+
+    /**
+     * resets the matcher in order to allow new parsing.
+     */
+    private void reset() {
+        m.reset();
     }
 
     /**
@@ -708,10 +691,10 @@ public class PatternString implements CharSequence, MatchResult {
                 qq.add(a);
             } else {
                 // closing parenthesis.
-                
+
                 if (pp.isEmpty()) {
                     System.out.println("Too many closing parentheses.");
-                    qq.add(new int[]{-1, s.start(), 0});
+                    qq.add(new int[] {-1, s.start(), 0});
                 } else {
                     int[] a = pp.pop();
                     a[1] = s.start();
