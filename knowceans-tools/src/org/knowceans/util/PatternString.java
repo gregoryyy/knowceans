@@ -3,6 +3,7 @@
  */
 package org.knowceans.util;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Stack;
 import java.util.Vector;
@@ -675,19 +676,29 @@ public class PatternString implements CharSequence, MatchResult {
      * @return
      */
     private StringBuffer space(int len) {
-        StringBuffer x = new StringBuffer();
 
-        for (int i = 0; i <= len; i++) {
-            x.append(' ');
-        }
-        return x;
+        StringBuffer b = new StringBuffer();
+
+        char[] a = new char[len];
+        Arrays.fill(a, ' ');
+
+        b.append(a);
+        return b;
     }
 
+    /**
+     * Create a list of group bounds from the pattern string, which basically
+     * looks at parentheses. Elements are [startpos, endpos, type] where type =
+     * 1 and 0 for capturing and non-capturing groups. The list is ordered by
+     * the group start positions.
+     * 
+     * @param pattern
+     * @return
+     */
     private List<int[]> getGroupBounds(String pattern) {
 
         // the stack contains the groups in
-        // elements like this [start, end, type], type = 1 and 0 for
-        // capturing and non-capturing groups
+        // 
         Stack<int[]> pp = new Stack<int[]>();
         Vector<int[]> qq = new Vector<int[]>();
 
