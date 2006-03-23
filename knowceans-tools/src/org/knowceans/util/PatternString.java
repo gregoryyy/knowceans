@@ -45,7 +45,8 @@ public class PatternString implements CharSequence, MatchResult {
 
         String a = "ein langer string mit mit xxx";
         PatternString p = PatternString.create(a);
-        PatternString q = p.find("lang...");
+        p.perl("/lang.../");
+        PatternString q = p.findNext();
         if (p.found()) {
             System.out.println(p.start());
             System.out.println(q);
@@ -345,7 +346,7 @@ public class PatternString implements CharSequence, MatchResult {
             m.appendTail(sb);
             return sb.toString();
         }
-        return null;
+        return text.toString();
     }
 
     /**
@@ -375,7 +376,7 @@ public class PatternString implements CharSequence, MatchResult {
     /**
      * resets the matcher in order to allow new parsing.
      */
-    private void reset() {
+    public void reset() {
         m.reset();
     }
 
@@ -548,7 +549,7 @@ public class PatternString implements CharSequence, MatchResult {
      */
     public PatternString variablePattern(String perlVar) {
 
-        return new PatternString(perlVar);
+        return new PatternString(variable(perlVar));
     }
 
     /**
@@ -596,6 +597,13 @@ public class PatternString implements CharSequence, MatchResult {
 
         StringBuffer b = debugPatternString(m.pattern().pattern());
 
+        StringBuffer cc = space(text.length());
+        for (int i = 0; i < cc.length() / 10; i++) {
+            cc.setCharAt(i * 10, (char) (i + 48));
+            if (10 * i + 5 < cc.length())
+                cc.setCharAt(i * 10 + 5, '.');
+        }
+        b.append("10 =  ").append(cc);
         b.append("\nin = '").append(text).append("'");
 
         // create group information
@@ -645,13 +653,10 @@ public class PatternString implements CharSequence, MatchResult {
 
         int len = pattern.length();
         // two buffers for real and non-capturing groups
+        StringBuffer x = space(len);
         StringBuffer[] aa = new StringBuffer[2];
-        aa[0] = new StringBuffer();
-
-        for (int i = 0; i <= len; i++) {
-            aa[0].append(' ');
-        }
-        aa[1] = new StringBuffer(aa[0]);
+        aa[0] = x;
+        aa[1] = new StringBuffer(x);
         int[] ii = {1, 1};
         for (int[] par : a) {
             if (par[0] >= 0)
@@ -661,6 +666,21 @@ public class PatternString implements CharSequence, MatchResult {
             ii[par[2]]++;
         }
         return aa;
+    }
+
+    /**
+     * create a StringBuffer with len space characters.
+     * 
+     * @param len
+     * @return
+     */
+    private StringBuffer space(int len) {
+        StringBuffer x = new StringBuffer();
+
+        for (int i = 0; i <= len; i++) {
+            x.append(' ');
+        }
+        return x;
     }
 
     private List<int[]> getGroupBounds(String pattern) {
