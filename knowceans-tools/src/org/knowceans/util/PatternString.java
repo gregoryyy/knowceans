@@ -46,14 +46,19 @@ public class PatternString implements CharSequence, MatchResult {
 
         String a = "ein langer string mit mit xxx";
         PatternString p = PatternString.create(a);
-        p.perl("/lang.../");
+        p.nperl("/lang.../");
         PatternString q = p.findNext();
         if (p.found()) {
             System.out.println(p.start());
             System.out.println(q);
         }
-
+        p.nperl("s/la//g");
+        System.out.println(p);
+        p.nperl("s/g//g");
+        System.out.println(p);
     }
+
+    public boolean debug = false;
 
     /**
      * Create a PatternString from the input, with an empty matcher.
@@ -100,6 +105,17 @@ public class PatternString implements CharSequence, MatchResult {
     private int flags;
 
     private boolean found;
+
+    /**
+     * Like perl, but resets the parser before.
+     * 
+     * @param patternCommand
+     * @return
+     */
+    public boolean nperl(String patternCommand) {
+        reset();
+        return perl(patternCommand);
+    }
 
     /**
      * Perform the command in a perl specification on this and return this,
@@ -315,6 +331,8 @@ public class PatternString implements CharSequence, MatchResult {
      * @return
      */
     private String replaceNext(String replacement) {
+        if (debug)
+            System.out.println("replace next with " + replacement);
         found = false;
         StringBuffer sb = new StringBuffer();
         if (m.find()) {
@@ -334,6 +352,8 @@ public class PatternString implements CharSequence, MatchResult {
      * @return true if at least one replacement has been done.
      */
     private String replaceRemaining(String replacement) {
+        if (debug)
+            System.out.println("replace remaining with " + replacement);
         found = false;
         // this is like in matcher, only the reset()
         boolean result = m.find();
@@ -378,7 +398,11 @@ public class PatternString implements CharSequence, MatchResult {
      * resets the matcher in order to allow new parsing.
      */
     public void reset() {
-        m.reset();
+        if (debug)
+            System.out.println("reset matcher");
+        if (m != null) {
+            m.reset(text);
+        }
     }
 
     /**
@@ -414,8 +438,12 @@ public class PatternString implements CharSequence, MatchResult {
      */
     private void configureMatcher(Pattern p) {
         if (m == null) {
+            if (debug)
+                System.out.println("create matcher with pattern " + p);
             m = p.matcher(text.toString());
         } else {
+            if (debug)
+                System.out.println("set pattern " + p);
             m.usePattern(p);
         }
     }
@@ -455,15 +483,18 @@ public class PatternString implements CharSequence, MatchResult {
      */
     public int getPerlFlags(String perlFlags) {
         int flags = 0;
-        if (perlFlags == null)
+        if (perlFlags == null) {
             return flags;
-        if (perlFlags.contains("m"))
+        }
+        if (perlFlags.contains("m")) {
             flags |= Pattern.MULTILINE;
-        if (perlFlags.contains("i"))
+        }
+        if (perlFlags.contains("i")) {
             flags |= Pattern.CASE_INSENSITIVE;
-        if (perlFlags.contains("s"))
+        }
+        if (perlFlags.contains("s")) {
             flags |= Pattern.DOTALL;
-
+        }
         return flags;
     }
 
