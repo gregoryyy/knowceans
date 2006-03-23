@@ -36,7 +36,11 @@ import java.util.regex.Pattern;
  * was global. For the non-global version, the current state of the matcher,
  * i.e. its current region is used. Therefore, it is possible to run through a
  * string using find() or findNext() (findNext() can only be called after
- * find()) and substitute().
+ * find()) and substitute() [TODO: this hot-needle code must be thoroughly
+ * tested!].
+ * <p>
+ * TODO: make pattern string with a constant (and pre-compilable pattern). TODO:
+ * fix problems with cascading substitution.
  * 
  * @author gregor
  */
@@ -44,8 +48,9 @@ public class PatternString implements CharSequence, MatchResult {
 
     public static void main(String[] args) {
 
-        String a = "ein langer string mit mit xxx";
+        String a = "ein langer string mit mit yyy";
         PatternString p = PatternString.create(a);
+        p.debug = true;
         p.nperl("/lang.../");
         PatternString q = p.findNext();
         if (p.found()) {
@@ -54,8 +59,17 @@ public class PatternString implements CharSequence, MatchResult {
         }
         p.nperl("s/la//g");
         System.out.println(p);
-        p.nperl("s/g//g");
+        p.perl("s/([gin])/X$1/g");
         System.out.println(p);
+        System.out.println(p);
+        p.perl("/yyy/");
+        if (p.found()) {
+            System.out.println(p.group());
+        }
+        p.nperl("s/(\\w+) \\1/$1/");
+        if (p.found()) {
+            System.out.println(p);
+        }
     }
 
     public boolean debug = false;
@@ -102,6 +116,8 @@ public class PatternString implements CharSequence, MatchResult {
 
     private Matcher m;
 
+    private MatchResult mr;
+
     private int flags;
 
     private boolean found;
@@ -121,6 +137,10 @@ public class PatternString implements CharSequence, MatchResult {
      * Perform the command in a perl specification on this and return this,
      * e.g., <code>this =~ s/exp/subs/flags</code> will call substitute(exp,
      * subs, flags).
+     * <p>
+     * FIXME: with cascaded substitution, the string of the matcher is always
+     * reset to the first value (the field text diverges from the internal state
+     * of the matcher).
      * 
      * @param patternCommand -- everything that appears right of a
      *        <code>=~</code> in Perl, i.e., the expression includes commands
@@ -144,7 +164,7 @@ public class PatternString implements CharSequence, MatchResult {
         if (!s.found()) {
             throw new IllegalArgumentException("wrong Perl pattern string");
         }
-        int flags = getPerlFlags(s.group(4));
+        int flags = translatePerlFlags(s.group(4));
 
         // System.out.println(s.debugString());
 
@@ -157,14 +177,15 @@ public class PatternString implements CharSequence, MatchResult {
             if (s.group(3) == null)
                 throw new IllegalArgumentException(
                     "wrong Perl substitution pattern string");
-            String temp = text.toString();
+            StringBuffer temp = text;
             if (s.group(4) != null && s.group(4).contains("g")) {
-                return !substitute(s.group(2), s.group(3), flags, true)
-                    .toString().equals(temp);
+                substitute(s.group(2), s.group(3), flags, true).toString()
+                    .equals(temp);
             } else {
-                return !substitute(s.group(2), s.group(3), flags, false)
-                    .toString().equals(temp);
+                substitute(s.group(2), s.group(3), flags, false).toString()
+                    .equals(temp);
             }
+            return (temp != text);
         }
         return false;
     }
@@ -180,7 +201,7 @@ public class PatternString implements CharSequence, MatchResult {
     public PatternString find(String expression, String perlFlags) {
 
         if (perlFlags != null) {
-            int flags = getPerlFlags(perlFlags);
+            int flags = translatePerlFlags(perlFlags);
             return find(expression, flags);
         }
         return find(expression, 0);
@@ -225,8 +246,15 @@ public class PatternString implements CharSequence, MatchResult {
         found = false;
         if (m.find()) {
             this.found = true;
+            mr = m.toMatchResult();
+            if (debug)
+                System.out.println("found '" + m.group() + "' =~ /"
+                    + m.pattern() + "/");
             return new PatternString(m.group());
         }
+        if (debug)
+            System.out.println("pattern not found /" + m.pattern() + "/");
+        mr = m.toMatchResult();
         return null;
     }
 
@@ -249,7 +277,7 @@ public class PatternString implements CharSequence, MatchResult {
      * @return the matched string
      */
     public boolean match(String expression, String perlFlags) {
-        int flags = getPerlFlags(perlFlags);
+        int flags = translatePerlFlags(perlFlags);
         return match(expression, flags);
     }
 
@@ -266,6 +294,16 @@ public class PatternString implements CharSequence, MatchResult {
         Pattern p = Pattern.compile(expression, flags);
         configureMatcher(p);
         found = m.matches();
+        mr = m.toMatchResult();
+        if (debug)
+            if (found) {
+                System.out.println("matched '" + m.group() + "' =~ m/"
+                    + m.pattern() + "/");
+            } else {
+                System.out
+                    .println("pattern not matched m/" + m.pattern() + "/");
+
+            }
         return matched();
     }
 
@@ -290,7 +328,7 @@ public class PatternString implements CharSequence, MatchResult {
     public PatternString substitute(String expression, String replacement,
         String perlFlags) {
 
-        int flags = getPerlFlags(perlFlags);
+        int flags = translatePerlFlags(perlFlags);
 
         boolean replaceRemaining = false;
         if (perlFlags.contains("g"))
@@ -331,15 +369,26 @@ public class PatternString implements CharSequence, MatchResult {
      * @return
      */
     private String replaceNext(String replacement) {
-        if (debug)
-            System.out.println("replace next with " + replacement);
         found = false;
         StringBuffer sb = new StringBuffer();
         if (m.find()) {
             m.appendReplacement(sb, replacement);
             found = true;
+            if (debug)
+                System.out.println("replace from pos " + m.regionStart()
+                    + " with /" + replacement + "/, found '" + m.group()
+                    + "' =~ /" + m.pattern() + "/");
+        } else {
+            if (debug)
+                System.out.println("replacement pattern from pos "
+                    + m.regionStart() + " with /" + replacement
+                    + "/, not found /" + m.pattern() + "/");
         }
+        // new matcher position should be after last replacement:
+        int regstart = sb.length();
         m.appendTail(sb);
+        synchroniseMatcher(sb.toString(), regstart, sb.length());
+
         return sb.toString();
     }
 
@@ -352,22 +401,50 @@ public class PatternString implements CharSequence, MatchResult {
      * @return true if at least one replacement has been done.
      */
     private String replaceRemaining(String replacement) {
-        if (debug)
-            System.out.println("replace remaining with " + replacement);
         found = false;
-        // this is like in matcher, only the reset()
         boolean result = m.find();
         found = result;
         if (result) {
             StringBuffer sb = new StringBuffer();
+            int i = 0;
             do {
+                if (debug)
+                    i++;
                 m.appendReplacement(sb, replacement);
                 result = m.find();
             } while (result);
+            if (debug)
+                System.out.println("replace from pos " + m.regionStart()
+                    + " with /" + replacement + "/, " + i + "x found /"
+                    + m.pattern() + "/");
+            int regstart = sb.length();
             m.appendTail(sb);
+            synchroniseMatcher(sb.toString(), regstart, sb.length());
             return sb.toString();
+        } else {
+            if (debug)
+                System.out.println("replacement pattern all from pos "
+                    + m.regionStart() + " with /" + replacement
+                    + "/, not found /" + m.pattern() + "/");
         }
         return text.toString();
+    }
+
+    /**
+     * save the current matcher state and reset it to new input pattern
+     * 
+     * @param text
+     * @param regstart
+     * @param regend
+     */
+    private void synchroniseMatcher(String text, int regstart, int regend) {
+        if (debug)
+            System.out.println("move matcher region from [" + m.regionStart()
+                + ", " + m.regionEnd() + "] to [" + regstart + ", " + regend
+                + "]");
+        mr = m.toMatchResult();
+        m.reset(text);
+        m.region(regstart, regend);
     }
 
     /**
@@ -399,9 +476,10 @@ public class PatternString implements CharSequence, MatchResult {
      */
     public void reset() {
         if (debug)
-            System.out.println("reset matcher");
+            System.out.println("reset matcher with text '" + text + "'");
         if (m != null) {
             m.reset(text);
+            mr = m.toMatchResult();
         }
     }
 
@@ -436,14 +514,14 @@ public class PatternString implements CharSequence, MatchResult {
      * 
      * @param p
      */
-    private void configureMatcher(Pattern p) {
+    public void configureMatcher(Pattern p) {
         if (m == null) {
             if (debug)
-                System.out.println("create matcher with pattern " + p);
+                System.out.println("create matcher with pattern /" + p + "/");
             m = p.matcher(text.toString());
         } else {
             if (debug)
-                System.out.println("set pattern " + p);
+                System.out.println("set pattern /" + p + "/");
             m.usePattern(p);
         }
     }
@@ -481,7 +559,7 @@ public class PatternString implements CharSequence, MatchResult {
      * @param perlFlags
      * @return the corresponding the Pattern flags value.
      */
-    public int getPerlFlags(String perlFlags) {
+    public int translatePerlFlags(String perlFlags) {
         int flags = 0;
         if (perlFlags == null) {
             return flags;
@@ -505,7 +583,7 @@ public class PatternString implements CharSequence, MatchResult {
      * @return
      */
     public String group(int number) {
-        return m.group(number);
+        return mr.group(number);
     }
 
     /*
@@ -514,7 +592,7 @@ public class PatternString implements CharSequence, MatchResult {
      * @see java.util.regex.MatchResult#start()
      */
     public int start() {
-        return m.start();
+        return mr.start();
     }
 
     /*
@@ -523,7 +601,7 @@ public class PatternString implements CharSequence, MatchResult {
      * @see java.util.regex.MatchResult#end()
      */
     public int end() {
-        return m.end();
+        return mr.end();
     }
 
     /*
@@ -532,7 +610,7 @@ public class PatternString implements CharSequence, MatchResult {
      * @see java.util.regex.MatchResult#start(int)
      */
     public int start(int group) {
-        return m.start(group);
+        return mr.start(group);
     }
 
     /*
@@ -541,7 +619,7 @@ public class PatternString implements CharSequence, MatchResult {
      * @see java.util.regex.MatchResult#end(int)
      */
     public int end(int group) {
-        return m.end(group);
+        return mr.end(group);
     }
 
     /*
@@ -550,7 +628,7 @@ public class PatternString implements CharSequence, MatchResult {
      * @see java.util.regex.MatchResult#group()
      */
     public String group() {
-        return m.group();
+        return mr.group();
     }
 
     /*
@@ -559,7 +637,7 @@ public class PatternString implements CharSequence, MatchResult {
      * @see java.util.regex.MatchResult#groupCount()
      */
     public int groupCount() {
-        return m.groupCount();
+        return mr.groupCount();
     }
 
     /**
@@ -784,6 +862,7 @@ public class PatternString implements CharSequence, MatchResult {
 
     public final void setText(StringBuffer b) {
         this.text = b;
+        m.reset(b);
     }
 
     public final int getFlags() {
