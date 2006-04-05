@@ -1,6 +1,3 @@
-/*
- * Created on 22.03.2006
- */
 package org.knowceans.util;
 
 import java.util.Arrays;
@@ -70,6 +67,11 @@ public class PatternString implements CharSequence, MatchResult {
         if (p.found()) {
             System.out.println(p);
         }
+
+        PatternString s = new PatternString("abc dlcid c bC ab c");
+
+        Vector<PatternString> b = s.findAll("b ?c", "i");
+        System.out.println(b);
     }
 
     public boolean debug = false;
@@ -100,6 +102,21 @@ public class PatternString implements CharSequence, MatchResult {
      */
     public PatternString() {
         text = new StringBuffer();
+    }
+
+    /**
+     * copies the pattern string content with an new matcher set to the region
+     * of the current one but the matchresult my set, ie., all references to
+     * groups information of the last match are kept.
+     * 
+     * @return
+     */
+    public PatternString copy() {
+        PatternString pp = new PatternString(text);
+        pp.mr = mr;
+        reset();
+        m.region(m.regionStart(), m.regionEnd());
+        return pp;
     }
 
     /**
@@ -236,6 +253,68 @@ public class PatternString implements CharSequence, MatchResult {
     }
 
     /**
+     * Emulates a repeated perl find like:
+     * <code> foreach this =~ /expression/ \@a += \@_</code>.
+     * <p>
+     * Returns the array of strings found. After this, found will be false
+     * because the search is exhaustive and the matcher of this pattern string
+     * is positioned at the end of the last match. Can be used to use find in a
+     * Java foreach construct. Use reset() to start at the beginning.
+     * 
+     * @param expression
+     * @return
+     */
+    public Vector<PatternString> findAll(String expression) {
+        return findAll(expression, "");
+    }
+
+    /**
+     * Emulates a repeated perl find like:
+     * <code> foreach this =~ /expression/ @@a += @@_</code>. Returns the array of strings found. After this, found will
+     *     be false because the search is exhaustive and the matcher of this
+     *     pattern string is positioned at the end of the last match. Can be
+     *     used to use find in a Java foreach construct. Use reset() to start at
+     *     the beginning.
+     * @param expression
+     * @return
+     */
+    public Vector<PatternString> findAll(String expression, String perlFlags) {
+        Vector<PatternString> r = new Vector<PatternString>();
+        find(expression, perlFlags);
+        while (found()) {
+            r.add(new PatternString(group()));
+            findNext();
+        }
+        return r;
+    }
+
+    /**
+     * Finds all occurrences of the expression and substitutes them with the
+     * replacement. Does not change the internal string but resets the internal
+     * matcher and those of the generated pattern strings.
+     * 
+     * @param expression
+     * @return
+     */
+    public Vector<PatternString> findAll(String expression, String replacement,
+        String perlFlags) {
+        Vector<PatternString> r = new Vector<PatternString>();
+
+        find(expression, perlFlags);
+        while (found()) {
+            PatternString ps = new PatternString(group());
+            // TODO: this is duplicate matching work since we know the
+            // expression matches
+            ps.substitute(expression, replacement, perlFlags);
+            ps.reset();
+            r.add(ps);
+            findNext();
+        }
+        reset();
+        return r;
+    }
+
+    /**
      * Finds the next occurrence of the pattern and returns it (i.e., return
      * group(0)). The success of this find() operation can be checked with
      * found(), and the actual groups can be checked with group(...).
@@ -345,7 +424,7 @@ public class PatternString implements CharSequence, MatchResult {
      * @param replacement
      * @param perlFlags (see Pattern)
      * @param replaceRemaining whether to substitute all remaining occurrences
-     *        (prior reset() if you want to replace all.)
+     *        or only the next one (prior reset() if you want to replace all.)
      * @return this
      */
     public PatternString substitute(String expression, String replacement,
@@ -460,8 +539,9 @@ public class PatternString implements CharSequence, MatchResult {
     }
 
     /**
-     * emulates a perl substitution expression like:
-     * <code> this =~ s/expression/replacement/g</code>
+     * performs global replace of the string expression with the replacement.
+     * After the operation, the internal string buffer is filled with the
+     * substitute (and the original string lost).
      * 
      * @param expression
      * @param replacement
@@ -584,6 +664,46 @@ public class PatternString implements CharSequence, MatchResult {
      */
     public String group(int number) {
         return mr.group(number);
+    }
+
+    /**
+     * return the group with the number after the last match
+     * 
+     * @param number
+     * @return
+     */
+    public PatternString groupP(int number) {
+        return new PatternString(mr.group(number));
+    }
+
+    /**
+     * return the start of the internal matcher's region
+     * 
+     * @return
+     */
+    public int regionStart() {
+        return m.regionStart();
+    }
+
+    /**
+     * return the end of the internal matcher's region
+     * 
+     * @return
+     */
+    public int regionEnd() {
+        return m.regionEnd();
+    }
+
+    /**
+     * sets the region for this pattern string
+     * 
+     * @param start
+     * @param end
+     */
+    public void region(int start, int end) {
+        if (debug)
+            System.out.println("set region to [" + start + ", " + end + "]");
+        m.region(start, end);
     }
 
     /*
@@ -709,7 +829,7 @@ public class PatternString implements CharSequence, MatchResult {
 
         StringBuffer cc = space(text.length());
         for (int i = 0; i < cc.length() / 10; i++) {
-            cc.setCharAt(i * 10, (char) (i + 48));
+            cc.setCharAt(i * 10, (char) (i % 10 + 48));
             if (10 * i + 5 < cc.length())
                 cc.setCharAt(i * 10 + 5, '.');
         }

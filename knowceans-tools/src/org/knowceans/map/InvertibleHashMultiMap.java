@@ -42,7 +42,7 @@ import java.util.Set;
  * @author heinrich
  */
 public class InvertibleHashMultiMap<X, Y> extends HashMultiMap<X, Y>
-// implements IInvertibleMultiMap<X, Y>
+ implements IInvertibleMultiMap<X, Y>
 {
 
     /**

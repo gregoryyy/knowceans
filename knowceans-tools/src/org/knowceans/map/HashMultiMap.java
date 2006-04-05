@@ -152,15 +152,15 @@ public class HashMultiMap<X, Y> extends HashMap<X, Set<Y>> implements
         }
     }
 
-    /*
-     * (non-Javadoc)
-     * 
-     * @see org.knowceans.map.IMultiMap#getInverse(java.lang.Object)
-     */
-    public Set<X> getInverse(Y value) {
-        // TODO Auto-generated method stub
-        return null;
-    }
+//    /*
+//     * (non-Javadoc)
+//     * 
+//     * @see org.knowceans.map.IMultiMap#getInverse(java.lang.Object)
+//     */
+//    public Set<X> getInverse(Y value) {
+//        // TODO Auto-generated method stub
+//        return null;
+//    }
 
     /**
      * @return

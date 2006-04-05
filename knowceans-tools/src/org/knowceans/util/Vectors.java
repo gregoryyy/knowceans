@@ -457,6 +457,8 @@ public class Vectors {
      * @return
      */
     public static String print(double[] x) {
+        if (x == null)
+            return "null";
         StringBuffer b = new StringBuffer();
         for (int i = 0; i < x.length - 1; i++) {
             b.append(x[i]).append(" ");
@@ -472,6 +474,8 @@ public class Vectors {
      * @return
      */
     public static String print(double[][] x) {
+        if (x == null)
+            return "null";
         StringBuffer b = new StringBuffer();
         for (int i = 0; i < x.length - 1; i++) {
             b.append(print(x[i])).append("\n");
@@ -487,6 +491,8 @@ public class Vectors {
      * @return
      */
     public static String print(int[] x) {
+        if (x == null)
+            return "null";
         StringBuffer b = new StringBuffer();
         for (int i = 0; i < x.length - 1; i++) {
             b.append(x[i]).append(" ");
@@ -502,6 +508,8 @@ public class Vectors {
      * @return
      */
     public static String print(int[][] x) {
+        if (x == null)
+            return "null";
         StringBuffer b = new StringBuffer();
         for (int i = 0; i < x.length - 1; i++) {
             b.append(print(x[i])).append("\n");
