@@ -72,6 +72,12 @@ public class PatternString implements CharSequence, MatchResult {
 
         Vector<PatternString> b = s.findAll("b ?c", "i");
         System.out.println(b);
+        
+        s = new PatternString("abc dlcid c bC ab c");
+        
+        Vector<PatternString> v = s.findAll("(b ?c)", "i$1$1", "i");
+        System.out.println(v);
+        
     }
 
     public boolean debug = false;
