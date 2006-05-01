@@ -56,6 +56,9 @@ public class DoubleFormat {
      * have enough space for this, this number is reduced or the formatting
      * switched to exponential notation (in that priority order). If this is not
      * successful, null is returned;
+     * <p>
+     * TODO: debug so that lengths < 5 can be allowed TODO: debug conditions for
+     * exponential notation
      * 
      * @param x the number to be formatted.
      * @param ndigits the maximum number of significant (non-zero) digits
@@ -64,6 +67,8 @@ public class DoubleFormat {
      * @return the formatted number string or null
      */
     private static String format(double x, int ndigits, int strlen) {
+        if (strlen < 5)
+            throw new IllegalArgumentException("Cannot use yet strlen < 5");
         String s = null;
         boolean leftalign = false;
         if (strlen < 0) {

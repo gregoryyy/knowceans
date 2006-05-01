@@ -9,7 +9,7 @@ import java.util.Arrays;
  * 
  * @author gregor
  */
-class ExpDouble {
+public class ExpDouble {
 
     private static double log10 = Math.log(10);
 
