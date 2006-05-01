@@ -1,0 +1,165 @@
+/*
+ * Created on Jun 30, 2005
+ */
+package org.knowceans.util;
+
+import java.util.Arrays;
+
+/**
+ * DoubleFormat formats double numbers into a specified digit format. The
+ * difference to NumberFormat and DecimalFormat is that this DigitFormat is
+ * based on a strategy to focus on a given number of nonzero digits, for which
+ * it rounds numbers if necessary. In addition, it is possible to format a
+ * number into a String that has a specified length, with a strategy to first
+ * obey the significant-digit rule and then try to either space-pad the string
+ * on the left or shorten the string by rounding, converting to
+ * mantissa-exponent format or indicating overflow or underflow. Although the
+ * class does not yield separator-aligned numbers, it yields a readable output.
+ * 
+ * @author heinrich
+ */
+public class DoubleFormat {
+
+    public static void main(String[] args) {
+
+        // test();
+        run();
+    }
+
+    private static void test() {
+
+        // now check the width available
+        String s = format(1180, 3, 2);
+        System.out.println("[" + s + "]");
+        s = format(0.088810446, 4, 4);
+        System.out.println("[" + s + "]");
+    }
+
+    /**
+     * Format the number x with n significant digits.
+     * 
+     * @param x
+     * @param ndigits
+     * @return
+     */
+    public static double format(double x, int ndigits) {
+        int magnitude = ExpDouble.orderOfMagnitude(x);
+        double factor = Math.pow(10, ndigits - 1 - magnitude);
+        double y = Math.round(x * factor) / factor;
+
+        return y;
+    }
+
+    /**
+     * Format the number so it becomes exactly as large as the argument strlen.
+     * The number of nonzero digits is tried to be ndigits. If strlen does not
+     * have enough space for this, this number is reduced or the formatting
+     * switched to exponential notation (in that priority order). If this is not
+     * successful, null is returned;
+     * 
+     * @param x the number to be formatted.
+     * @param ndigits the maximum number of significant (non-zero) digits
+     * @param strlen the exact number of characters in the string returned
+     *        (positive for right-aligned, negative for left-aligned)
+     * @return the formatted number string or null
+     */
+    private static String format(double x, int ndigits, int strlen) {
+        String s = null;
+        boolean leftalign = false;
+        if (strlen < 0) {
+            strlen = -strlen;
+            leftalign = true;
+        }
+        int pad = 0;
+
+        ExpDouble d = new ExpDouble(x, ndigits);
+        // System.out.println(d.debug());
+        int len = d.strlen();
+        pad = strlen - len;
+        if (pad >= 0) {
+            s = d.toString();
+        } else {
+            // if it has a fraction, it can be right-trucated
+            if (d.exponent < 0) {
+                // retry rounding if at least one digit can be displayed as
+                // 0.00#
+                int newdigits = d.digits - -pad;
+                // at least one digit necessary
+                if (newdigits > 0) {
+                    d.round(newdigits);
+                    s = d.toString();
+                    pad = 0;
+                } else {
+                    s = exponentialNotation(d, strlen);
+                }
+            } else {
+                // try exponential notation (1.2E3)
+                s = exponentialNotation(d, strlen);
+            }
+            pad = strlen - s.length();
+        }
+
+        String spc = space(pad);
+        if (leftalign) {
+            return s + spc;
+        } else {
+            return spc + s;
+        }
+    }
+
+    /**
+     * @param d expdouble object
+     * @param strlen maximum string length
+     * @return number as string in exponential notation
+     */
+    private static String exponentialNotation(ExpDouble d, int strlen) {
+        String s;
+        int len;
+        len = d.strlenexp();
+        int minlen = d.minstrlenexp();
+        if (minlen > strlen) {
+            char[] cc = new char[strlen];
+            if (d.exponent >= 0) {
+                Arrays.fill(cc, '>');
+            } else {
+                Arrays.fill(cc, '<');
+            }
+            s = new String(cc);
+        }
+
+        // do all digits fit?
+        int diff = strlen - len;
+        if (diff == -1) {
+            // at least two digits (with additional point
+            d.round(d.digits + diff);
+        } else {
+            // only one digit (this yields minlen)
+            d.round(1);
+        }
+        s = d.toExpString();
+        return s;
+    }
+
+    private static String space(int pad) {
+        char[] ch = new char[pad];
+        Arrays.fill(ch, ' ');
+        String spc = new String(ch);
+        return spc;
+    }
+
+    private static void run() {
+        double[] a = new double[] {10229876.3, 1022.9876, 0.9876, 0.00009876,
+            0.0987678, 99.987678, 9.87604E9, 9.976E10};
+
+        for (int i = 10; i > 0; i--) {
+
+            System.out.println("\nlength = " + i + " : ");
+            for (int j = 0; j < a.length; j++) {
+                System.out.println("[" + DoubleFormat.format(a[j], 6, i)
+                    + "] <= (" + a[j] + ")");
+                System.out.println("[" + DoubleFormat.format(-a[j], 6, i)
+                    + "] <= (" + -a[j] + ")");
+            }
+        }
+    }
+}

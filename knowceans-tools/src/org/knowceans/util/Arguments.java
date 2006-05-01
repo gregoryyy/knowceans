@@ -369,7 +369,7 @@ public class Arguments {
      */
     public Object getArgument(int i) throws IllegalArgumentException {
         if (i == 0) {
-            return getMainClass();
+            return Which.main();
         }
         if (i > argTypes.length()) {
             throw new IllegalArgumentException("Format supports only "
@@ -400,7 +400,7 @@ public class Arguments {
         path.append(File.separatorChar + "java -cp "+ linesep); 
         path.append(classpath.replaceAll(File.pathSeparator, File.pathSeparator + linesep) + linesep);
         path.append(linesep).append(" ");
-        path.append(getMainClass());
+        path.append(Which.main());
         path.append(linesep).append(" ");
         for (String key : options.keySet()) {
             String param = "";
@@ -417,22 +417,6 @@ public class Arguments {
         return path.toString();
     }
 
-    /**
-     * Determines the main class type.
-     * 
-     * @return
-     */
-    public String getMainClass() {
-        String clazz = null;
-        try {
-            throw new Exception();
-        } catch (Exception e) {
-            StackTraceElement[] t = e.getStackTrace();
-            clazz = t[t.length - 1].getClassName();    
-        }
-        return clazz;
-
-    }
 
     /**
      * Same as getArgument, but returns a default value if optional argument is
@@ -672,7 +656,7 @@ public class Arguments {
         if (helptext != null) {
             sb.append(helptext).append("\n\n");
         }
-        sb.append(getMainClass());
+        sb.append(Which.main());
         //if (optionTypes.size() > 0)
         sb.append(" <options>");
         if (minArgs > 0)

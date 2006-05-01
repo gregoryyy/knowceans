@@ -11,7 +11,7 @@ import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 
 /**
- * Singleton class to decrypt and encrypt Strings using symmetric DES 
+ * Singleton class to decrypt and encrypt Strings using the symmetric DES 
  * algorithm.
  *  
  * @author heinrich
