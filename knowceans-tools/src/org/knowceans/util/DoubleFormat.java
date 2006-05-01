@@ -26,13 +26,20 @@ public class DoubleFormat {
         run();
     }
 
-    private static void test() {
+    private static void run() {
+        double[] a = new double[] {10229876.3, 1022.9876, 0.9876, 0.00009876,
+            0.0987678, 99.987678, 9.87604E9, 9.976E10};
 
-        // now check the width available
-        String s = format(1180, 3, 2);
-        System.out.println("[" + s + "]");
-        s = format(0.088810446, 4, 4);
-        System.out.println("[" + s + "]");
+        for (int i = 12; i > 5; i--) {
+
+            System.out.println("\nlength = " + i + " : ");
+            for (int j = 0; j < a.length; j++) {
+                System.out.println("[" + DoubleFormat.format(a[j], 6, i)
+                    + "] <= (" + a[j] + ")");
+                System.out.println("[" + DoubleFormat.format(-a[j], 6, i)
+                    + "] <= (" + -a[j] + ")");
+            }
+        }
     }
 
     /**
@@ -58,7 +65,7 @@ public class DoubleFormat {
      * successful, null is returned;
      * <p>
      * TODO: debug so that lengths < 5 can be allowed TODO: debug conditions for
-     * exponential notation
+     * exponential notation TODO: debug truncation for mixed numbers
      * 
      * @param x the number to be formatted.
      * @param ndigits the maximum number of significant (non-zero) digits
@@ -66,15 +73,16 @@ public class DoubleFormat {
      *        (positive for right-aligned, negative for left-aligned)
      * @return the formatted number string or null
      */
-    private static String format(double x, int ndigits, int strlen) {
-        if (strlen < 5)
-            throw new IllegalArgumentException("Cannot use yet strlen < 5");
+    static String format(double x, int ndigits, int strlen) {
         String s = null;
         boolean leftalign = false;
         if (strlen < 0) {
             strlen = -strlen;
             leftalign = true;
         }
+        if (strlen < 5)
+            throw new IllegalArgumentException("Cannot use yet abs(strlen) < 5");
+
         int pad = 0;
 
         ExpDouble d = new ExpDouble(x, ndigits);
@@ -91,9 +99,14 @@ public class DoubleFormat {
                 int newdigits = d.digits - -pad;
                 // at least one digit necessary
                 if (newdigits > 0) {
-                    d.round(newdigits);
+                    boolean plusone = d.round(newdigits);
+                    // if rounding up to next order of magnitude
+                    if (plusone && newdigits > 1) {
+                        d.round(newdigits - 1);
+                    } else {
+                        s = exponentialNotation(d, strlen);
+                    }
                     s = d.toString();
-                    pad = 0;
                 } else {
                     s = exponentialNotation(d, strlen);
                 }
@@ -152,19 +165,4 @@ public class DoubleFormat {
         return spc;
     }
 
-    private static void run() {
-        double[] a = new double[] {10229876.3, 1022.9876, 0.9876, 0.00009876,
-            0.0987678, 99.987678, 9.87604E9, 9.976E10};
-
-        for (int i = 10; i > 0; i--) {
-
-            System.out.println("\nlength = " + i + " : ");
-            for (int j = 0; j < a.length; j++) {
-                System.out.println("[" + DoubleFormat.format(a[j], 6, i)
-                    + "] <= (" + a[j] + ")");
-                System.out.println("[" + DoubleFormat.format(-a[j], 6, i)
-                    + "] <= (" + -a[j] + ")");
-            }
-        }
-    }
 }

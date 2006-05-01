@@ -26,6 +26,10 @@ import java.util.Vector;
  */
 public class Vectors {
 
+    public static int ndigits = 0;
+    public static int colwidth = 0;
+    
+
     /**
      * @param start
      * @param end
@@ -179,9 +183,7 @@ public class Vectors {
         System.arraycopy(y, 0, z, x.length, y.length);
         return z;
     }
-    
-    
-    
+
     /**
      * w = [x y z]
      * 
@@ -355,8 +357,8 @@ public class Vectors {
      * @param more cols
      * @return larger matrix
      */
-    public static int[][] increaseSize(final int[][] matrix,
-        int morerows, int morecols) {
+    public static int[][] increaseSize(final int[][] matrix, int morerows,
+        int morecols) {
 
         int[][] array2 = new int[matrix.length + morerows][];
         for (int i = 0; i < matrix.length; i++) {
@@ -393,8 +395,8 @@ public class Vectors {
      * @param cols ordered vector of cols to remove
      * @return smaller matrix
      */
-    public static int[][] removeElements(final int[][] matrix,
-        int[] rows, int[] cols) {
+    public static int[][] removeElements(final int[][] matrix, int[] rows,
+        int[] cols) {
         return chooseElements(matrix, rangeComplement(rows, matrix.length),
             rangeComplement(cols, matrix[0].length));
     }
@@ -419,8 +421,7 @@ public class Vectors {
      * @param cols
      * @return
      */
-    public static int[][] chooseElements(int[][] matrix, int[] rows,
-        int[] cols) {
+    public static int[][] chooseElements(int[][] matrix, int[] rows, int[] cols) {
 
         int[][] matrix2 = new int[rows.length][cols.length];
 
@@ -447,9 +448,7 @@ public class Vectors {
         }
         return vector2;
     }
-    
-    
-    
+
     /**
      * prints a double representation of the vector.
      * 
@@ -461,10 +460,18 @@ public class Vectors {
             return "null";
         StringBuffer b = new StringBuffer();
         for (int i = 0; i < x.length - 1; i++) {
-            b.append(x[i]).append(" ");
+            b.append(format(x[i])).append(" ");
         }
-        b.append(x[x.length - 1]);
+        b.append(format(x[x.length - 1]));
         return b.toString();
+    }
+
+    private static String format(double x) {
+        if (ndigits > 0) {
+            return DoubleFormat.format(x, ndigits, colwidth);
+        } else {
+            return Double.toString(x);
+        }
     }
 
     /**
@@ -483,6 +490,7 @@ public class Vectors {
         b.append(print(x[x.length - 1]));
         return b.toString();
     }
+    
 
     /**
      * prints a double representation of the vector.
@@ -772,5 +780,37 @@ public class Vectors {
             s += ds[i] * dt[i];
         }
         return s;
+    }
+
+    /**
+     * transpose the matrix
+     * 
+     * @param mat
+     * @return
+     */
+    public static double[][] transpose(double[][] mat) {
+        double[][] a = new double[mat[0].length][mat.length];
+        for (int i = 0; i < mat[0].length; i++) {
+            for (int j = 0; j < mat.length; j++) {
+                a[i][j] = mat[j][i];
+            }
+        }
+        return a;
+    }
+
+    /**
+     * transpose the matrix
+     * 
+     * @param mat
+     * @return
+     */
+    public static int[][] transpose(int[][] mat) {
+        int[][] a = new int[mat[0].length][mat.length];
+        for (int i = 0; i < mat[0].length; i++) {
+            for (int j = 0; j < mat.length; j++) {
+                a[i][j] = mat[j][i];
+            }
+        }
+        return a;
     }
 }

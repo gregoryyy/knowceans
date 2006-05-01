@@ -57,7 +57,7 @@ public class Gamma {
      * distribution and the k-dimensional generalisation of the beta function.
      * fdelta(a) = prod_k fgamma(a_k) / fgamma( sum_k a_k ) = int_(sum x = 1)
      * prod_k x_k^(a_k-1) dx. See G. Heinrich: Parameter estimation for text
-     * analysis (http://www.arbylon.net/publications/text-est_iv.pdf)
+     * analysis (http://www.arbylon.net/publications/text-est.pdf)
      * 
      * @param x
      * @return

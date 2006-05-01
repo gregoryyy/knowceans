@@ -14,7 +14,7 @@ public class ExpDouble {
     private static double log10 = Math.log(10);
 
     public static void main(String[] args) {
-        double[] x = new double[] {-1.0099638, 3.56, 30, -300.04, -45383487,
+        double[] x = new double[] {0, -1.0099638, 3.56, 30, -300.04, -45383487,
             9.998, 34598E12};
         for (int i = 0; i < x.length; i++) {
             ExpDouble a = new ExpDouble(x[i], 5);
@@ -33,7 +33,13 @@ public class ExpDouble {
      * @param maxdigits
      */
     public ExpDouble(double x, int maxdigits) {
-        magnitude = orderOfMagnitude(x);
+        if (x == 0) {
+            x = Math.pow(10, -maxdigits - 1);
+            magnitude = -1;
+            maxdigits = 1;
+        } else {
+            magnitude = orderOfMagnitude(x);
+        }
         formatExponential(x, maxdigits);
         value = x;
     }
@@ -69,12 +75,13 @@ public class ExpDouble {
      * Round this instance to the number of significant digits
      * 
      * @param digits
-     * @return this
+     * @return whether magnitude and digits had to be changed by rounding values
+     *         >9.5 to 10
      */
-    public ExpDouble round(int ndigits) {
+    public boolean round(int ndigits) {
         int diff = digits - ndigits;
         if (diff <= 0) {
-            return this;
+            return false;
         }
 
         // mantissa: ###$ -> ###.$ -> ###
@@ -88,14 +95,20 @@ public class ExpDouble {
             // magnitude changes because we are interested in formatting.
             // the represented value is actually one order below
             magnitude++;
+            return true;
         }
-        return this;
+        return false;
     }
 
     /**
      * @return length as a string
      */
     int strlen() {
+        if (Double.isInfinite(value)) {
+            return negative ? 4: 3;
+        } else if (Double.isNaN(value)) {
+                return 3;
+        }
         int len = digits;
         // minus sign
         if (negative) {
@@ -119,6 +132,11 @@ public class ExpDouble {
     }
 
     int strlenexp() {
+        if (Double.isInfinite(value)) {
+            return negative ? 4: 3;
+        } else if (Double.isNaN(value)) {
+                return 3;
+        }
         int len = minstrlenexp();
         if (digits == 1) {
             return len;
@@ -131,6 +149,11 @@ public class ExpDouble {
      * @return minimum length of the number in exponential notation 1E3
      */
     int minstrlenexp() {
+        if (Double.isInfinite(value)) {
+            return negative ? 4: 3;
+        } else if (Double.isNaN(value)) {
+                return 3;
+        }
         // digit and E3
         int len = 1 + 2;
         if (negative) {
@@ -152,6 +175,11 @@ public class ExpDouble {
      * @return string representation of this object
      */
     public String toString() {
+        if (Double.isInfinite(value)) {
+            return negative ? "-inf" : "inf";
+        } else if (Double.isNaN(value)) {
+            return "nan";
+        }
         String[] pp = parts();
         if (pp[1] == null) {
             return pp[0];
@@ -217,8 +245,7 @@ public class ExpDouble {
             int zerotail = 0;
             char[] zz;
             if (trailingZeros > 0) {
-                zz = new char[trailingZeros];
-                Arrays.fill(zz, '0');
+                zz = zeros(trailingZeros);
                 frac.append(zz).append(mantissa);
             } else {
                 String s = Long.toString(mantissa).substring(
@@ -229,8 +256,7 @@ public class ExpDouble {
             // pad tailing zeros if they belong to digits
             // #.###00
             if (zerotail > 0) {
-                zz = new char[zerotail];
-                Arrays.fill(zz, '0');
+                zz = zeros(zerotail);
                 frac.append(zz);
             }
             parts[1] = frac.toString();
@@ -243,14 +269,28 @@ public class ExpDouble {
     }
 
     /**
+     * Creates a character array with zeros.
+     * 
+     * @param count
+     * @return
+     */
+    private char[] zeros(int count) {
+        char[] zz;
+        zz = new char[count];
+        Arrays.fill(zz, '0');
+        return zz;
+    }
+
+    /**
      * formats the number into a mantissa with interval in interval
      * [1,10)E{ndigits} and an exponent.
      * 
      * @param x the number
      * @param ndigits the number of significant digits
      */
-    protected void formatExponential(double x, int ndigits) {
+    protected boolean formatExponential(double x, int ndigits) {
 
+        boolean magchg = false;
         exponent = magnitude - ndigits + 1;
         digits = ndigits;
         double factor = Math.pow(10, -exponent);
@@ -263,6 +303,7 @@ public class ExpDouble {
             // magnitude changes because we are interested in formatting.
             // the represented value is actually one order below
             magnitude++;
+            magchg = true;
         }
 
         if (x < 0) {
@@ -277,6 +318,8 @@ public class ExpDouble {
         // mantissa /= 10;
         // exponent++;
         // }
+
+        return magchg;
     }
 
     /**
@@ -284,6 +327,8 @@ public class ExpDouble {
      * @return order of magnitue of x, i.e., n : x in [ 10^n, 10^(n+1) )
      */
     public static int orderOfMagnitude(double x) {
+        if (x == 0)
+            return -Integer.MAX_VALUE;
         x = Math.abs(x);
         int magnitude = (int) (Math.log(x + 1E-12) / log10);
         if (x < 1)
