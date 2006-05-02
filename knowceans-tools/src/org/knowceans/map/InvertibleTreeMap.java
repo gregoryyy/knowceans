@@ -69,7 +69,7 @@ public class InvertibleTreeMap<X, Y> extends TreeMap<X, Y> {
      * 
      * @param c
      */
-    public InvertibleTreeMap(Comparator<X> c) {
+    public InvertibleTreeMap(Comparator<Object> c) {
         super(c);
         inverse = new HashMultiMap<Y, X>();
     }
@@ -81,6 +81,8 @@ public class InvertibleTreeMap<X, Y> extends TreeMap<X, Y> {
         super();
         inverse = new HashMultiMap<Y, X>();
     }
+    
+    
 
     // /**
     // * create a multimap with an inverse. FIXME: problems with remove

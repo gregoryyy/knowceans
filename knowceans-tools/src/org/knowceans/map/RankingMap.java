@@ -15,13 +15,18 @@ import java.util.TreeMap;
 import org.knowceans.util.Cokus;
 
 /**
- * RankingMap allows sorting of two lists of items simultaneously. 
+ * RankingMap allows sorting of two lists of items simultaneously.
  * <p>
  * TODO: build ParallelCollection (or for primitive types a ParallelArray)
  * 
  * @author gregor
  */
-public class RankingMap<K, V> extends TreeMap<K, V> {
+public class RankingMap<K, V> extends InvertibleTreeMap<K, V> {
+
+    /**
+     * 
+     */
+    private static final long serialVersionUID = 2428685609778646169L;
 
     public static void main(String[] args) {
         double[] a = new double[20];
@@ -46,33 +51,31 @@ public class RankingMap<K, V> extends TreeMap<K, V> {
      */
     public RankingMap() {
         super();
-        // TODO Auto-generated constructor stub
     }
 
     /**
-     * @param c
+     * Init and specify whether sorting should be reversed.
      */
-    public RankingMap(Comparator< ? super K> c) {
-        super(c);
-        // TODO Auto-generated constructor stub
+    public RankingMap(boolean reverse) {
+        super(Collections.reverseOrder());
     }
 
     /**
-     * @param m
+     * Init and specify Comparator for keys.
+     * 
+     * @param comp
      */
-    public RankingMap(Map< ? extends K, ? extends V> m) {
-        super(m);
-        // TODO Auto-generated constructor stub
+    public RankingMap(Comparator<Object> comp) {
+        super(comp);
     }
 
     /**
-     * @param m
+     * Get a maximum of count sorted keys. For key-based truncation, cf.
+     * headMap; For key-based truncation, cf. headMap and subMap
+     * 
+     * @param count
+     * @return
      */
-    public RankingMap(SortedMap<K, ? extends V> m) {
-        super(m);
-        // TODO Auto-generated constructor stub
-    }
-
     public List<K> sortedKeys(int count) {
         ArrayList<K> a = new ArrayList<K>();
 
@@ -84,10 +87,22 @@ public class RankingMap<K, V> extends TreeMap<K, V> {
         return a;
     }
 
+    /**
+     * Get sorted keys.
+     * 
+     * @return
+     */
     public List<K> sortedKeys() {
         return sortedKeys(Integer.MAX_VALUE);
     }
 
+    /**
+     * Get a maximum of count sorted values. For key-based truncation, cf.
+     * headMap and subMap;
+     * 
+     * @param count
+     * @return
+     */
     public List<V> sortedValues(int count) {
         ArrayList<V> a = new ArrayList<V>();
         for (V val : values()) {
@@ -98,11 +113,37 @@ public class RankingMap<K, V> extends TreeMap<K, V> {
         return a;
     }
 
+    /**
+     * Get sorted values
+     * 
+     * @return
+     */
     public List<V> sortedValues() {
         return sortedValues(Integer.MAX_VALUE);
     }
 
-    void put(K[] keys, V[] values) {
+    /**
+     * creates a new map with count values referenced (but not
+     * 
+     * @param count
+     */
+    public RankingMap<K, V> headMap(int count) {
+        RankingMap<K, V> head = new RankingMap<K, V>();
+        for (Map.Entry<K, V> e : entrySet()) {
+            head.put(e.getKey(), e.getValue());
+            if (--count == 0)
+                break;
+        }
+        return head;
+    }
+
+    /**
+     * Put the two arrays (of equal size) into the map
+     * 
+     * @param keys
+     * @param values
+     */
+    public void put(K[] keys, V[] values) {
         put(Arrays.asList(keys), Arrays.asList(values));
     }
 
@@ -112,7 +153,7 @@ public class RankingMap<K, V> extends TreeMap<K, V> {
      * @param keys
      * @param values
      */
-    void put(List<K> keys, List<V> values) {
+    public void put(List<K> keys, List<V> values) {
         if (keys.size() != values.size()) {
             throw new IllegalArgumentException("lists must have equal size.");
         }
@@ -121,6 +162,12 @@ public class RankingMap<K, V> extends TreeMap<K, V> {
         }
     }
 
+    /**
+     * convert from primitive to Object array
+     * 
+     * @param a
+     * @return
+     */
     public static Double[] convert(double[] a) {
         Double[] b = new Double[a.length];
         for (int i = 0; i < b.length; i++) {
@@ -129,6 +176,12 @@ public class RankingMap<K, V> extends TreeMap<K, V> {
         return b;
     }
 
+    /**
+     * convert from primitive to Object array
+     * 
+     * @param a
+     * @return
+     */
     public static Integer[] convert(int[] a) {
         Integer[] b = new Integer[a.length];
         for (int i = 0; i < b.length; i++) {
@@ -137,6 +190,12 @@ public class RankingMap<K, V> extends TreeMap<K, V> {
         return b;
     }
 
+    /**
+     * convert from Object to primitive array
+     * 
+     * @param a
+     * @return
+     */
     public static double[] convert(Double[] a) {
         double[] b = new double[a.length];
         for (int i = 0; i < b.length; i++) {
@@ -145,6 +204,12 @@ public class RankingMap<K, V> extends TreeMap<K, V> {
         return b;
     }
 
+    /**
+     * convert from Object to primitive array
+     * 
+     * @param a
+     * @return
+     */
     public static int[] convert(Integer[] a) {
         int[] b = new int[a.length];
         for (int i = 0; i < b.length; i++) {
