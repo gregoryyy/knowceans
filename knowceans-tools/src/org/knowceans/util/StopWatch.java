@@ -67,6 +67,11 @@ public class StopWatch {
     private boolean running = false;
 
     /**
+     * Name of this watch
+     */
+    private String name;
+
+    /**
      * Manages all stop watches in the current java process
      */
     protected static Hashtable<String, StopWatch> watches = new Hashtable<String, StopWatch>();
@@ -80,6 +85,7 @@ public class StopWatch {
      */
     protected StopWatch(String name) {
         tabsolute = new Hashtable<String, Long>();
+        this.name = name;
     }
 
     /**
@@ -136,6 +142,26 @@ public class StopWatch {
     }
 
     /**
+     * Get the named watch object.
+     * 
+     * @param watch
+     * @return
+     */
+    public static StopWatch get(String watch) {
+        return watches.get(watch);
+    }
+
+    /**
+     * Get the default watch object.
+     * 
+     * @param watch
+     * @return
+     */
+    public static StopWatch get() {
+        return watches.get(DEFAULT);
+    }
+
+    /**
      * Get the time of the named stop watch, relative to the last call to lap.
      * 
      * @param watch
@@ -167,7 +193,8 @@ public class StopWatch {
     }
 
     /**
-     * Read the current time the named watch is showing.
+     * Read the current time the named watch is showing. If it is stopped, it
+     * reads the interval stop - start - paused
      * 
      * @param watch
      * @return
@@ -179,7 +206,10 @@ public class StopWatch {
         if (w == null || !w.running) {
             return INVALID;
         }
-        return t - w.tstart - w.tpaused;
+        if (w.running) {
+            return t - w.tstart - w.tpaused;
+        }
+        return w.tstop - w.tstart - w.tpaused;
     }
 
     /**
@@ -214,14 +244,51 @@ public class StopWatch {
      * @return
      */
     public static long stop() {
-        long t = lap(DEFAULT);
-        stop(DEFAULT);
-        return t;
+        return stop(DEFAULT);
     }
 
-    @Override
+    /**
+     * Prints a debug string
+     * 
+     * @return
+     */
+    public String debug() {
+        String s = name + ": ";
+        s += running ? " running: " : " stopped: ";
+        s += format(read(name));
+        s += tabsolute.toString();
+        return s;
+    }
+
+    /**
+     * Prints the status of this stop watch, i.e., its name and current reading.
+     */
     public String toString() {
-        return tabsolute.toString();
+        return name + ": " + format(read(name));
+    }
+
+    /**
+     * Print toString() to stdout.
+     * 
+     * @param watch
+     * @return
+     */
+    public static void print(String watch) {
+        StopWatch w = watches.get(watch);
+        if (w == null) {
+            System.out.println(watch + " unknown");
+        }
+        System.out.println(w.toString());
+    }
+
+    /**
+     * Print toString() of the default watch to stdout.
+     * 
+     * @param watch
+     * @return
+     */
+    public static void print() {
+        print(DEFAULT);
     }
 
     /**
@@ -292,6 +359,10 @@ public class StopWatch {
      */
     public static final Hashtable<String, StopWatch> getWatches() {
         return watches;
+    }
+
+    public final String getName() {
+        return name;
     }
 
 }
