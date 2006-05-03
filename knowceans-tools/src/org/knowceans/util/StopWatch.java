@@ -4,6 +4,7 @@
 package org.knowceans.util;
 
 import java.util.Hashtable;
+import java.util.Vector;
 
 /**
  * StopWatch allows to time a java program by simply starting lap-timing,
@@ -14,7 +15,7 @@ import java.util.Hashtable;
 public class StopWatch {
 
     public static void main(String[] args) throws InterruptedException {
-        long a = 243630300;
+        long a = 234345243630300L;
         System.out.println(format(a));
         start();
         Thread.sleep(1200);
@@ -29,6 +30,8 @@ public class StopWatch {
             System.out.println(format(read()));
             System.out.println();
         }
+        stop("my");
+        System.out.println(get("my").debug());
 
     }
 
@@ -36,15 +39,13 @@ public class StopWatch {
      * name of the default stopwatch (used with convenience methods)
      */
     private static final String DEFAULT = "_default_";
-    private static final String START = "_tstart_";
-    private static final String LAP = "_tlap_";
-    private static final String STOP = "_tstop_";
+    // TODO: set invalid to out-of-scope value
     private static final int INVALID = -1;
 
     /**
      * Starting system time
      */
-    private long tstart = -1;
+    private long tstart = INVALID;
 
     /**
      * keeps the time that this stop watch has been paused.
@@ -52,14 +53,19 @@ public class StopWatch {
     private long tpaused = 0;
 
     /**
-     * Named times in absolute notation (as starting times might change).
+     * start of the last lap time
      */
-    private Hashtable<String, Long> tabsolute = null;
+    private long tlapstart = INVALID;
+
+    /**
+     * Lap times (stored relative to last start or lap).
+     */
+    private Vector<Long> laps = null;
 
     /**
      * Stopping relative time relative to starting time
      */
-    private long tstop = -1;
+    private long tstop = INVALID;
 
     /**
      * Running status (set by start, unset by stop).
@@ -72,7 +78,7 @@ public class StopWatch {
     private String name;
 
     /**
-     * Manages all stop watches in the current java process
+     * Manages all stop watches in the current java process.
      */
     protected static Hashtable<String, StopWatch> watches = new Hashtable<String, StopWatch>();
 
@@ -84,7 +90,7 @@ public class StopWatch {
      * @param name
      */
     protected StopWatch(String name) {
-        tabsolute = new Hashtable<String, Long>();
+        laps = new Vector<Long>();
         this.name = name;
     }
 
@@ -106,7 +112,7 @@ public class StopWatch {
         w.running = true;
         long t = time();
         w.tstart = t;
-        w.tabsolute.put(START, t);
+        w.tlapstart = t;
         // subtract paused interval
         if (w.tstop > 0) {
             w.tpaused += t - w.tstop;
@@ -162,25 +168,25 @@ public class StopWatch {
     }
 
     /**
-     * Get the time of the named stop watch, relative to the last call to lap.
+     * Get the time of the named stop watch, relative to the last call to lap or
+     * start.
      * 
      * @param watch
-     * @return relative time of last lap (or start), or -1 if unknown or not
-     *         running.
+     * @return relative time of last lap (or start), or INVALID if unknown or
+     *         not running.
      */
     public static synchronized long lap(String watch) {
-        long t = time();
+        long tabs = time();
+        long t = tabs;
 
         StopWatch w = watches.get(watch);
         if (w == null || !w.running) {
-            return -1;
+            return INVALID;
         }
-        Long lap = w.tabsolute.get(LAP);
-        w.tabsolute.put(LAP, t);
-        if (lap == null) {
-            return t - w.tstart - w.tpaused;
-        }
-        return t - lap;
+        t -= w.tlapstart;
+        w.tlapstart = tabs;
+        w.laps.add(t);
+        return t;
     }
 
     /**
@@ -203,7 +209,7 @@ public class StopWatch {
         long t = time();
 
         StopWatch w = watches.get(watch);
-        if (w == null || !w.running) {
+        if (w == null) {
             return INVALID;
         }
         if (w.running) {
@@ -234,7 +240,7 @@ public class StopWatch {
             return INVALID;
         }
         w.tstop = t;
-        w.tabsolute.put(STOP, t);
+        w.running = false;
         return t - w.tstart - w.tpaused;
     }
 
@@ -256,7 +262,10 @@ public class StopWatch {
         String s = name + ": ";
         s += running ? " running: " : " stopped: ";
         s += format(read(name));
-        s += tabsolute.toString();
+        s += " lap times: ";
+        for (long lap : laps) {
+            s += format(lap) + " ";
+        }
         return s;
     }
 
@@ -299,6 +308,13 @@ public class StopWatch {
      */
     public synchronized static String format(long reltime) {
         StringBuffer b = new StringBuffer();
+        if (reltime == INVALID) {
+            return "[invalid]";
+        }
+        if (reltime < 0) {
+            b.append("-");
+            reltime = -reltime;
+        }
         // TODO: class for this!
         long millis = reltime % 1000;
         reltime -= millis;
@@ -309,7 +325,9 @@ public class StopWatch {
         long mins = reltime % 60;
         reltime -= mins;
         reltime /= 60;
-        b.append(reltime).append("h");
+        if (reltime > 0) {
+            b.append(reltime).append("h");
+        }
         b.append(digits(mins, 2)).append("'");
         b.append(digits(secs, 2)).append("\"");
         b.append(digits(millis, 3));
@@ -365,4 +383,7 @@ public class StopWatch {
         return name;
     }
 
+    public final Vector<Long> getLaps() {
+        return laps;
+    }
 }

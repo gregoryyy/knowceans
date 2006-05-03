@@ -75,13 +75,14 @@ import java.util.regex.Pattern;
 public class Arguments {
 
     /**
-     * TeeStream splits output to two PrintStreams. 
-     *
+     * TeeStream splits output to two PrintStreams.
+     * 
      * @author heinrich
      */
     class TeeStream extends PrintStream {
 
         PrintStream stream2 = null;
+
         /**
          * @param out
          */
@@ -102,7 +103,7 @@ public class Arguments {
 
         public void write(int b) {
             byte[] buf = new byte[1];
-            buf[0] = (byte)b;
+            buf[0] = (byte) b;
             write(buf, 0, 1);
         }
 
@@ -110,25 +111,26 @@ public class Arguments {
             super.write(b, off, len);
             stream2.write(b, off, len);
         }
-        
+
     }
 
     private boolean debug = false;
-    
+
     private boolean tee = true;
-    
+
     String helpFormat = "\\s*(\\{([^\\}]+)\\})?";
 
     String types = "ilfdbspu";
 
-    String optionFormat = "([\\w\\d_-]+(\\|[\\w\\d_-]+)?)(=([" + types + "0]))?" + helpFormat;
+    String optionFormat = "([\\w\\d_-]+(\\|[\\w\\d_-]+)?)(=([" + types
+        + "0]))?" + helpFormat;
 
     String argFormat = "([" + types + "])" + helpFormat;
-    
+
     PrintStream stdout = null;
 
     PrintStream stderr = null;
-    
+
     /**
      * contains the option types
      */
@@ -138,7 +140,7 @@ public class Arguments {
      * contains help information
      */
     TreeMap<String, String> help = new TreeMap<String, String>();
-    
+
     /**
      * help text.
      */
@@ -163,7 +165,7 @@ public class Arguments {
      * contains the options
      */
     HashMap<String, Object> options = new HashMap<String, Object>();
-    
+
     String variable = null;
 
     int minArgs = 0;
@@ -235,10 +237,8 @@ public class Arguments {
      * 
      * The help strings can include line breaks "\n".
      * 
-     * @param optformat
-     *            format string for options
-     * @param argtypes
-     *            format string for arguments
+     * @param optformat format string for options
+     * @param argtypes format string for arguments
      */
     public Arguments(String optformat, String argtypes) {
         Matcher m = Pattern.compile(optionFormat).matcher(optformat);
@@ -248,12 +248,13 @@ public class Arguments {
                 synonyms.put(keys[0], keys[1]);
                 synonyms.put(keys[1], keys[0]);
             }
-            
+
             for (String key : keys) {
                 if (optionTypes.containsKey(key))
-                    throw new IllegalArgumentException("option " + key + " is duplicate in format specification.");
+                    throw new IllegalArgumentException("option " + key
+                        + " is duplicate in format specification.");
             }
-                
+
             String type = m.group(4) != null ? m.group(4) : "0";
             optionTypes.put(keys[0], type.charAt(0));
             String desc = m.group(6);
@@ -279,9 +280,9 @@ public class Arguments {
         }
         maxArgs = argTypes.length();
     }
-    
+
     /**
-     * same as 2-argument constructor, but sets a help text. 
+     * same as 2-argument constructor, but sets a help text.
      * 
      * @param optformat
      * @param argtypes
@@ -305,8 +306,7 @@ public class Arguments {
      * returns the named option value. If it has no parameter, Boolean.TRUE is
      * returned if given, otherwise Boolean.FALSE.
      * 
-     * @param string
-     *            key for the option parameter.
+     * @param string key for the option parameter.
      * @return value of option parameter (that can be casted to the specific
      *         type) or null if not given at command line or not in format.
      * @throws IllegalArgumentException
@@ -344,7 +344,7 @@ public class Arguments {
             obj = defaultValue;
         }
         if (debug) {
-            System.out.println(string.replaceFirst("^\\-","") + " = " + obj);
+            System.out.println(string.replaceFirst("^\\-", "") + " = " + obj);
         }
         return obj;
     }
@@ -360,8 +360,8 @@ public class Arguments {
 
     /**
      * Returns the argument with index i and null if i is compliant with the
-     * format but not specified at commandline. Arguments start at the
-     * index 1, index 0 returns a the full name of the main class.
+     * format but not specified at commandline. Arguments start at the index 1,
+     * index 0 returns a the full name of the main class.
      * 
      * @param i
      * @return
@@ -384,11 +384,10 @@ public class Arguments {
         }
         return obj;
     }
-    
+
     /**
-     * The full call string of the program, including the classpath 
-     * and working directory.
-     * TODO: parameterless options are printed with boolean value...
+     * The full call string of the program, including the classpath and working
+     * directory. TODO: parameterless options are printed with boolean value...
      * 
      * @param format true to format lines.
      * @return
@@ -397,8 +396,10 @@ public class Arguments {
         String linesep = format ? "\n\t" : "";
         StringBuffer path = new StringBuffer(System.getProperty("user.dir"));
         String classpath = System.getProperty("java.class.path");
-        path.append(File.separatorChar + "java -cp "+ linesep); 
-        path.append(classpath.replaceAll(File.pathSeparator, File.pathSeparator + linesep) + linesep);
+        path.append(File.separatorChar + "java -cp " + linesep);
+        path.append(classpath.replaceAll(File.pathSeparator, File.pathSeparator
+            + linesep)
+            + linesep);
         path.append(linesep).append(" ");
         path.append(Which.main());
         path.append(linesep).append(" ");
@@ -416,7 +417,6 @@ public class Arguments {
         }
         return path.toString();
     }
-
 
     /**
      * Same as getArgument, but returns a default value if optional argument is
@@ -439,20 +439,20 @@ public class Arguments {
      * the getOption and getArgument methods afterwards. Further, if option -?
      * is not specified in the format string, the help string (accessible via
      * toString()) is output to stdout and System.exit(0) called. The same works
-     * for -stdout and a file where the output is sent to, -stderr, -stdouterr, 
-     * and -stdin work accordingly. Stream redirection must be explicitly enabled
-     * by calling redirect(true) and, at the end of the program, to call
+     * for -stdout and a file where the output is sent to, -stderr, -stdouterr,
+     * and -stdin work accordingly. Stream redirection must be explicitly
+     * enabled by calling redirect(true) and, at the end of the program, to call
      * the close() method. By default, streams are duplicated to stdout / stderr
      * to allow monitoring, disable stream duplication by calling tee(false).
      * <p>
-     * Another important possibility is the option -$, which allows to set a variable
-     * that can be used afterwards in the option and argument values by using $@.
-     * Enable this using the variable(true);
+     * Another important possibility is the option -$, which allows to set a
+     * variable that can be used afterwards in the option and argument values by
+     * using $@. Enable this using the variable(true);
      * 
-     * @param args
-     *            the argument string, typically directly that of a main method.
-     * @throws IllegalArgumentException
-     *             if the commandline arguments do not match the given format.
+     * @param args the argument string, typically directly that of a main
+     *        method.
+     * @throws IllegalArgumentException if the commandline arguments do not
+     *         match the given format.
      */
     public void parse(String[] args) throws IllegalArgumentException {
         int nargs = 0;
@@ -479,7 +479,7 @@ public class Arguments {
                 nargs++;
             }
             if (nargs > 0)
-                continue;            
+                continue;
             String voption = getVOption(option);
             if (voption == null) {
                 if (option.equals("?")) {
@@ -491,11 +491,12 @@ public class Arguments {
                     try {
                         BufferedOutputStream bos = new BufferedOutputStream(
                             new FileOutputStream(replaceVariable(outfile)));
-                        stdout = tee ? new TeeStream(bos, System.out) : new PrintStream(bos, true);
+                        stdout = tee ? new TeeStream(bos, System.out)
+                            : new PrintStream(bos, true);
                         System.setOut(stdout);
                     } catch (Exception e) {
-                        throw new IllegalArgumentException("Unable to redirect stdout to "
-                            + outfile);
+                        throw new IllegalArgumentException(
+                            "Unable to redirect stdout to " + outfile);
                     }
                     continue;
                 } else if (option.equals("stderr") && redirect) {
@@ -504,11 +505,12 @@ public class Arguments {
                     try {
                         BufferedOutputStream bos = new BufferedOutputStream(
                             new FileOutputStream(replaceVariable(outfile)));
-                        stderr = tee ? new TeeStream(bos, System.out) : new PrintStream(bos);
+                        stderr = tee ? new TeeStream(bos, System.out)
+                            : new PrintStream(bos);
                         System.setErr(stderr);
                     } catch (Exception e) {
-                        throw new IllegalArgumentException("Unable to redirect stderr to "
-                            + outfile);
+                        throw new IllegalArgumentException(
+                            "Unable to redirect stderr to " + outfile);
                     }
                     continue;
                 } else if (option.equals("stdouterr") && redirect) {
@@ -517,16 +519,18 @@ public class Arguments {
                     try {
                         BufferedOutputStream bos = new BufferedOutputStream(
                             new FileOutputStream(replaceVariable(outfile)));
-                        stdout = tee ? new TeeStream(bos, System.out) : new PrintStream(bos);
+                        stdout = tee ? new TeeStream(bos, System.out)
+                            : new PrintStream(bos);
                         System.setOut(stdout);
                         System.setErr(stdout);
                     } catch (Exception e) {
-                        throw new IllegalArgumentException("Unable to redirect stderr to "
-                            + outfile);
+                        throw new IllegalArgumentException(
+                            "Unable to redirect stderr to " + outfile);
                     }
                     continue;
                 } else if (option.equals("stdin") && redirect) {
-                    System.out.println("Stdin redirection not implemented yet.");
+                    System.out
+                        .println("Stdin redirection not implemented yet.");
                     i++;
                     continue;
                 } else if (option.equals("$") && allowVariable) {
@@ -581,9 +585,10 @@ public class Arguments {
         if (allowVariable && value != null) {
             int rep = value.indexOf("$@");
             if (rep != -1) {
-                value = value.substring(0, rep) + variable + value.substring(rep + 2);
+                value = value.substring(0, rep) + variable
+                    + value.substring(rep + 2);
             }
-            
+
         }
         return value;
     }
@@ -597,17 +602,17 @@ public class Arguments {
     private String getVOption(String option) {
         Character c = optionTypes.get(option);
 
-        if (c != null) 
+        if (c != null)
             return option;
 
         String voption = synonyms.get(option);
-        if (voption == null) 
+        if (voption == null)
             return null;
-        
+
         c = optionTypes.get(voption);
-        if (c != null) 
+        if (c != null)
             return voption;
-            
+
         return null;
     }
 
@@ -657,7 +662,7 @@ public class Arguments {
             sb.append(helptext).append("\n\n");
         }
         sb.append(Which.main());
-        //if (optionTypes.size() > 0)
+        // if (optionTypes.size() > 0)
         sb.append(" <options>");
         if (minArgs > 0)
             sb.append(" <required arguments>");
@@ -665,7 +670,7 @@ public class Arguments {
             sb.append(" <optional arguments>");
         sb.append("\n");
         int maxOption = 8;
-        
+
         sb.append("\nOptions:\n");
         for (String a : optionTypes.keySet()) {
             String syn = synonyms.get(a);
@@ -684,7 +689,7 @@ public class Arguments {
             sb.append("\n");
 
         }
-        if (allowVariable ) {
+        if (allowVariable) {
             sb.append("  ").append("-$");
             spacePad(sb, maxOption);
             sb.append("string    # a variable that farther right replaces $@");
@@ -696,7 +701,7 @@ public class Arguments {
             sb.append("(void)    # this synopsis");
             sb.append("\n");
         }
-        
+
         if (redirect) {
             sb.append("  ").append("-stdout");
             spacePad(sb, maxOption);
@@ -711,7 +716,7 @@ public class Arguments {
             sb.append("filename  # redirect stdout + stderr");
             sb.append("\n");
         }
-        
+
         if (minArgs > 0)
             sb.append("\nRequired arguments:\n");
         else
@@ -788,7 +793,7 @@ public class Arguments {
      * @param b
      */
     public void debug(boolean b) {
-        
+
         debug = b;
     }
 
@@ -796,18 +801,18 @@ public class Arguments {
      * @param string
      */
     public void help(String string) {
-        
+
         helptext = string;
     }
-    
+
     /**
      * This method must be called if output redirection is used.
      */
     public void close() {
-        if (stdout != null) {
+        if (stdout != null && stdout != System.out) {
             stdout.close();
         }
-        if (stderr != null) {
+        if (stderr != null && stderr != System.err) {
             stderr.close();
         }
     }
@@ -818,7 +823,7 @@ public class Arguments {
      * @param b
      */
     public void redirect(boolean b) {
-        
+
         redirect = b;
     }
 
@@ -828,7 +833,7 @@ public class Arguments {
      * @param b
      */
     public void variable(boolean b) {
-        
+
         allowVariable = b;
     }
 
@@ -838,7 +843,7 @@ public class Arguments {
      * @param b
      */
     public void tee(boolean b) {
-        
+
         tee = b;
     }
 
