@@ -1,6 +1,3 @@
-/*
- * Created on 01.05.2006
- */
 package org.knowceans.map;
 
 import java.util.ArrayList;

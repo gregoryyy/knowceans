@@ -61,19 +61,6 @@ public class WeblogAnalyzer {
     //	private String namePattern = ".*\\.log";
 
     private static int count = 0;
-    /* 
-     * start=0, end=261
-     * Group(0) = dhcp-153-96-112-2.ist.fhg.de - - [31/Oct/2003:10:55:21 1000] "\n
-     * GET /xsearch?cmd=search&query=a-C%3AH-Schichten HTTP/1.0" 200 5933 \n
-     * "http://fhgxpert.igd.fhg.de/xsearch?cmd=search&query=a-C%3AH-Schicht" \n
-     * "Mozilla/4.0 (compatible; MSIE 5.01; Windows NT 5.0; T312461)"
-     * Group(1) = dhcp-153-96-112-2.ist.fhg.de
-     * Group(2) = 31/Oct/2003:10:55:21
-     * Group(3) = /xsearch?cmd=search&query
-     * Group(4) = a-C%3AH-Schichten
-     * Group(5) =  MSIE 5.01
-     * Group(6) =  Windows NT 5.0
-     */
 
     /**
      * keeps the pattern of a log line.

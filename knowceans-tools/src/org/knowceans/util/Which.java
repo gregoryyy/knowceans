@@ -22,7 +22,6 @@ public class Which {
         }
     }
 
-    
     public static void main(String[] args) {
         run();
     }
@@ -199,5 +198,15 @@ public class Which {
         s = resolveAnonymous(t, s);
         return s;
     }
-}
 
+    /**
+     * get the memory currently used as a double (in megabytes) rounded to two
+     * decimal digits.
+     * 
+     * @return
+     */
+    public static double usedMemory() {
+        return Math.round((Runtime.getRuntime().totalMemory() - Runtime
+            .getRuntime().freeMemory()) / 10.24 / 1024.) / 100.;
+    }
+}
