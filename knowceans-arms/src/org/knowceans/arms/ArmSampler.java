@@ -74,6 +74,11 @@ public abstract class ArmSampler {
 
     Object params;
 
+    /**
+     * dereference for ported c pointers
+     */
+    public static final int DEREF = 0;
+
     /** a point in the x,y plane */
     class Point {
         /** x and y coordinates */
@@ -162,13 +167,14 @@ public abstract class ArmSampler {
          * set up starting values
          */
         for (i = 0; i < ninit; i++) {
-            xinit[i] = xl[0] + (i + 1.0) * (xr[0] - xl[0]) / (ninit + 1.0);
+            xinit[i] = xl[DEREF] + (i + 1.0) * (xr[DEREF] - xl[DEREF])
+                / (ninit + 1.0);
         }
 
         arms(params, xinit, ninit, xl, xr, convex, npoint, dometrop, xprev,
             xsamp, nsamp, qcent, xcent, ncent, neval);
 
-        return xsamp[0];
+        return xsamp[DEREF];
     }
 
     /**
@@ -234,18 +240,19 @@ public abstract class ArmSampler {
         /*
          * set up initial envelope
          */
-        initial(xinit, ninit, xl[0], xr[0], npoint, env, convex, neval, metrop);
+        initial(xinit, ninit, xl[DEREF], xr[DEREF], npoint, env, convex, neval,
+            metrop);
         /*
          * finish setting up metropolis struct (can only do this after setting
          * up env)
          */
         if (metrop.on) {
-            if ((xprev[0] < xl[0]) || (xprev[0] > xr[0])) {
+            if ((xprev[DEREF] < xl[DEREF]) || (xprev[DEREF] > xr[DEREF])) {
                 throw new Exception(
                     "previous markov chain iterate out of range");
             }
-            metrop.xprev = xprev[0];
-            metrop.yprev = perfunc(env, xprev[0]);
+            metrop.xprev = xprev[DEREF];
+            metrop.yprev = perfunc(env, xprev[DEREF]);
         }
 
         /*
@@ -311,7 +318,7 @@ public abstract class ArmSampler {
             throw new Exception("too many initial points");
         }
 
-        if ((xinit[0] <= xl) || (xinit[ninit - 1] >= xr)) {
+        if ((xinit[DEREF] <= xl) || (xinit[ninit - 1] >= xr)) {
             throw new Exception("initial points do not satisfy bounds ");
         }
 
@@ -322,7 +329,7 @@ public abstract class ArmSampler {
             }
         }
 
-        if (convex[0] < 0.0) {
+        if (convex[DEREF] < 0.0) {
             throw new Exception("negative convexity parameter");
         }
 
@@ -338,7 +345,7 @@ public abstract class ArmSampler {
         /*
          * initialise current number of function evaluations
          */
-        env.neval[0] = 0;
+        env.neval[DEREF] = 0;
 
         /*
          * set up space for envelope POINTs
@@ -354,11 +361,11 @@ public abstract class ArmSampler {
         /*
          * left bound
          */
-        q[0] = new Point();
-        q[0].x = xl;
-        q[0].f = 0;
-        q[0].pl = null;
-        q[0].pr = q[1];
+        q[DEREF] = new Point();
+        q[DEREF].x = xl;
+        q[DEREF].f = 0;
+        q[DEREF].pl = null;
+        q[DEREF].pr = q[1];
         for (j = 1, k = 0; j < mpoint - 1; j++) {
             q[j] = new Point();
             if ((j % 2) != 0) {
@@ -446,7 +453,7 @@ public abstract class ArmSampler {
         /*
          * find rightmost point in envelope
          */
-        q = env.p[0];
+        q = env.p[DEREF];
         while (q.pr != null)
             q = q.pr;
 
@@ -605,7 +612,7 @@ public abstract class ArmSampler {
         /*
          * find envelope piece containing metrop.xprev
          */
-        ql = env.p[0];
+        ql = env.p[DEREF];
         while (ql.pl != null)
             ql = ql.pl;
         while (ql.pr.x < metrop.xprev)
@@ -776,7 +783,7 @@ public abstract class ArmSampler {
     void cumulate(Envelope env) throws Exception {
         Point q, qlmost;
 
-        qlmost = env.p[0];
+        qlmost = env.p[DEREF];
         /*
          * find left end of envelope
          */
@@ -871,12 +878,13 @@ public abstract class ArmSampler {
              * convexity on left exceeds current threshold
              */
             if (!(metrop.on)) {
-                throw new Exception("envelope violation without metropolis ");
+                throw new Exception(
+                    "convex on left: envelope violation without metropolis ");
             }
             /*
              * adjust left gradient
              */
-            gl = gl + (1.0 + env.convex[0]) * (grl - gl);
+            gl = gl + (1.0 + env.convex[DEREF]) * (grl - gl);
         }
 
         if ((irl != 0) && (ir != 0) && (gr > grl)) {
@@ -884,12 +892,13 @@ public abstract class ArmSampler {
              * convexity on right exceeds current threshold
              */
             if (!(metrop.on)) {
-                throw new Exception("envelope violation without metropolis ");
+                throw new Exception(
+                    "convex on right: envelope violation without metropolis ");
             }
             /*
              * adjust right gradient
              */
-            gr = gr + (1.0 + env.convex[0]) * (grl - gr);
+            gr = gr + (1.0 + env.convex[DEREF]) * (grl - gr);
         }
 
         if ((il != 0) && (irl != 0)) {
@@ -1025,7 +1034,7 @@ public abstract class ArmSampler {
         /*
          * increment count of function evaluations
          */
-        env.neval[0]++;
+        env.neval[DEREF]++;
 
         return y;
     }

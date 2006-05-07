@@ -24,6 +24,7 @@
 package org.knowceans.arms;
 
 import org.knowceans.util.Densities;
+import org.knowceans.util.Histogram;
 
 public class GammaArms extends ArmSampler {
 
@@ -43,12 +44,19 @@ public class GammaArms extends ArmSampler {
         GammaArms gars = new GammaArms();
         double[] xprev = new double[] {0.3};
         double[] params = new double[] {40.0, 30.0};
-        try {
-            double sample = gars.armsSimple(params, 4, new double[] {0.2},
-                new double[] {8000.}, true, xprev);
-            System.out.println(sample);
-        } catch (Exception e) {
-            e.printStackTrace();
+
+        int nsamp = 1000;
+        double[] samples = new double[nsamp];
+        for (int i = 0; i < nsamp; i++) {
+            try {
+                samples[i] = gars.armsSimple(params, 4, new double[] {0.2},
+                    new double[] {8000.}, true, xprev);
+                System.out.println(samples[i]);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
+        Histogram.hist(System.out, samples, 100);
+        
     }
 }

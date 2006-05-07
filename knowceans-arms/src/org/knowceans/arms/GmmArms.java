@@ -29,6 +29,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 
 import org.knowceans.util.Densities;
+import org.knowceans.util.Histogram;
 
 /**
  * GmmArms simulates a normal mixture. This reimplements the ARMS example 02.
@@ -86,11 +87,15 @@ public class GmmArms extends ArmSampler {
             double[] mean = new double[] {5., 10.};
             double[] sigma = new double[] {1., 2.5};
             double[] prob = new double[] {.3, .7};
+            int totsamp = 100000;
+            double[] samples = new double[totsamp];
+            double[] sample = new double[1]; 
 
-            for (i = 0; i < 10000; i++) {
-                ga.arms(new double[][] {mean, sigma, prob}, xinit, ninit, xl,
+            for (i = 0; i < totsamp; i++) {
+                sample = ga.arms(new double[][] {mean, sigma, prob}, xinit, ninit, xl,
                     xr, convex, npoint, dometrop, xprev, xsamp, nsamp, qcent,
                     xcent, ncent, neval);
+                samples[i] = sample[0];
 
                 bw.write(i + " " + xsamp[0] + "  " + neval[0] + "\n");
 
@@ -99,8 +104,10 @@ public class GmmArms extends ArmSampler {
                  */
                 xprev[0] = xsamp[0];
             }
-
             bw.close();
+            Histogram.hist(System.out, samples, 100);            
+            
+            
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         } catch (IOException e) {
