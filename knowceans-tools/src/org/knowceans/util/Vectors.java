@@ -28,7 +28,6 @@ public class Vectors {
 
     public static int ndigits = 0;
     public static int colwidth = 0;
-    
 
     /**
      * @param start
@@ -95,6 +94,20 @@ public class Vectors {
         }
         return sum;
 
+    }
+
+    /**
+     * sum the elements of vec
+     * 
+     * @param vec
+     * @return
+     */
+    public static int sum(int vec[]) {
+        int sum = 0;
+        for (int i = 0; i < vec.length; i++)
+            sum += vec[i];
+
+        return sum;
     }
 
     /**
@@ -490,7 +503,6 @@ public class Vectors {
         b.append(print(x[x.length - 1]));
         return b.toString();
     }
-    
 
     /**
      * prints a double representation of the vector.

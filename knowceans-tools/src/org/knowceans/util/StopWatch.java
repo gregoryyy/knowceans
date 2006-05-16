@@ -62,8 +62,13 @@ public class StopWatch {
      */
     private Vector<Long> laps = null;
 
+    // /**
+    // * TODO: Named events for this stop watch.
+    // */
+    // private Hashtable<String, Long> events = null;
+
     /**
-     * Stopping relative time relative to starting time
+     * Stopping time relative to starting time
      */
     private long tstop = INVALID;
 
@@ -101,7 +106,8 @@ public class StopWatch {
      * updated.
      * 
      * @param watch string identifier for that watch.
-     * @return current time used as reference for the watch.
+     * @return current starting time, which is 0 if started the first time and
+     *         the value of tstop if continued.
      */
     public static synchronized long start(String watch) {
 
@@ -111,14 +117,19 @@ public class StopWatch {
         }
         w.running = true;
         long t = time();
+        long toldstart = w.tstart;
         w.tstart = t;
         w.tlapstart = t;
-        // subtract paused interval
-        if (w.tstop > 0) {
-            w.tpaused += t - w.tstop;
-        }
         watches.put(watch, w);
-        return t;
+
+        // subtract paused interval if any
+        if (w.tstop > 0) {
+            w.tpaused += t - toldstart + w.tstop;
+            return w.tstop;
+        }
+        return 0;
+        // old version: return absolute starting instant
+        // return t;
     }
 
     /**

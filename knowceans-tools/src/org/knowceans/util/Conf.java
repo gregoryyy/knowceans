@@ -36,30 +36,30 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Reads configuration information from a properties file.
- * Implemented as singleton. The default location of this
- * file is ./conf.properties, however, this can be changed
- * if the system property conf.properties.file is
- * set at startup: java -Dknowceans.properties.file=somewhere.prop
- * e.g., -Dknowceans.properties.file=d:\eclipse\workspace\indexer.properties
+ * Reads configuration information from a properties file. Implemented as
+ * singleton. The default location of this file is ./conf.properties, however,
+ * this can be changed if the system property conf.properties.file is set at
+ * startup: java -Dknowceans.properties.file=somewhere.prop e.g.,
+ * -Dknowceans.properties.file=d:\eclipse\workspace\indexer.properties
  * <p>
- * Also, the possibility to define a base path is provided in the
- * properties file itself (property xpt.indexer.basepath) or in the 
- * basepath field of this class. To make properties dependent on
- * the basepath, set the relative path statement ./path to @/path .
- * <p>
- * This version allows the definition of variables that can be expanded at readtime:
- * @{x1} in values will be expanded according to the respective property @x1=val. 
- * The user MUST avoid circular references.
- * <p>
- * Re-packaging of Conf by knowceans.org.
+ * Also, the possibility to define a base path is provided in the properties
+ * file itself (property xpt.indexer.basepath) or in the basepath field of this
+ * class. To make properties dependent on the basepath, set the relative path
+ * statement ./path to
  * 
+ * @/path .
+ *        <p>
+ *        This version allows the definition of variables that can be expanded
+ *        at readtime:
+ * @{x1} in values will be expanded according to the respective property
+ * @x1=val. The user MUST avoid circular references.
+ *          <p>
+ *          Re-packaging of Conf by knowceans.org.
  * @author heinrich
- *
  */
 public class Conf extends Properties {
 
-	/**
+    /**
      * Comment for <code>serialVersionUID</code>
      */
     private static final long serialVersionUID = 3256728368379344693L;
@@ -67,99 +67,133 @@ public class Conf extends Properties {
      * Comment for <code>serialVersionUID</code>
      */
     protected static Conf instance;
-	protected static String propFile = "knowceans.properties";
-	protected static String basePath = ".";
-	Pattern varPattern;
-	/**
-	 * get the instance of the singleton object
-	 * @return
-	 */
-	public static Conf get() {
+    protected static String propFile = "knowceans.properties";
+    protected static String basePath = ".";
+    Pattern varPattern;
 
-		if (instance == null)
-			instance = new Conf();
+    /**
+     * get the instance of the singleton object
+     * 
+     * @return
+     */
+    public static Conf get() {
 
-		return instance;
-	}
+        if (instance == null)
+            instance = new Conf();
 
-	/**
-	 * get the named property from the singleton object
-	 * @return
-	 */
-	public static String get(String key) {
-		String p = Conf.get().getProperty(key);
-		if (p != null) {
-			p = instance.resolveVariables(p);
-		}
-		return p;
-	}
+        return instance;
+    }
 
-	protected Conf() {
+    /**
+     * get the named property from the singleton object
+     * 
+     * @return
+     */
+    public static String get(String key) {
+        String p = Conf.get().getProperty(key);
+        if (p != null) {
+            p = instance.resolveVariables(p);
+        }
+        return p;
+    }
 
-		super();
-		System.out.println(System.getProperty("user.dir"));
-		String temp = System.getProperty("knowceans.properties.file");
-		if (temp != null)
-			propFile = temp;
-		try {
-			load(new FileInputStream(propFile));
-			varPattern = Pattern.compile("(\\@\\{([^\\}]+)\\})+");
-		} catch (FileNotFoundException e) {
-			System.out.println("no properties file found.");
-			e.printStackTrace();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-	}
+    /**
+     * get a numeric value.
+     * 
+     * @param key
+     * @return
+     */
+    public static double getDouble(String key) {
+        String a = get(key);
+        return Double.parseDouble(a);
+    }
+    
+    public static float getFloat(String key) {
+        return (float) getDouble(key);
+    }
+    
+    /**
+     * get a numeric value.
+     * 
+     * @param key
+     * @return
+     */
+    public static long getLong(String key) {
+        String a = get(key);
+        return Long.parseLong(a);
+    }
+    
+    public static int getInt(String key) {
+        return (int) getLong(key);
+    }
 
-	/** 
-	 * Resolves all variables of the argument string using the respective
-	 * properties. The method works recursively, so dependent variables are resolved.
-	 * 
-	 * @param p
-	 * @return
-	 */
-	private synchronized String resolveVariables(String line) {
-		StringBuffer sb = new StringBuffer();
-		Matcher m = varPattern.matcher(line);
-		while (m.find()) {
-			String a = m.group(2);
-			String x = get("@".concat(a));
-			if (x != null)
-				m = m.appendReplacement(sb, x);
-		}
-		sb = m.appendTail(sb);
-		if (sb.toString() == "")
-			return line;
-		return sb.toString();
+    protected Conf() {
 
-	}
+        super();
+        System.out.println(System.getProperty("user.dir"));
+        String temp = System.getProperty("knowceans.properties.file");
+        if (temp != null)
+            propFile = temp;
+        try {
+            load(new FileInputStream(propFile));
+            varPattern = Pattern.compile("(\\@\\{([^\\}]+)\\})+");
+        } catch (FileNotFoundException e) {
+            System.out.println("no properties file found.");
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
 
-	/**
-	 * @return
-	 */
-	public static String getBasePath() {
-		return basePath;
-	}
+    /**
+     * Resolves all variables of the argument string using the respective
+     * properties. The method works recursively, so dependent variables are
+     * resolved.
+     * 
+     * @param p
+     * @return
+     */
+    private synchronized String resolveVariables(String line) {
+        StringBuffer sb = new StringBuffer();
+        Matcher m = varPattern.matcher(line);
+        while (m.find()) {
+            String a = m.group(2);
+            String x = get("@".concat(a));
+            if (x != null)
+                m = m.appendReplacement(sb, x);
+        }
+        sb = m.appendTail(sb);
+        if (sb.toString() == "")
+            return line;
+        return sb.toString();
 
-	/**
-	 * @return
-	 */
-	public static String getPropFile() {
-		return propFile;
-	}
+    }
 
-	/**
-	 * @param string
-	 */
-	public static void setBasePath(String string) {
-		basePath = string;
-	}
+    /**
+     * @return
+     */
+    public static String getBasePath() {
+        return basePath;
+    }
 
-	/**
-	 * @param string
-	 */
-	public static void setPropFile(String string) {
-		propFile = string;
-	}
+    /**
+     * @return
+     */
+    public static String getPropFile() {
+        return propFile;
+    }
+
+    /**
+     * @param string
+     */
+    public static void setBasePath(String string) {
+        basePath = string;
+    }
+
+    /**
+     * @param string
+     */
+    public static void setPropFile(String string) {
+        propFile = string;
+    }
 }

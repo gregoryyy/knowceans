@@ -102,7 +102,6 @@ public class InvertibleTreeMultiMap<X, Y> extends TreeMultiMap<X, Y>
         inverse = new HashMultiMap<Y, X>();
     }
 
-
     /**
      * @param inverse allow to set an inverse map that could be a tree map with
      *        its own comparator.
@@ -113,7 +112,6 @@ public class InvertibleTreeMultiMap<X, Y> extends TreeMultiMap<X, Y>
         this.inverse = inverse;
     }
 
-    
     /**
      * adds the value to the key's value set and the key to the value's key set.
      */
@@ -158,12 +156,17 @@ public class InvertibleTreeMultiMap<X, Y> extends TreeMultiMap<X, Y>
      * removes the (forward) key and its elements from it value set from the map
      * that map to key.
      */
-    public Set<Y> remove(X key) {
+    @SuppressWarnings("unchecked")
+    public Set<Y> remove(Object key) {
+        // when subclassing, this results in a name clash because Map.remove
+        // uses Object as key type.
+        // public Set<Y> remove(K key) {
+        X xkey = (X) key;
         // Remove the inverse mapping and return the value mapped by key.
         Set<Y> val = super.remove(key);
         // Update the reverse map. oldVal no longer maps to key.
         for (Y el : val) {
-            inverse.remove(el, key);
+            inverse.remove(el, xkey);
             Set<X> inv = inverse.get(el);
             if (inv != null && inv.size() == 0)
                 inverse.remove(el);
