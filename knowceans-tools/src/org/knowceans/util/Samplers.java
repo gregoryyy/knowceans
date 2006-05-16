@@ -13,6 +13,7 @@ package org.knowceans.util;
 
 import java.util.Arrays;
 
+
 /**
  * Diverse sampling methods, including beta, gamma, multinomial, and Dirichlet
  * distributions as well as Dirichlet processes, using Sethurahman's
@@ -25,11 +26,11 @@ import java.util.Arrays;
  */
 public class Samplers {
 
-    private static boolean haveNextNextGaussian = false;
+    protected static boolean haveNextNextGaussian = false;
 
-    private static double nextNextGaussian;
+    protected static double nextNextGaussian;
 
-    static double drand48() {
+    protected static double drand48() {
         return Cokus.randDouble();
     }
 
@@ -41,9 +42,12 @@ public class Samplers {
      * @return
      */
     public static double randNorm(double mu, double sigma) {
+
+        // Random r = new Random();
+        // return r.nextGaussian() * sigma + mu;
         if (haveNextNextGaussian) {
             haveNextNextGaussian = false;
-            return nextNextGaussian;
+            return nextNextGaussian * sigma + mu;
         } else {
             double v1, v2, s;
             do {
@@ -92,6 +96,31 @@ public class Samplers {
             x[i] = randNorm(mean[c], sigma[c]);
         }
         return x;
+        // double[] x = new double[n];
+        // int k = probs.length;
+        // // init random number generator
+        // Random r = new Random();
+        //
+        // // multinomial cdf for probs
+        // double[] cumprobs = new double[k];
+        // cumprobs[0] = probs[0];
+        // for (int i = 1; i < k; i++) {
+        // cumprobs[i] = cumprobs[i - 1] + probs[i];
+        // }
+        //
+        // for (int i = 0; i < n; i++) {
+        //
+        // // multinomial index sampling
+        // double s = r.nextDouble();
+        // int c = 0;
+        // for (c = 0; c < k; c++) {
+        // if (s < cumprobs[c])
+        // break;
+        // }
+        // // normal component sampling
+        // x[i] = r.nextGaussian() * sigma[c] + mean[c];
+        // }
+        // return x;
     }
 
     /**
@@ -203,7 +232,7 @@ public class Samplers {
     public static double randGamma(double shape, double scale) {
         return randGamma(shape) * scale;
     }
-    
+
     /**
      * Random permutation of size elements (symbols '0'.. '[size-1]'). This
      * works a bit like sampling without replacement or a factorial.
@@ -454,7 +483,6 @@ public class Samplers {
             int mid = (low + high) >> 1;
             double midVal = a[mid];
 
-            int cmp;
             if (midVal < p) {
                 low = mid + 1;
             } else if (midVal > p) {
@@ -465,7 +493,38 @@ public class Samplers {
                 return mid;
             }
         }
-        return a.length; // key not found.
+        // out of range.
+        return a.length;
+    }
+
+    /**
+     * draw a binomial sample (by counting Bernoulli samples).
+     * 
+     * @param N
+     * @param p
+     */
+    public static int randBinom(double N, double p) {
+        int n = 0;
+        for (int i = 0; i < N; i++) {
+            if (randBernoulli(p) == 1) {
+                n++;
+            }
+        }
+        return n;
+    }
+
+    /**
+     * draw a Bernoulli sample.
+     * 
+     * @param p success probability
+     * @return 1 if sucessful, 0 otherwise
+     */
+    public static int randBernoulli(double p) {
+        double a = Cokus.randDouble();
+        if (a < p) {
+            return 1;
+        }
+        return 0;
     }
 
     /**
@@ -741,24 +800,24 @@ public class Samplers {
     /**
      * TODO: MAXSTIRLING should be made variable
      */
-    private static int MAXSTIRLING = 40;
+    protected static int MAXSTIRLING = 40;
 
     /**
      * maximum stirling number in allss
      */
-    static int maxnn = 1;
+    protected static int maxnn = 1;
 
     /**
      * contains all stirling number iteratively calculated so far
      */
-    static double[][] allss = new double[MAXSTIRLING][];
+    protected static double[][] allss = new double[MAXSTIRLING][];
 
     /**
      * 
      */
-    static double[] logmaxss = new double[MAXSTIRLING];
+    protected static double[] logmaxss = new double[MAXSTIRLING];
 
-    static double lmss = 0;
+    protected static double lmss = 0;
 
     /**
      * [ss lmss] = stirling(nn) Gives unsigned Stirling numbers of the first
@@ -804,9 +863,9 @@ public class Samplers {
      * @return
      */
     public static double randUniform(double numvalue) {
-        return Math.floor(drand48() * numvalue);
+        return drand48() * numvalue;
     }
-    
+
     /**
      * @param numclass
      * @return
@@ -814,5 +873,5 @@ public class Samplers {
     public static int randUniform(int numvalue) {
         return (int) Math.floor(drand48() * numvalue);
     }
-    
+
 }
