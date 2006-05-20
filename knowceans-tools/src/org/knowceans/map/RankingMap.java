@@ -13,6 +13,7 @@ import java.util.SortedMap;
 import java.util.Map.Entry;
 
 import org.knowceans.util.Cokus;
+import org.knowceans.util.TableList;
 
 /**
  * RankingMap allows sorting of two lists of items simultaneously.
@@ -75,7 +76,7 @@ public class RankingMap<K, V> extends InvertibleTreeMultiMap<K, V> {
         System.out.println("Imagine these were scores:");
         RankingMap<Double, Integer> r = new RankingMap<Double, Integer>(
             Collections.reverseOrder());
-        r.put(convert(a), convert(b));
+        r.put(TableList.convert(a), TableList.convert(b));
         RankingMap<Double, Integer> s = r.headMap(0.8);
         System.out.println("Max 10 best scores above 0.8:");
         System.out.println(s.sortedKeys(10));
@@ -87,7 +88,7 @@ public class RankingMap<K, V> extends InvertibleTreeMultiMap<K, V> {
 
         System.out.println("Imagine these were distances:");
         r = new RankingMap<Double, Integer>();
-        r.put(convert(a), convert(b));
+        r.put(TableList.convert(a), TableList.convert(b));
         s = r.headMap(0.2);
         System.out.println("Max 10 least distances below 0.2:");
         System.out.println(s.sortedKeys(10));
@@ -273,62 +274,6 @@ public class RankingMap<K, V> extends InvertibleTreeMultiMap<K, V> {
         for (int i = 0; i < keys.size(); i++) {
             super.add(keys.get(i), values.get(i));
         }
-    }
-
-    /**
-     * convert from primitive to Object array
-     * 
-     * @param a
-     * @return
-     */
-    public static Double[] convert(double[] a) {
-        Double[] b = new Double[a.length];
-        for (int i = 0; i < b.length; i++) {
-            b[i] = a[i];
-        }
-        return b;
-    }
-
-    /**
-     * convert from primitive to Object array
-     * 
-     * @param a
-     * @return
-     */
-    public static Integer[] convert(int[] a) {
-        Integer[] b = new Integer[a.length];
-        for (int i = 0; i < b.length; i++) {
-            b[i] = a[i];
-        }
-        return b;
-    }
-
-    /**
-     * convert from Object to primitive array
-     * 
-     * @param a
-     * @return
-     */
-    public static double[] convert(Double[] a) {
-        double[] b = new double[a.length];
-        for (int i = 0; i < b.length; i++) {
-            b[i] = a[i];
-        }
-        return b;
-    }
-
-    /**
-     * convert from Object to primitive array
-     * 
-     * @param a
-     * @return
-     */
-    public static int[] convert(Integer[] a) {
-        int[] b = new int[a.length];
-        for (int i = 0; i < b.length; i++) {
-            b[i] = a[i];
-        }
-        return b;
     }
 
 }

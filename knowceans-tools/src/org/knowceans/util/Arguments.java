@@ -404,7 +404,7 @@ public class Arguments {
         path.append(Which.main());
         path.append(linesep).append(" ");
         for (String key : options.keySet()) {
-            String param = "";
+            // String param = "";
             // VerifyError...
             // if (optionTypes.get(key) != '0') {
             // param += options.get(key).toString();
@@ -456,16 +456,24 @@ public class Arguments {
      */
     public void parse(String[] args) throws IllegalArgumentException {
         int nargs = 0;
-        boolean needsparam = false;
+        // boolean needsparam = false;
         String option = "";
         for (int i = 0; i < args.length; i++) {
+            // allow more than one space between arguments
+            if (args[i].trim().equals(""))
+                continue;
             if (args[i].startsWith("-") && nargs == 0) {
                 option = args[i].substring(1, args[i].length());
             } else {
-                if (nargs > argTypes.length() - 1)
+                if (nargs > argTypes.length() - 1) {
+                    String argstring = "";
+                    for (String arg : args) {
+                        argstring += arg + " ";
+                    }
                     throw new IllegalArgumentException(
                         "Options do not comply with format. "
-                            + "Check option parameters.");
+                            + "Check option parameters:\n  " + argstring + "\n\n" + this.toString());
+                }
                 char type = argTypes.charAt(nargs);
                 if (allowVariable && variable != null) {
                     args[i] = replaceVariable(args[i]);

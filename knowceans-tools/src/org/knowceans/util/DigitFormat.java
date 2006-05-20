@@ -11,10 +11,12 @@ package org.knowceans.util;
 public class DigitFormat {
 
     public static void main(String[] args) {
-        System.out.println(DigitFormat.format( 100, 2));
+        System.out.println(DigitFormat.format(100, 2));
     }
 
     public static double format(double x, int ndigits) {
+        if (x == 0)
+            return 0;
         int magnitude = (int) (Math.log(x) / Math.log(10));
         double factor = Math.pow(10, ndigits - 1 - magnitude);
         double y = Math.round(x * factor) / factor;

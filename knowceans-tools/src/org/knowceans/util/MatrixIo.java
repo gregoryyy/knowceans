@@ -114,12 +114,9 @@ public class MatrixIo {
      */
     public static int[][] readIntMatrix(DataInputStream bw) throws IOException {
         int rows = bw.readInt();
-        int cols = bw.readInt();
-        int[][] matrix = new int[rows][cols];
+        int[][] matrix = new int[rows][];
         for (int i = 0; i < rows; i++) {
-            for (int j = 0; j < cols; j++) {
-                matrix[i][j] = bw.readInt();
-            }
+            matrix[i] = readIntVector(bw);
         }
         return matrix;
     }
@@ -152,12 +149,9 @@ public class MatrixIo {
     public static double[][] readDoubleMatrix(DataInputStream bw)
         throws IOException {
         int rows = bw.readInt();
-        int cols = bw.readInt();
-        double[][] matrix = new double[rows][cols];
+        double[][] matrix = new double[rows][];
         for (int i = 0; i < rows; i++) {
-            for (int j = 0; j < cols; j++) {
-                matrix[i][j] = bw.readDouble();
-            }
+            matrix[i] = readDoubleVector(bw);
         }
         return matrix;
     }
@@ -189,12 +183,9 @@ public class MatrixIo {
     public static float[][] readFloatMatrix(DataInputStream bw)
         throws IOException {
         int rows = bw.readInt();
-        int cols = bw.readInt();
-        float[][] matrix = new float[rows][cols];
+        float[][] matrix = new float[rows][];
         for (int i = 0; i < rows; i++) {
-            for (int j = 0; j < cols; j++) {
-                matrix[i][j] = bw.readFloat();
-            }
+            matrix[i] = readFloatVector(bw);
         }
         return matrix;
     }
@@ -219,7 +210,9 @@ public class MatrixIo {
     // write methods
 
     /**
-     * Writes an integer matrix in the format rows,cols,a11,a12,a1...,a21,...
+     * Writes an integer matrix in the format
+     * rows,cols1,a11,a12,a1...,cols2,a21,... This way, matrices can be stored
+     * that have variable row lengths.
      * 
      * @param bw
      * @param matrix
@@ -228,11 +221,8 @@ public class MatrixIo {
     public static void writeIntMatrix(DataOutputStream bw, int[][] matrix)
         throws IOException {
         bw.writeInt(matrix.length);
-        bw.writeInt(matrix[0].length);
         for (int i = 0; i < matrix.length; i++) {
-            for (int j = 0; j < matrix[0].length; j++) {
-                bw.writeInt(matrix[i][j]);
-            }
+            writeIntVector(bw, matrix[i]);
         }
     }
 
@@ -252,7 +242,8 @@ public class MatrixIo {
     }
 
     /**
-     * Writes a double matrix in the format rows,cols,a11,a12,a1...,a21,...
+     * Writes a double matrix in the format
+     * rows,cols1,a11,a12,a1...,cols2,a21,...
      * 
      * @param bw
      * @param matrix
@@ -261,11 +252,8 @@ public class MatrixIo {
     public static void writeDoubleMatrix(DataOutputStream bw, double[][] matrix)
         throws IOException {
         bw.writeInt(matrix.length);
-        bw.writeInt(matrix[0].length);
         for (int i = 0; i < matrix.length; i++) {
-            for (int j = 0; j < matrix[0].length; j++) {
-                bw.writeDouble(matrix[i][j]);
-            }
+            writeDoubleVector(bw, matrix[0]);
         }
     }
 
@@ -294,11 +282,8 @@ public class MatrixIo {
     public static void writeFloatMatrix(DataOutputStream bw, float[][] matrix)
         throws IOException {
         bw.writeInt(matrix.length);
-        bw.writeInt(matrix[0].length);
         for (int i = 0; i < matrix.length; i++) {
-            for (int j = 0; j < matrix[0].length; j++) {
-                bw.writeFloat(matrix[i][j]);
-            }
+            writeFloatVector(bw, matrix[i]);
         }
     }
 

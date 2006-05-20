@@ -107,11 +107,11 @@ public class Conf extends Properties {
         String a = get(key);
         return Double.parseDouble(a);
     }
-    
+
     public static float getFloat(String key) {
         return (float) getDouble(key);
     }
-    
+
     /**
      * get a numeric value.
      * 
@@ -122,9 +122,23 @@ public class Conf extends Properties {
         String a = get(key);
         return Long.parseLong(a);
     }
-    
+
     public static int getInt(String key) {
         return (int) getLong(key);
+    }
+
+    /**
+     * get a boolean value: true and 1 are allowed for true, anything else for
+     * false
+     * 
+     * @param key
+     * @return
+     */
+    public static boolean getBoolean(String key) {
+        String a = get(key);
+        if (a.trim().equals("true") || a.trim().equals("1"))
+            return true;
+        return false;
     }
 
     protected Conf() {
@@ -138,7 +152,7 @@ public class Conf extends Properties {
             load(new FileInputStream(propFile));
             varPattern = Pattern.compile("(\\@\\{([^\\}]+)\\})+");
         } catch (FileNotFoundException e) {
-            System.out.println("no properties file found.");
+            System.out.println("no properties file found: " + propFile);
             e.printStackTrace();
         } catch (IOException e) {
             e.printStackTrace();
