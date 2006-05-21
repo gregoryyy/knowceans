@@ -475,7 +475,38 @@ public class Vectors {
         for (int i = 0; i < x.length - 1; i++) {
             b.append(format(x[i])).append(" ");
         }
-        b.append(format(x[x.length - 1]));
+        if (x.length > 0)
+            b.append(format(x[x.length - 1]));
+        return b.toString();
+    }
+
+    /**
+     * Print the array of objects via their toString() methods.
+     * 
+     * @param x
+     * @return
+     */
+    public static Object print(Object[] x) {
+        return print(x, " ");
+    }
+
+    /**
+     * Print the array of objects via their toString() methods, using the
+     * delimiter.
+     * 
+     * @param x
+     * @param delim
+     * @return
+     */
+    public static Object print(Object[] x, String delim) {
+        if (x == null)
+            return "null";
+        StringBuffer b = new StringBuffer();
+        for (int i = 0; i < x.length - 1; i++) {
+            b.append(x[i]).append(delim);
+        }
+        if (x.length > 0)
+            b.append(x[x.length - 1]);
         return b.toString();
     }
 
@@ -500,7 +531,8 @@ public class Vectors {
         for (int i = 0; i < x.length - 1; i++) {
             b.append(print(x[i])).append("\n");
         }
-        b.append(print(x[x.length - 1]));
+        if (x.length > 0)
+            b.append(print(x[x.length - 1]));
         return b.toString();
     }
 
@@ -517,7 +549,8 @@ public class Vectors {
         for (int i = 0; i < x.length - 1; i++) {
             b.append(x[i]).append(" ");
         }
-        b.append(x[x.length - 1]);
+        if (x.length > 0)
+            b.append(x[x.length - 1]);
         return b.toString();
     }
 
@@ -534,7 +567,8 @@ public class Vectors {
         for (int i = 0; i < x.length - 1; i++) {
             b.append(print(x[i])).append("\n");
         }
-        b.append(print(x[x.length - 1]));
+        if (x.length > 0)
+            b.append(print(x[x.length - 1]));
         return b.toString();
     }
 
@@ -825,4 +859,5 @@ public class Vectors {
         }
         return a;
     }
+
 }
