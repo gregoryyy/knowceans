@@ -4,7 +4,11 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+
+import org.knowceans.map.IMultiMap;
 
 /**
  * TableList handles parallel lists whose elements with same index can be
@@ -20,7 +24,8 @@ import java.util.List;
  * static Collections methods. To find rows of large lists, first sort and then
  * do binary search via the collections interface.
  * <p>
- * TODO: alternatively set of HashMaps with TreeMap views for sorting indices
+ * TODO: set of HashMaps with TreeMap views for indices TODO: implement binary
+ * search on a field
  * 
  * @author gregor
  */
@@ -30,47 +35,80 @@ public class TableList extends ArrayList<TableList.Fields> {
      * @param args
      */
     public static void main(String[] args) {
-        int[] a = Samplers.randPerm(1000);
-        double[] b = Samplers.randDir(0.1, 1000);
+        int size = (int) 1e3;
+        int[] a = Samplers.randPerm(size);
+        double[] b = Samplers.randDir(0.3, size);
         System.out.println(Which.usedMemory());
-        List<Integer> aa = Arrays.asList(TableList.convert(a));
-        List<Double> bb = Arrays.asList(TableList.convert(b));
+        List<Integer> aa = Arrays.asList((Integer[]) ArrayUtils.convert(a));
+        List<Double> bb = Arrays.asList((Double[]) ArrayUtils.convert(b));
         StopWatch.start();
-
+        System.out.println("fill list");
         TableList list = new TableList();
+
         list.addList("key", aa);
         list.addList("value", bb);
         list.addIndexList("index");
+        System.out.println(StopWatch.format(StopWatch.lap()));
 
-        System.out.println(list);
+        System.out.println(list.size());
 
+        System.out.println("sort by key");
         list.sort("key", false);
 
-        System.out.println(list);
-
-        list.sort("value", true);
-
-        System.out.println(list);
-
-        TableList list2 = list.getSubList(0, 3);
-
-        list2.sort("value", false);
-
-        System.out.println(list2);
-
-        TableList list3 = list.filter(
-            list.new FieldBetween("value", 0.001, 0.01, false)).sort("key",
-            false);
-
-        System.out.println(list3);
-
-        list3.addAll(list2);
-
-        list3.sort("index", false);
-
-        System.out.println(list3);
-
         System.out.println(StopWatch.format(StopWatch.lap()));
+        System.out.println(list.size());
+
+        System.out.println("sort by value");
+        list.sort("value", true);
+        System.out.println(StopWatch.format(StopWatch.lap()));
+        System.out.println(list.size());
+
+        System.out.println("sort by field 0");
+        Collections.sort(list);
+        System.out.println(StopWatch.format(StopWatch.lap()));
+        System.out.println(list.size());
+
+        System.out.println("get sublist and sort by value");
+        TableList list2 = list.getSubList(0, 5);
+        list2.sort("value", false);
+        System.out.println(StopWatch.format(StopWatch.lap()));
+        System.out.println(list2.size());
+        System.out.println(list2);
+        System.out.println("value array");
+        System.out.println(Vectors.print(list2.toArray("value"), " "));
+
+        double low = 1. / size * 0.8;
+        double high = 1. / size;
+        System.out.println("get filtered list in [" + low + ", " + high
+            + "], sorted by key");
+        TableList list3 = list.filter(
+            list.new FieldBetween("value", low, high, false))
+            .sort("key", false);
+        System.out.println(StopWatch.format(StopWatch.lap()));
+        System.out.println(list3.size());
+
+        System.out.println("merge filtered and sublist and sort by index");
+        list3.addAll(list2);
+        list3.sort("index", false);
+        System.out.println(StopWatch.format(StopWatch.lap()));
+        System.out.println(list3.size());
+
+        System.out.println("get map index->value");
+        HashMap m = new HashMap();
+        list3.getMap("index", "value", m);
+        System.out.println(StopWatch.format(StopWatch.lap()));
+        System.out
+            .println("compare list and map size (=check for unique key field)");
+        System.out.println(m.size() + " " + list3.size());
+
+        System.out.println("print value histogram of filtered and sublist");
+        double[] v3 = (double[]) ArrayUtils.convert(list3.toArray("value"));
+        System.out.println(StopWatch.format(StopWatch.lap()));
+        Histogram.hist(System.out, v3, 50);
+
+        System.out.println("total time");
+        System.out.println(StopWatch.format(StopWatch.stop()));
+        System.out.println("total memory");
         System.out.println(Which.usedMemory());
 
     }
@@ -114,7 +152,7 @@ public class TableList extends ArrayList<TableList.Fields> {
      * @author gregor
      */
     @SuppressWarnings("serial")
-    public class Fields extends ArrayList<Object> {
+    public class Fields extends ArrayList<Object> implements Comparable<Fields> {
         @SuppressWarnings("unchecked")
         public int compareTo(Fields rr) {
             Comparable c1 = (Comparable) get(0);
@@ -240,7 +278,7 @@ public class TableList extends ArrayList<TableList.Fields> {
      * 
      */
     private static final long serialVersionUID = 8611765516306513144L;
-    private List<String> fields = null;
+    private SetArrayList<String> fields = null;
 
     // constructors
 
@@ -249,7 +287,7 @@ public class TableList extends ArrayList<TableList.Fields> {
      */
     public TableList() {
         super();
-        fields = new ArrayList<String>();
+        fields = new SetArrayList<String>();
     }
 
     /**
@@ -290,7 +328,7 @@ public class TableList extends ArrayList<TableList.Fields> {
      */
     protected TableList(List<String> fields) {
         super();
-        this.fields = new ArrayList<String>(fields.size());
+        this.fields = new SetArrayList<String>(fields.size());
         this.fields.addAll(fields);
     }
 
@@ -298,7 +336,7 @@ public class TableList extends ArrayList<TableList.Fields> {
      * Initialise fields
      */
     private void init() {
-        fields = new ArrayList<String>();
+        fields = new SetArrayList<String>();
     }
 
     // methods
@@ -308,7 +346,7 @@ public class TableList extends ArrayList<TableList.Fields> {
      * 
      * @param a
      */
-    void addList(String key, List< ? extends Object> a) {
+    public void addList(String key, List< ? extends Object> a) {
         fields.add(key);
         if (size() == 0) {
             for (int i = 0; i < a.size(); i++) {
@@ -331,10 +369,93 @@ public class TableList extends ArrayList<TableList.Fields> {
      * 
      * @param key
      */
-    void addIndexList(String key) {
+    public void addIndexList(String key) {
         fields.add(key);
         for (int i = 0; i < size(); i++) {
             get(i).add(i);
+        }
+    }
+
+    /**
+     * Add the keys and values of the map to this table list, in the order that
+     * the map iterator provides. This method can only be used if the list is
+     * empty or if the size of the map is exactly the size of the list or the
+     * key and value field are exactly the same as the two only fields in the
+     * map, in which case the map is added to the end of the list.
+     * 
+     * @param keyfield name of the field for the keys
+     * @param valfield name of the field for the values.
+     * @param map
+     */
+    public void addMap(String keyfield, String valfield,
+        Map< ? extends Object, ? extends Object> map) {
+
+        if (size() == 0) {
+            // case 1: empty list --> add fields and map entries
+            fields.add(keyfield);
+            fields.add(valfield);
+            addMap(map);
+
+        } else if (size() == map.size()) {
+            // case 2: map and list are equal in column size
+            fields.add(keyfield);
+            fields.add(valfield);
+            int i = 0;
+            for (Map.Entry< ? extends Object, ? extends Object> e : map
+                .entrySet()) {
+                Fields ff = this.get(i);
+                ff.add(e.getKey());
+                ff.add(e.getValue());
+                this.add(ff);
+                i++;
+            }
+        } else if (fields.size() == 2 && fields.get(0).equals(keyfield)
+            && fields.get(1).equals(valfield)) {
+            // case 3: map and list are equal in row size with equal field
+            // names -> add map entries to the end of the list
+            addMap(map);
+        }
+    }
+
+    /**
+     * Add the complete map to the end of this list.
+     * 
+     * @param map
+     */
+    private void addMap(Map< ? extends Object, ? extends Object> map) {
+        for (Map.Entry< ? extends Object, ? extends Object> e : map.entrySet()) {
+            Fields ff = new Fields();
+            ff.add(e.getKey());
+            ff.add(e.getValue());
+            this.add(ff);
+        }
+    }
+
+    /**
+     * Get a map representation of the keys and values fields. Depending on the
+     * runtime type of the map, certain requirements need to be observed. For
+     * instance, the bijective map contract requires that keys and values are
+     * both unique. Uniqueness in maps is automatically ensured by overwriting
+     * exsting values along the iteration. Use a multi map to allow non-unique
+     * map keys.
+     * 
+     * @param keyfield
+     * @param valfield
+     */
+    // TODO: how to check types without <? extends Object>, which prevends
+    // addition to map?
+    @SuppressWarnings("unchecked")
+    public void getMap(String keyfield, String valfield, Map map) {
+        int key = fields.indexOf(keyfield);
+        int value = fields.indexOf(valfield);
+        if (map instanceof IMultiMap) {
+            for (int i = 0; i < size(); i++) {
+                ((IMultiMap) map).add(get(key, i), get(value, i));
+            }
+        } else {
+            for (int i = 0; i < size(); i++) {
+                map.put(get(key, i), get(value, i));
+            }
         }
     }
 
@@ -411,6 +532,21 @@ public class TableList extends ArrayList<TableList.Fields> {
     }
 
     /**
+     * Get an object array of the field.
+     * 
+     * @param field
+     * @return
+     */
+    public Object[] toArray(String field) {
+        int index = fields.indexOf(field);
+        Object[] array = new Object[size()];
+        for (int i = 0; i < size(); i++) {
+            array[i] = get(index, i);
+        }
+        return array;
+    }
+
+    /**
      * Get a sublist of this list according to the filter criterion. The actual
      * values and field names are referenced.
      * 
@@ -429,15 +565,26 @@ public class TableList extends ArrayList<TableList.Fields> {
     }
 
     /**
-     * Get a sublist of this list according to the filter criterion. The actual
-     * values and field names are copied.
+     * Get two sublists of this list according to the filter criterion. The
+     * actual values and field names are referenced. The result is a 2-array
+     * with the elements that satisfy the filter condition in the 0-element, and
+     * those that don't in the 1-element.
      * 
      * @param filt
      * @return
      */
-    public TableList getFilterCopy(Filter filt) {
-        TableList filtered = filter(filt);
-        return new TableList(filtered);
+    public TableList[] split(Filter filt) {
+        TableList pos = new TableList();
+        TableList neg = new TableList();
+        for (int i = 0; i < size(); i++) {
+            if (filt.valid(get(i))) {
+                pos.add(get(i));
+            } else {
+                neg.add(get(i));
+            }
+        }
+        pos.fields = fields;
+        return new TableList[] {pos, neg};
     }
 
     /**
@@ -492,63 +639,5 @@ public class TableList extends ArrayList<TableList.Fields> {
      */
     public List<String> getFields() {
         return fields;
-    }
-
-    // static helpers for primitive arrays.
-
-    /**
-     * convert from primitive to Object array
-     * 
-     * @param a
-     * @return
-     */
-    public static Double[] convert(double[] a) {
-        Double[] b = new Double[a.length];
-        for (int i = 0; i < b.length; i++) {
-            b[i] = a[i];
-        }
-        return b;
-    }
-
-    /**
-     * convert from primitive to Object array
-     * 
-     * @param a
-     * @return
-     */
-    public static Integer[] convert(int[] a) {
-        Integer[] b = new Integer[a.length];
-        for (int i = 0; i < b.length; i++) {
-            b[i] = a[i];
-        }
-        return b;
-    }
-
-    /**
-     * convert from Object to primitive array
-     * 
-     * @param a
-     * @return
-     */
-    public static double[] convert(Double[] a) {
-        double[] b = new double[a.length];
-        for (int i = 0; i < b.length; i++) {
-            b[i] = a[i];
-        }
-        return b;
-    }
-
-    /**
-     * convert from Object to primitive array
-     * 
-     * @param a
-     * @return
-     */
-    public static int[] convert(Integer[] a) {
-        int[] b = new int[a.length];
-        for (int i = 0; i < b.length; i++) {
-            b[i] = a[i];
-        }
-        return b;
     }
 }
