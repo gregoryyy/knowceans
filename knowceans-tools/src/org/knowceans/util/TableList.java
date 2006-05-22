@@ -5,8 +5,12 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.knowceans.map.IMultiMap;
 
@@ -38,6 +42,7 @@ public class TableList extends ArrayList<TableList.Fields> {
         int size = (int) 1e6;
         int[] a = Samplers.randPerm(size);
         double[] b = Samplers.randDir(0.3, size);
+        
         System.out.println(Which.usedMemory());
         List<Integer> aa = Arrays.asList((Integer[]) ArrayUtils.convert(a));
         List<Double> bb = Arrays.asList((Double[]) ArrayUtils.convert(b));
@@ -204,6 +209,24 @@ public class TableList extends ArrayList<TableList.Fields> {
             return row.get(field).equals(value);
         }
     }
+    
+    /**
+     * FieldRegexFind matches field with the regular expression.
+     * 
+     * @author gregor
+     */
+    public class FieldRegexFind extends SingleFieldFilter {
+
+        public FieldRegexFind(String field, Object value) {
+            super(field, Pattern.compile((String) value));
+        }
+
+        public boolean valid(Fields row) {
+            Matcher m = ((Pattern)value).matcher((CharSequence) row.get(field));
+            return m.find();
+        }
+    }
+    
 
     /**
      * FieldLessThan checks if field less than.
@@ -468,7 +491,8 @@ public class TableList extends ArrayList<TableList.Fields> {
         } else {
             for (int i = 0; i < size(); i++) {
                 map.put(get(key, i), get(value, i));
-                System.out.println("adding " + get(key, i) + " " + get(value, i));
+                System.out.println("adding " + get(key, i) + " "
+                    + get(value, i));
                 System.out.println(map + " " + map.size());
             }
         }
