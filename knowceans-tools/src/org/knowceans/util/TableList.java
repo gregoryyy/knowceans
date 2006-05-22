@@ -367,16 +367,26 @@ public class TableList extends ArrayList<TableList.Fields> {
     }
 
     /**
-     * Adds an index to the list. After sorting, this way the original sorting
-     * order can be tracked.
+     * Adds an index plus an offset to the list. After sorting, this way the
+     * original sorting order can be tracked.
+     * 
+     * @param field
+     */
+    public void addIndexList(String field, int offset) {
+        fields.add(field);
+        for (int i = 0; i < size(); i++) {
+            get(i).add(i + offset);
+        }
+    }
+
+    /**
+     * Add an index plus to the list. After sorting, this way the original
+     * sorting order can be tracked.
      * 
      * @param field
      */
     public void addIndexList(String field) {
-        fields.add(field);
-        for (int i = 0; i < size(); i++) {
-            get(i).add(i);
-        }
+        addIndexList(field, 0);
     }
 
     /**
@@ -458,8 +468,11 @@ public class TableList extends ArrayList<TableList.Fields> {
         } else {
             for (int i = 0; i < size(); i++) {
                 map.put(get(key, i), get(value, i));
+                System.out.println("adding " + get(key, i) + " " + get(value, i));
+                System.out.println(map + " " + map.size());
             }
         }
+        System.out.println(map);
     }
 
     /**
@@ -480,7 +493,7 @@ public class TableList extends ArrayList<TableList.Fields> {
      * 
      * @param index
      */
-    public ArrayList<Object> getList(String field) {
+    public ArrayList< ? > getList(String field) {
         return getList(fields.indexOf(field));
     }
 
@@ -489,7 +502,7 @@ public class TableList extends ArrayList<TableList.Fields> {
      * 
      * @param index
      */
-    public ArrayList<Object> getList(int index) {
+    public ArrayList< ? > getList(int index) {
 
         ArrayList<Object> list = new ArrayList<Object>();
         for (int i = 0; i < size(); i++) {
@@ -497,7 +510,7 @@ public class TableList extends ArrayList<TableList.Fields> {
         }
         return list;
     }
-    
+
     /**
      * Get one element of the list with the specified key.
      * 
@@ -519,7 +532,7 @@ public class TableList extends ArrayList<TableList.Fields> {
     public Object get(String field, int index) {
         return get(index).get(fields.indexOf(field));
     }
-    
+
     /**
      * Set the field at the index with the value.
      * 
@@ -530,7 +543,7 @@ public class TableList extends ArrayList<TableList.Fields> {
     public void set(int field, int index, Object value) {
         get(index).set(field, value);
     }
-    
+
     /**
      * Set the field at the index with the value.
      * 
@@ -655,7 +668,7 @@ public class TableList extends ArrayList<TableList.Fields> {
         Collections.sort(this, comp);
         return this;
     }
-    
+
     /**
      * Get field index of key.
      * 
@@ -684,4 +697,56 @@ public class TableList extends ArrayList<TableList.Fields> {
     public List<String> getFields() {
         return fields;
     }
+
+    /**
+     * Find all indices that the field matches with key.
+     * 
+     * @param field
+     * @param key
+     * @return
+     */
+    public int[] indicesOf(String field, Object key) {
+        ArrayList<Integer> ia = new ArrayList<Integer>();
+        for (int i = 0; i < size(); i++) {
+            if (get(field, i).equals(key)) {
+                ia.add(i);
+            }
+        }
+        int[] ii = (int[]) ArrayUtils.asPrimitiveArray(ia);
+        return ii;
+    }
+
+    /**
+     * Find the first index the field matches with key.
+     * 
+     * @param field
+     * @param key
+     * @return
+     */
+    public int indexOf(String field, Object key) {
+        for (int i = 0; i < size(); i++) {
+            if (get(field, i).equals(key)) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    /**
+     * Find the last index the field matches with key.
+     * 
+     * @param field
+     * @param key
+     * @return
+     */
+    public int lastIndexOf(String field, Object key) {
+
+        for (int i = size() - 1; i >= 0; i--) {
+            if (get(field, i).equals(key)) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
 }

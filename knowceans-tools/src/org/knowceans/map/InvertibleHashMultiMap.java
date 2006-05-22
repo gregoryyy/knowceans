@@ -84,6 +84,12 @@ public class InvertibleHashMultiMap<X, Y> extends HashMultiMap<X, Y>
         System.out.println(g);
 
     }
+    
+    @Override
+    public void clear() {
+        super.clear();
+        inverse.clear();
+    }
 
     /**
      * adds the value to the key's value set and the key to the value's key set.

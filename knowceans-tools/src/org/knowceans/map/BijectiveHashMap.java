@@ -93,6 +93,12 @@ public class BijectiveHashMap<X, Y> extends HashMap<X, Y> implements
         super(initialCapacity);
     }
 
+    @Override
+    public void clear() {
+        super.clear();
+        inverse.clear();
+    }
+
     /**
      * put key-value pair into the map. If the key exists, it is replaced, along
      * with the value it points to. If the value exists, it is replaced, along
@@ -105,6 +111,9 @@ public class BijectiveHashMap<X, Y> extends HashMap<X, Y> implements
         X oldKey = inverse.get(val);
         super.remove(oldKey);
         Y oldVal = get(key);
+        System.out.println("key " + key + " val = " + val + " oldKey = "
+            + oldKey + " oldval = " + oldVal);
+        System.out.println(this);
         inverse.remove(oldVal);
         super.put(key, val);
         inverse.put(val, key);

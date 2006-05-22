@@ -111,6 +111,12 @@ public class InvertibleTreeMultiMap<X, Y> extends TreeMultiMap<X, Y>
         super(m);
         this.inverse = inverse;
     }
+    
+    @Override
+    public void clear() {
+        super.clear();
+        inverse.clear();
+    }
 
     /**
      * adds the value to the key's value set and the key to the value's key set.

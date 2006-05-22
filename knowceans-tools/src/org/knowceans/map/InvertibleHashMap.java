@@ -73,7 +73,7 @@ public class InvertibleHashMap<X, Y> extends HashMap<X, Y> {
         System.out.println(b.getInverse());
         b.checkConsistency();
     }
-
+    
     /**
      * 
      */
@@ -90,6 +90,12 @@ public class InvertibleHashMap<X, Y> extends HashMap<X, Y> {
         inverse.clear();
     }
 
+    @Override
+    public void clear() {
+        super.clear();
+        inverse.clear();
+    }
+    
     /**
      * put a new key-value pair. In the inverse map, the (forward) key needs to
      * be removed from the Set that is pointed to by its old value, and the key

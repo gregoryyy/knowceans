@@ -82,7 +82,11 @@ public class InvertibleTreeMap<X, Y> extends TreeMap<X, Y> {
         inverse = new HashMultiMap<Y, X>();
     }
     
-    
+    @Override
+    public void clear() {
+        super.clear();
+        inverse.clear();
+    }
 
     // /**
     // * create a multimap with an inverse. FIXME: problems with remove

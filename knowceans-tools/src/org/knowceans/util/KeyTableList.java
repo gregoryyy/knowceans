@@ -277,12 +277,7 @@ public class KeyTableList extends TableList {
             }
             return i;
         } else {
-            for (int i = 0; i < size(); i++) {
-                if (get(field, i).equals(elem)) {
-                    return i;
-                }
-            }
-            return -1;
+            return super.indexOf(field, elem);
         }
     }
 
@@ -309,12 +304,7 @@ public class KeyTableList extends TableList {
             }
             return i;
         } else {
-            for (int i = size() - 1; i >= 0; i--) {
-                if (get(field, i).equals(elem)) {
-                    return i;
-                }
-            }
-            return -1;
+            return super.lastIndexOf(field, elem);
         }
     }
 
@@ -345,14 +335,7 @@ public class KeyTableList extends TableList {
             Arrays.sort(ii);
             return ii;
         } else {
-            ArrayList<Integer> ia = new ArrayList<Integer>();
-            for (int i = 0; i < size(); i++) {
-                if (get(field, i).equals(elem)) {
-                    ia.add(i);
-                }
-            }
-            int[] ii = (int[]) ArrayUtils.asPrimitiveArray(ia);
-            return ii;
+            return super.indicesOf(field, elem);
         }
     }
 
