@@ -35,7 +35,7 @@ public class TableList extends ArrayList<TableList.Fields> {
      * @param args
      */
     public static void main(String[] args) {
-        int size = (int) 1e3;
+        int size = (int) 1e6;
         int[] a = Samplers.randPerm(size);
         double[] b = Samplers.randDir(0.3, size);
         System.out.println(Which.usedMemory());
@@ -54,9 +54,13 @@ public class TableList extends ArrayList<TableList.Fields> {
 
         System.out.println("sort by key");
         list.sort("key", false);
-
         System.out.println(StopWatch.format(StopWatch.lap()));
         System.out.println(list.size());
+
+        System.out.println("find index of key 55555");
+        int i = list.binarySearch("key", 55555);
+        System.out.println(StopWatch.format(StopWatch.lap()));
+        System.out.println("index = " + i + ": " + list.get(i));
 
         System.out.println("sort by value");
         list.sort("value", true);
@@ -110,7 +114,6 @@ public class TableList extends ArrayList<TableList.Fields> {
         System.out.println(StopWatch.format(StopWatch.stop()));
         System.out.println("total memory");
         System.out.println(Which.usedMemory());
-
     }
 
     // helper classes
@@ -278,7 +281,7 @@ public class TableList extends ArrayList<TableList.Fields> {
      * 
      */
     private static final long serialVersionUID = 8611765516306513144L;
-    private SetArrayList<String> fields = null;
+    protected SetArrayList<String> fields = null;
 
     // constructors
 
@@ -335,7 +338,7 @@ public class TableList extends ArrayList<TableList.Fields> {
     /**
      * Initialise fields
      */
-    private void init() {
+    protected void init() {
         fields = new SetArrayList<String>();
     }
 
@@ -346,8 +349,8 @@ public class TableList extends ArrayList<TableList.Fields> {
      * 
      * @param a
      */
-    public void addList(String key, List< ? extends Object> a) {
-        fields.add(key);
+    public void addList(String field, List< ? extends Object> a) {
+        fields.add(field);
         if (size() == 0) {
             for (int i = 0; i < a.size(); i++) {
                 Fields h = new Fields();
@@ -367,10 +370,10 @@ public class TableList extends ArrayList<TableList.Fields> {
      * Adds an index to the list. After sorting, this way the original sorting
      * order can be tracked.
      * 
-     * @param key
+     * @param field
      */
-    public void addIndexList(String key) {
-        fields.add(key);
+    public void addIndexList(String field) {
+        fields.add(field);
         for (int i = 0; i < size(); i++) {
             get(i).add(i);
         }
@@ -462,10 +465,10 @@ public class TableList extends ArrayList<TableList.Fields> {
     /**
      * Remove the list with key from the internal maps.
      * 
-     * @param key
+     * @param field
      */
-    public void removeList(String key) {
-        int index = fields.indexOf(key);
+    public void removeList(String field) {
+        int index = fields.indexOf(field);
         fields.remove(index);
         for (int i = 0; i < size(); i++) {
             get(i).remove(index);
@@ -477,8 +480,8 @@ public class TableList extends ArrayList<TableList.Fields> {
      * 
      * @param index
      */
-    public ArrayList<Object> getList(String key) {
-        return getList(fields.indexOf(key));
+    public ArrayList<Object> getList(String field) {
+        return getList(fields.indexOf(field));
     }
 
     /**
@@ -494,7 +497,7 @@ public class TableList extends ArrayList<TableList.Fields> {
         }
         return list;
     }
-
+    
     /**
      * Get one element of the list with the specified key.
      * 
@@ -509,12 +512,35 @@ public class TableList extends ArrayList<TableList.Fields> {
     /**
      * Get one element of the list with the specified key.
      * 
-     * @param key
+     * @param field
      * @param index
      * @return
      */
-    public Object get(String key, int index) {
-        return get(index).get(fields.indexOf(key));
+    public Object get(String field, int index) {
+        return get(index).get(fields.indexOf(field));
+    }
+    
+    /**
+     * Set the field at the index with the value.
+     * 
+     * @param field
+     * @param index
+     * @param value
+     */
+    public void set(int field, int index, Object value) {
+        get(index).set(field, value);
+    }
+    
+    /**
+     * Set the field at the index with the value.
+     * 
+     * @param field
+     * @param index
+     * @param value
+     */
+    public void set(String field, int index, Object value) {
+        int i = fields.indexOf(field);
+        get(index).set(i, value);
     }
 
     /**
@@ -588,12 +614,30 @@ public class TableList extends ArrayList<TableList.Fields> {
     }
 
     /**
+     * Perform a binary search on the field.
+     * 
+     * @param field
+     * @param key
+     * @return
+     */
+    public int binarySearch(String field, Object key) {
+        Fields row = new Fields();
+        int index = fields.indexOf(field);
+        // padding by irrelevant fields, could also be done by another
+        // Comparator
+        row.addAll(Collections.nCopies(index, null));
+        row.add(key);
+        return Collections.binarySearch(this, row,
+            new FieldSorter(index, false));
+    }
+
+    /**
      * Sort the table list by the specified field. Use the Collections.sort() or
      * sort(Comparator<Fields>) method for other comparators.
      * 
      * @param field
      * @param reverse
-     * @return
+     * @return this
      */
     public synchronized TableList sort(String field, boolean reverse) {
         Collections.sort(this, new FieldSorter(fields.indexOf(field), reverse));
@@ -605,31 +649,31 @@ public class TableList extends ArrayList<TableList.Fields> {
      * Collections.sort().
      * 
      * @param comp
-     * @return
+     * @return this
      */
     public synchronized TableList sort(Comparator<Fields> comp) {
         Collections.sort(this, comp);
         return this;
     }
-
+    
     /**
      * Get field index of key.
      * 
-     * @param key
+     * @param field
      * @return
      */
-    public int getField(String key) {
-        return fields.indexOf(key);
+    public int getField(String field) {
+        return fields.indexOf(field);
     }
 
     /**
      * Get key of field index.
      * 
-     * @param key
+     * @param field
      * @return
      */
-    public String getField(int key) {
-        return fields.get(key);
+    public String getField(int field) {
+        return fields.get(field);
     }
 
     /**

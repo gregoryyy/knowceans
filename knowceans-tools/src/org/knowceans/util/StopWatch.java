@@ -15,8 +15,6 @@ import java.util.Vector;
 public class StopWatch {
 
     public static void main(String[] args) throws InterruptedException {
-        long a = 234345243630300L;
-        System.out.println(format(a));
         start();
         Thread.sleep(1200);
         System.out.println(format(read()));
@@ -24,7 +22,7 @@ public class StopWatch {
         System.out.println(format(read("my")));
         for (int i = 0; i < 6; i++) {
 
-            Thread.sleep(1400);
+            Thread.sleep(140);
             System.out.println(format(lap("my")));
             System.out.println(format(lap()));
             System.out.println(format(read()));
@@ -32,7 +30,11 @@ public class StopWatch {
         }
         stop("my");
         System.out.println(get("my").debug());
-
+        Thread.sleep(1000);
+        start("my");
+        Thread.sleep(1000);
+        stop("my");
+        System.out.println(get("my").debug());
     }
 
     /**
@@ -45,17 +47,17 @@ public class StopWatch {
     /**
      * Starting system time
      */
-    private long tstart = INVALID;
+    private long absStart = INVALID;
 
     /**
      * keeps the time that this stop watch has been paused.
      */
-    private long tpaused = 0;
+    private long relPaused = 0;
 
     /**
      * start of the last lap time
      */
-    private long tlapstart = INVALID;
+    private long absLap = INVALID;
 
     /**
      * Lap times (stored relative to last start or lap).
@@ -68,9 +70,9 @@ public class StopWatch {
     // private Hashtable<String, Long> events = null;
 
     /**
-     * Stopping time relative to starting time
+     * Stopping time
      */
-    private long tstop = INVALID;
+    private long absStop = INVALID;
 
     /**
      * Running status (set by start, unset by stop).
@@ -116,20 +118,20 @@ public class StopWatch {
             w = new StopWatch(watch);
         }
         w.running = true;
-        long t = time();
-        long toldstart = w.tstart;
-        w.tstart = t;
-        w.tlapstart = t;
+        long now = time();
+        
+        w.absLap = now;
         watches.put(watch, w);
 
         // subtract paused interval if any
-        if (w.tstop > 0) {
-            w.tpaused += t - toldstart + w.tstop;
-            return w.tstop;
+        if (w.absStop == 0) {
+            w.absStart = now;
+            return 0;
+            
+        } else {
+            w.relPaused += now - w.absStop;
+            return now - w.absStart - w.relPaused;
         }
-        return 0;
-        // old version: return absolute starting instant
-        // return t;
     }
 
     /**
@@ -180,24 +182,22 @@ public class StopWatch {
 
     /**
      * Get the time of the named stop watch, relative to the last call to lap or
-     * start.
+     * start, whatever was later.
      * 
      * @param watch
      * @return relative time of last lap (or start), or INVALID if unknown or
      *         not running.
      */
     public static synchronized long lap(String watch) {
-        long tabs = time();
-        long t = tabs;
-
+        long now = time();
         StopWatch w = watches.get(watch);
         if (w == null || !w.running) {
             return INVALID;
         }
-        t -= w.tlapstart;
-        w.tlapstart = tabs;
-        w.laps.add(t);
-        return t;
+        long relLap = now - w.absLap;
+        w.absLap = now;
+        w.laps.add(relLap);
+        return relLap;
     }
 
     /**
@@ -217,16 +217,16 @@ public class StopWatch {
      * @return
      */
     public static synchronized long read(String watch) {
-        long t = time();
+        long now = time();
 
         StopWatch w = watches.get(watch);
         if (w == null) {
             return INVALID;
         }
         if (w.running) {
-            return t - w.tstart - w.tpaused;
+            return now - w.absStart - w.relPaused;
         }
-        return w.tstop - w.tstart - w.tpaused;
+        return w.absStop - w.absStart - w.relPaused;
     }
 
     /**
@@ -245,14 +245,14 @@ public class StopWatch {
      * @return the relative time since the start.
      */
     public static synchronized long stop(String watch) {
-        long t = time();
+        long now = time();
         StopWatch w = watches.get(watch);
         if (w == null || !w.running) {
             return INVALID;
         }
-        w.tstop = t;
+        w.absStop = now;
         w.running = false;
-        return t - w.tstart - w.tpaused;
+        return now - w.absStart - w.relPaused;
     }
 
     /**

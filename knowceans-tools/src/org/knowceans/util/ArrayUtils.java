@@ -4,10 +4,12 @@
 package org.knowceans.util;
 
 import java.lang.reflect.Array;
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * ArrayUtils provides functionality for conversion between primitive and object
- * arrays.
+ * arrays and lists.
  * 
  * @author gregor heinrich
  */
@@ -26,9 +28,12 @@ public class ArrayUtils {
         System.out.println(Vectors.print(e) + " "
             + e.getClass().getComponentType());
         Object f = convert(e);
-        System.out.println(Vectors.print((int[])f) + " "
+        System.out.println(Vectors.print((int[]) f) + " "
             + f.getClass().getComponentType());
-
+        List< ? > h = asList(b);
+        System.out.println(h);
+        int[] i = (int[]) asPrimitiveArray(h);
+        System.out.println(Vectors.print(i));
     }
 
     public static final Class[][] types = {
@@ -106,6 +111,51 @@ public class ArrayUtils {
                 objects[i] = Array.get(array, i);
             }
             return objects;
+        }
+        return null;
+    }
+
+    /**
+     * Convert an array of primitive-type elements into a list of its
+     * wrapper-type elements.
+     * 
+     * @param array
+     * @return the array or null if invalid
+     */
+    public static List< ? > asList(Object array) {
+        Object[] a = convert(array);
+        if (a == null) {
+            return null;
+        }
+        return Arrays.asList(a);
+    }
+
+    /**
+     * Convert an list of objects into an array of primitive types. This extends
+     * the functionality of the List.toArray() method to primitive types. If the
+     * list does not consist of wrapper-type elements or if it has zero length,
+     * null is returned (in the second case because the element type cannot be
+     * determined).
+     * 
+     * @param objects
+     * @return array of primitive types or null if invalid.
+     */
+    public static Object asPrimitiveArray(List<? extends Object> objects) {
+        Class< ? extends Object> c = null;
+        if (objects.size() == 0) {
+            return null;
+        } else {
+            c = objects.get(0).getClass();
+        }
+        // no standard method found to get primitive types from their wrappers
+        for (int i = 0; i < types[0].length; i++) {
+            if (c.equals(types[0][i])) {
+                Object array = Array.newInstance(types[1][i], objects.size());
+                for (int j = 0; j < objects.size(); j++) {
+                    Array.set(array, j, objects.get(j));
+                }
+                return array;
+            }
         }
         return null;
     }
