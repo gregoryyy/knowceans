@@ -111,9 +111,6 @@ public class BijectiveHashMap<X, Y> extends HashMap<X, Y> implements
         X oldKey = inverse.get(val);
         super.remove(oldKey);
         Y oldVal = get(key);
-        System.out.println("key " + key + " val = " + val + " oldKey = "
-            + oldKey + " oldval = " + oldVal);
-        System.out.println(this);
         inverse.remove(oldVal);
         super.put(key, val);
         inverse.put(val, key);
