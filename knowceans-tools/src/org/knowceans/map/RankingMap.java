@@ -12,6 +12,7 @@ import java.util.Set;
 import java.util.SortedMap;
 import java.util.Map.Entry;
 
+import org.knowceans.util.ArrayUtils;
 import org.knowceans.util.Cokus;
 import org.knowceans.util.TableList;
 
@@ -76,7 +77,7 @@ public class RankingMap<K, V> extends InvertibleTreeMultiMap<K, V> {
         System.out.println("Imagine these were scores:");
         RankingMap<Double, Integer> r = new RankingMap<Double, Integer>(
             Collections.reverseOrder());
-        r.put(TableList.convert(a), TableList.convert(b));
+        r.put((Double[]) ArrayUtils.convert(a), (Integer[]) ArrayUtils.convert(b));
         RankingMap<Double, Integer> s = r.headMap(0.8);
         System.out.println("Max 10 best scores above 0.8:");
         System.out.println(s.sortedKeys(10));
@@ -88,7 +89,7 @@ public class RankingMap<K, V> extends InvertibleTreeMultiMap<K, V> {
 
         System.out.println("Imagine these were distances:");
         r = new RankingMap<Double, Integer>();
-        r.put(TableList.convert(a), TableList.convert(b));
+        r.put((Double[]) ArrayUtils.convert(a), (Integer[]) ArrayUtils.convert(b));
         s = r.headMap(0.2);
         System.out.println("Max 10 least distances below 0.2:");
         System.out.println(s.sortedKeys(10));

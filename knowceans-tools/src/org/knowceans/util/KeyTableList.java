@@ -55,19 +55,35 @@ public class KeyTableList extends TableList {
         list.addIndexList("index");
         System.out.println(StopWatch.format(StopWatch.lap()));
 
-        System.out.println("find using iteration");
-        int i = list.indexOf("key", 2139);
+        System.out.println("sort map by key");
+        list.sort("key", false);
         System.out.println(StopWatch.format(StopWatch.lap()));
-        System.out.println("index of 2139 is " + i);
+
+        int value = 684034;
+        System.out.println("finding key value " + value);
+
+        System.out.println("find using binary search");
+        int i = list.binarySearch("key", value);
+        System.out.println(StopWatch.format(StopWatch.lap()));
+        System.out.println("index is " + i);
+
+        // System.out.println("scramble map");
+        // Collections.shuffle(list);
+        // System.out.println(StopWatch.format(StopWatch.lap()));
+
+        System.out.println("find using iteration");
+        i = list.indexOf("key", value);
+        System.out.println(StopWatch.format(StopWatch.lap()));
+        System.out.println("index is " + i);
 
         System.out.println("add key map");
         list.setAsKey("key");
         System.out.println(StopWatch.format(StopWatch.lap()));
-        
+
         System.out.println("find using this map");
-        i = list.indexOf("key", 2139);
+        i = list.indexOf("key", value);
         System.out.println(StopWatch.format(StopWatch.lap()));
-        System.out.println("index of 2139 is " + i);
+        System.out.println("index is " + i);
 
     }
 
