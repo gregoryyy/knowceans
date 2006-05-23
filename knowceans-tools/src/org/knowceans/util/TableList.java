@@ -18,16 +18,13 @@ import org.knowceans.map.IMultiMap;
  * the list is a list on its own, representing the fields of the list. The
  * contract is that these element lists are of equal size when manipulating
  * single elements. Filtering operations are provided via the filter method and
- * Filter interface.
+ * Filter interface as well as the indices() methods.
  * <p>
  * This class is optimised for coding rather than runtime efficiency.
  * Particularly, manipulating the structure of the fields (columns) is expensive
  * as it iterates through all rows. Sorting, shuffling etc. are provided by the
  * static Collections methods. To find rows of large lists, first sort and then
  * do binary search via the collections interface.
- * <p>
- * TODO: set of HashMaps with TreeMap views for indices TODO: implement binary
- * search on a field
  * 
  * @author gregor
  */
@@ -40,7 +37,7 @@ public class TableList extends ArrayList<TableList.Fields> {
         int size = (int) 1e6;
         int[] a = Samplers.randPerm(size);
         double[] b = Samplers.randDir(0.3, size);
-        
+
         System.out.println(Which.usedMemory());
         List<Integer> aa = Arrays.asList((Integer[]) ArrayUtils.convert(a));
         List<Double> bb = Arrays.asList((Double[]) ArrayUtils.convert(b));
@@ -126,7 +123,7 @@ public class TableList extends ArrayList<TableList.Fields> {
      * 
      * @author gregor
      */
-    public class FieldSorter implements Comparator<Fields> {
+    public class FieldComparator implements Comparator<Fields> {
         private int field;
         private boolean reverse;
 
@@ -136,7 +133,7 @@ public class TableList extends ArrayList<TableList.Fields> {
          * @param field
          * @param reverse
          */
-        public FieldSorter(int field, boolean reverse) {
+        public FieldComparator(int field, boolean reverse) {
             this.field = field;
             this.reverse = reverse;
         }
@@ -207,7 +204,7 @@ public class TableList extends ArrayList<TableList.Fields> {
             return row.get(field).equals(value);
         }
     }
-    
+
     /**
      * FieldRegexFind matches field with the regular expression.
      * 
@@ -220,11 +217,11 @@ public class TableList extends ArrayList<TableList.Fields> {
         }
 
         public boolean valid(Fields row) {
-            Matcher m = ((Pattern)value).matcher((CharSequence) row.get(field));
+            Matcher m = ((Pattern) value)
+                .matcher((CharSequence) row.get(field));
             return m.find();
         }
     }
-    
 
     /**
      * FieldLessThan checks if field less than.
@@ -476,7 +473,7 @@ public class TableList extends ArrayList<TableList.Fields> {
      * @param keyfield
      * @param valfield
      */
-    // TODO: how to check types without <? extends Object>, which prevends
+    // TODO: how to check types without <? extends Object>, which prevents
     // addition to map?
     @SuppressWarnings("unchecked")
     public void getMap(String keyfield, String valfield, Map map) {
@@ -489,12 +486,8 @@ public class TableList extends ArrayList<TableList.Fields> {
         } else {
             for (int i = 0; i < size(); i++) {
                 map.put(get(key, i), get(value, i));
-                System.out.println("adding " + get(key, i) + " "
-                    + get(value, i));
-                System.out.println(map + " " + map.size());
             }
         }
-        System.out.println(map);
     }
 
     /**
@@ -649,6 +642,105 @@ public class TableList extends ArrayList<TableList.Fields> {
     }
 
     /**
+     * Find all indices that the field matches with key.
+     * 
+     * @param field
+     * @param key
+     * @return
+     */
+    public int[] indicesOf(String field, Object key) {
+        ArrayList<Integer> ia = new ArrayList<Integer>();
+        for (int i = 0; i < size(); i++) {
+            if (get(field, i).equals(key)) {
+                ia.add(i);
+            }
+        }
+        int[] ii = (int[]) ArrayUtils.asPrimitiveArray(ia);
+        return ii;
+    }
+
+    /**
+     * Find all indices that are valid for the filter.
+     * 
+     * @param filt
+     * @return
+     */
+    public int[] indicesOf(Filter filt) {
+        ArrayList<Integer> ia = new ArrayList<Integer>();
+        for (int i = 0; i < size(); i++) {
+            if (filt.valid(get(i))) {
+                ia.add(i);
+            }
+        }
+        int[] ii = (int[]) ArrayUtils.asPrimitiveArray(ia);
+        return ii;
+    }
+
+    /**
+     * Find the first index the field matches with key.
+     * 
+     * @param field
+     * @param key
+     * @return
+     */
+    public int indexOf(String field, Object key) {
+        for (int i = 0; i < size(); i++) {
+            if (get(field, i).equals(key)) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    /**
+     * Find the first index valid for the filter.
+     * 
+     * @param filt
+     * @return
+     */
+    public int indexOf(Filter filt) {
+        for (int i = 0; i < size(); i++) {
+            if (filt.valid(get(i))) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    /**
+     * Find the last index the field matches with key.
+     * 
+     * @param field
+     * @param key
+     * @return
+     */
+    public int lastIndexOf(String field, Object key) {
+
+        for (int i = size() - 1; i >= 0; i--) {
+            if (get(field, i).equals(key)) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    /**
+     * Find the last index that is valid for the filter.
+     * 
+     * @param key
+     * @param filt
+     * @return
+     */
+    public int lastIndexOf(Filter filt) {
+        for (int i = size() - 1; i >= 0; i--) {
+            if (filt.valid(get(i))) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    /**
      * Perform a binary search on the field.
      * 
      * @param field
@@ -662,8 +754,24 @@ public class TableList extends ArrayList<TableList.Fields> {
         // Comparator
         row.addAll(Collections.nCopies(index, null));
         row.add(key);
-        return Collections.binarySearch(this, row,
-            new FieldSorter(index, false));
+        return Collections.binarySearch(this, row, new FieldComparator(index,
+            false));
+    }
+
+    /**
+     * Perform a binary search, specifying the condition with a Comparator.
+     * 
+     * @param comparator
+     * @return
+     */
+    public int binarySearch(String field, Object key, FieldComparator comp) {
+        Fields row = new Fields();
+        int index = fields.indexOf(field);
+        row.addAll(Collections.nCopies(index, null));
+        row.add(key);
+        // padding by irrelevant fields, could also be done by another
+        // Comparator
+        return Collections.binarySearch(this, row, comp);
     }
 
     /**
@@ -675,7 +783,8 @@ public class TableList extends ArrayList<TableList.Fields> {
      * @return this
      */
     public synchronized TableList sort(String field, boolean reverse) {
-        Collections.sort(this, new FieldSorter(fields.indexOf(field), reverse));
+        Collections.sort(this, new FieldComparator(fields.indexOf(field),
+            reverse));
         return this;
     }
 
@@ -719,56 +828,4 @@ public class TableList extends ArrayList<TableList.Fields> {
     public List<String> getFields() {
         return fields;
     }
-
-    /**
-     * Find all indices that the field matches with key.
-     * 
-     * @param field
-     * @param key
-     * @return
-     */
-    public int[] indicesOf(String field, Object key) {
-        ArrayList<Integer> ia = new ArrayList<Integer>();
-        for (int i = 0; i < size(); i++) {
-            if (get(field, i).equals(key)) {
-                ia.add(i);
-            }
-        }
-        int[] ii = (int[]) ArrayUtils.asPrimitiveArray(ia);
-        return ii;
-    }
-
-    /**
-     * Find the first index the field matches with key.
-     * 
-     * @param field
-     * @param key
-     * @return
-     */
-    public int indexOf(String field, Object key) {
-        for (int i = 0; i < size(); i++) {
-            if (get(field, i).equals(key)) {
-                return i;
-            }
-        }
-        return -1;
-    }
-
-    /**
-     * Find the last index the field matches with key.
-     * 
-     * @param field
-     * @param key
-     * @return
-     */
-    public int lastIndexOf(String field, Object key) {
-
-        for (int i = size() - 1; i >= 0; i--) {
-            if (get(field, i).equals(key)) {
-                return i;
-            }
-        }
-        return -1;
-    }
-
 }

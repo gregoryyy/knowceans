@@ -32,6 +32,22 @@ public class MayaShades {
         "::.  ", ":::  ", ":::. ", ":::: ", "::::.", ":::::"};
 
     /**
+     * Create a string representation of the vector.
+     * 
+     * @param dd
+     * @param max
+     * @return
+     */
+    public static String shadeDouble(double[] dd, double max) {
+        StringBuffer b = new StringBuffer();
+        for (double d : dd) {
+            b.append(shadeDouble(d, max));
+            b.append(" ");
+        }
+        return b.toString();
+    }
+    
+    /**
      * create a string representation whose gray value appears as an indicator
      * of magnitude, cf. Hinton diagrams in statistics. A name for this kind of
      * presentation could be Quertzal from the Maya word Quetzal.

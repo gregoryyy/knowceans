@@ -5,16 +5,12 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.SortedMap;
-import java.util.Map.Entry;
 
 import org.knowceans.util.ArrayUtils;
 import org.knowceans.util.Cokus;
-import org.knowceans.util.TableList;
 
 /**
  * RankingMap allows sorting of two lists of items simultaneously.
@@ -32,8 +28,8 @@ public class RankingMap<K, V> extends InvertibleTreeMultiMap<K, V> {
      * @author gregor
      */
     public class RankEntry {
-        private K key;
-        private V value;
+        protected K key;
+        protected V value;
 
         public RankEntry(K key, V value) {
             this.key = key;
@@ -180,7 +176,7 @@ public class RankingMap<K, V> extends InvertibleTreeMultiMap<K, V> {
      * @param count maximum number of entries returned
      * @return
      */
-    public List<RankEntry> entryList(int count) {
+    public List<? extends RankEntry> entryList(int count) {
 
         ArrayList<RankEntry> a = new ArrayList<RankEntry>();
         for (K key : keySet()) {
@@ -195,7 +191,7 @@ public class RankingMap<K, V> extends InvertibleTreeMultiMap<K, V> {
 
     }
     
-    public List<RankEntry> entryList() {
+    public List<? extends RankEntry> entryList() {
         return entryList(Integer.MAX_VALUE);
     }
 

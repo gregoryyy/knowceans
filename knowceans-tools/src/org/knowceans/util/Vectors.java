@@ -26,8 +26,38 @@ import java.util.Vector;
  */
 public class Vectors {
 
-    public static int ndigits = 0;
-    public static int colwidth = 0;
+    protected static int ndigits = 0;
+    protected static int colwidth = 0;
+
+    /**
+     * Set the format of the following double print calls to the column width
+     * and number of digits. Note that this is a static setting, it can be
+     * undone using unsetFormat.
+     * 
+     * @param colwidth
+     * @param ndigits
+     */
+    public static final void setFormat(int colwidth, int ndigits) {
+        Vectors.colwidth = colwidth;
+        Vectors.ndigits = ndigits;
+    }
+
+    /**
+     * Get the format settings for doubles.
+     * 
+     * @return
+     */
+    public static final int[] getFormat() {
+        return new int[] {colwidth, ndigits};
+    }
+
+    /**
+     * Unset the format settings for doubles.
+     */
+    public static final void unsetFormat() {
+        Vectors.colwidth = 0;
+        Vectors.ndigits = 0;
+    }
 
     /**
      * @param start

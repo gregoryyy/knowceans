@@ -114,4 +114,17 @@ public class Gamma {
         }
         return (p);
     }
+    
+    /**
+     * Recursive implementation of the faculty.
+     * 
+     * @param i
+     * @return
+     */
+    public static long fak(int i) {
+        if (i > 1) {
+            return i * fak(i - 1);
+        }
+        return 1;
+    }
 }
