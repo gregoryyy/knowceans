@@ -18,6 +18,22 @@ This package provides a couple of helper classes for diverse programming problem
    o WebLogAnalyzer : a "hack" to analyse Tomcat logs whose target log file format can be 
      easily be adjusted via regular expressions.
      
+   o TableList : a list implementation that supports parallel sorting and lookup like a 
+     table in a relational database. KeyTableList extends this functionality by HashMap
+     keys to lookup list entries.
+     
+   o Densities, Samplers, Cokus, CokusRandom : random number generation and likelihood esti-
+     mation for various probability distributions.
+     
+   o PatternString : simplifies working with regex patterns, with a syntax inspired by Perl.
+   
+   o SetVector, SetArrayList : implement both the set and list interface (i.e., sorted sets)
+   
+   o Vectors, ArrayUtils : many helper functions for arrays, specifically of primitive 
+     elements.
+     
+   o StopWatch, Which : runtime introspection for memory, running time and stack traces.
+     
    o ...
    
    
