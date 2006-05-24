@@ -123,8 +123,54 @@ public class Conf extends Properties {
         return Long.parseLong(a);
     }
 
+    /**
+     * Get an integer value.
+     * 
+     * @param key
+     * @return
+     */
     public static int getInt(String key) {
         return (int) getLong(key);
+    }
+
+    /**
+     * Get a double array from the file, where the vales are separated by comma,
+     * semicolon or space.
+     * 
+     * @param key
+     * @return
+     */
+    public static double[] getDoubleArray(String key) {
+        String a = get(key);
+        if (a == null || a.trim().equals("null"))
+            return null;
+        a = a.replaceAll(" +", " ").replaceAll(", ", ",");
+        String[] ss = a.split("[;, ]");
+        double[] ii = new double[ss.length];
+        for (int i = 0; i < ii.length; i++) {
+            ii[i] = Double.parseDouble(ss[i]);
+        }
+        return ii;
+    }
+
+    /**
+     * Get an integer array from the file, where the vales are separated by
+     * comma, semicolon or space.
+     * 
+     * @param key
+     * @return
+     */
+    public static int[] getIntArray(String key) {
+        String a = get(key);
+        if (a == null || a.trim().equals("null"))
+            return null;
+        a = a.replaceAll(" +", " ").replaceAll(" *, *", ",");
+        String[] ss = a.split("[;, ]");
+        int[] ii = new int[ss.length];
+        for (int i = 0; i < ii.length; i++) {
+            ii[i] = Integer.parseInt(ss[i]);
+        }
+        return ii;
     }
 
     /**

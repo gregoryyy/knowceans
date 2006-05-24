@@ -1,5 +1,21 @@
 /*
- * Created on 21.05.2006
+ * Copyright (c) 2006 Gregor Heinrich. All rights reserved. Redistribution and
+ * use in source and binary forms, with or without modification, are permitted
+ * provided that the following conditions are met: 1. Redistributions of source
+ * code must retain the above copyright notice, this list of conditions and the
+ * following disclaimer. 2. Redistributions in binary form must reproduce the
+ * above copyright notice, this list of conditions and the following disclaimer
+ * in the documentation and/or other materials provided with the distribution.
+ * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESSED OR
+ * IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+ * MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO
+ * EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+ * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
+ * OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+ * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
+ * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
+ * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 package org.knowceans.util;
 
@@ -9,7 +25,10 @@ import java.util.List;
 
 /**
  * ArrayUtils provides functionality for conversion between primitive and object
- * arrays and lists.
+ * arrays and lists as well as a copying method for arrays of arbitrary type and
+ * dimensions. For array arguments, reflection and Object arguments are chosen
+ * as an alternative to overloading. Hopefully, this class will be obsolete in
+ * Java 1.6...
  * 
  * @author gregor heinrich
  */
@@ -34,6 +53,24 @@ public class ArrayUtils {
         System.out.println(h);
         int[] i = (int[]) asPrimitiveArray(h);
         System.out.println(Vectors.print(i));
+        int[] j = (int[]) copy(i);
+        i[2] = 45;
+        System.out.println(Vectors.print(i));
+        System.out.println(Vectors.print(j));
+        int[][] k = new int[][] {i, j};
+        int[][] l = (int[][]) copy(k);
+        k[1][1] = 123;
+        System.out.println(Vectors.print(k));
+        System.out.println(Vectors.print(l));
+        double[][][] m = new double[0][1][];
+        double[][][] n = (double[][][]) copy(m);
+        System.out.println(n.getClass().getComponentType().getComponentType()
+            .getComponentType());
+        double[][][] o = new double[][][] {{{2.3, 2.4}}};
+        double[][][] p = (double[][][]) copy(o);
+        o[0][0][1] *= 5;
+        System.out.println(Vectors.print(o[0]));
+        System.out.println(Vectors.print(p[0]));
     }
 
     public static final Class[][] types = {
@@ -140,7 +177,7 @@ public class ArrayUtils {
      * @param objects
      * @return array of primitive types or null if invalid.
      */
-    public static Object asPrimitiveArray(List<? extends Object> objects) {
+    public static Object asPrimitiveArray(List< ? extends Object> objects) {
         Class< ? extends Object> c = null;
         if (objects.size() == 0) {
             return null;
@@ -156,6 +193,41 @@ public class ArrayUtils {
                 }
                 return array;
             }
+        }
+        return null;
+    }
+
+    /**
+     * Create a copy of the argument array. There are almost no restrictions on
+     * the type of array to be copied: The array can be of object or primitive
+     * element type and can have any number of dimensions (a[], a[][], a[][][]
+     * etc.). For primitive element types, this is a deep copy.
+     * 
+     * @param array
+     * @return the copied array or null if the argument was not an array type.
+     */
+    public static Object copy(Object array) {
+        Class< ? extends Object> c = array.getClass();
+        if (c.isArray()) {
+            int len = Array.getLength(array);
+            c = array.getClass().getComponentType();
+            // handle zero-length arrays
+            if (len == 0) {
+                return Array.newInstance(c, 0);
+            }
+            Object newArray = Array.newInstance(c, len);
+            // check if this is a nested array
+            c = Array.get(array, 0).getClass().getComponentType();
+            if (c != null) {
+                for (int i = 0; i < len; i++) {
+                    Array.set(newArray, i, copy(Array.get(array, i)));
+                }
+            } else {
+                for (int i = 0; i < len; i++) {
+                    Array.set(newArray, i, Array.get(array, i));
+                }
+            }
+            return newArray;
         }
         return null;
     }

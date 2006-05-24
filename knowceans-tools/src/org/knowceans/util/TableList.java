@@ -1,5 +1,29 @@
+/*
+ * Copyright (c) 2006 Gregor Heinrich. All rights reserved. Redistribution and
+ * use in source and binary forms, with or without modification, are permitted
+ * provided that the following conditions are met: 1. Redistributions of source
+ * code must retain the above copyright notice, this list of conditions and the
+ * following disclaimer. 2. Redistributions in binary form must reproduce the
+ * above copyright notice, this list of conditions and the following disclaimer
+ * in the documentation and/or other materials provided with the distribution.
+ * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESSED OR
+ * IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+ * MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO
+ * EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+ * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
+ * OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+ * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
+ * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
+ * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
 package org.knowceans.util;
 
+import java.io.DataInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -11,6 +35,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.knowceans.map.IMultiMap;
+import org.knowceans.sandbox.Histogram;
 
 /**
  * TableList handles parallel lists whose elements with same index can be
@@ -34,7 +59,7 @@ public class TableList extends ArrayList<TableList.Fields> {
      * @param args
      */
     public static void main(String[] args) {
-        int size = (int) 1e6;
+        int size = (int) 1e4;
         int[] a = Samplers.randPerm(size);
         double[] b = Samplers.randDir(0.3, size);
 
@@ -57,8 +82,8 @@ public class TableList extends ArrayList<TableList.Fields> {
         System.out.println(StopWatch.format(StopWatch.lap()));
         System.out.println(list.size());
 
-        System.out.println("find index of key 55555");
-        int i = list.binarySearch("key", 55555);
+        System.out.println("find index of key 5555");
+        int i = list.binarySearch("key", 5555);
         System.out.println(StopWatch.format(StopWatch.lap()));
         System.out.println("index = " + i + ": " + list.get(i));
 
@@ -114,6 +139,14 @@ public class TableList extends ArrayList<TableList.Fields> {
         System.out.println(StopWatch.format(StopWatch.stop()));
         System.out.println("total memory");
         System.out.println(Which.usedMemory());
+        
+        System.out.println("save a list to a file");
+        list3.save("list3.zip");
+        
+        System.out.println("load from the file");
+        TableList list4 = TableList.load("list3.zip");
+        System.out.println(list4.size());
+        
     }
 
     // helper classes
@@ -351,6 +384,44 @@ public class TableList extends ArrayList<TableList.Fields> {
         super();
         this.fields = new SetArrayList<String>(fields.size());
         this.fields.addAll(fields);
+    }
+
+    /**
+     * Initialise the table list from the file.
+     * 
+     * @param file
+     * @throws ClassNotFoundException
+     * @throws IOException
+     */
+    public static TableList load(String file) {
+        try {
+            ObjectInputStream ois = ObjectIo.openInputStream(file);
+            TableList t = (TableList) ois.readObject();
+            ois.close();
+            return t;
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    /**
+     * Save the table list to a file.
+     * 
+     * @param file
+     */
+    public void save(String file) {
+        try {
+            ObjectOutputStream oos = ObjectIo.openOutputStream(file);
+            oos.writeObject(this);
+            oos.close();
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     /**

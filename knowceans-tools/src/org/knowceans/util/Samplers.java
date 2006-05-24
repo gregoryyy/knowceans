@@ -13,7 +13,6 @@ package org.knowceans.util;
 
 import java.util.Arrays;
 
-
 /**
  * Diverse sampling methods, including beta, gamma, multinomial, and Dirichlet
  * distributions as well as Dirichlet processes, using Sethurahman's
@@ -461,6 +460,43 @@ public class Samplers {
 
         // TODO: use insertion point formula in Array.binarySearch()
         i = binarySearch(cumPp, randNum);
+
+        System.out.println(Vectors.print(pp) + " " + i);
+
+        return i;
+    }
+
+    /**
+     * Creates one multinomial sample given the parameter vector pp. Each
+     * category is named after the index (0-based!) of the respective element of
+     * pp; Sometimes called categorical distribution (e.g., in BUGS). This
+     * version uses a binary search algorithm and does not require
+     * normalisation. Note that the parameters used <i>directly</i> changed
+     * because the multinomial is cumulated to save memory and copying time.
+     */
+    public static int randMultDirect(double[] pp) {
+
+        int i;
+
+        for (i = 1; i < pp.length; i++) {
+            pp[i] += pp[i - 1];
+
+        }
+        // this automatically normalises.
+        double randNum = Cokus.randDouble() * pp[i - 1];
+
+        double debugP = pp[i - 1];
+
+        double debugR = randNum / debugP;
+
+        i = Arrays.binarySearch(pp, randNum);
+
+        if (i == -1) {
+            System.out.println("debugP = " + debugP + " debugR = " + debugR
+                + " randNum = " + randNum);
+        }
+
+        System.out.println(Vectors.print(pp) + " " + i);
 
         return i;
     }
