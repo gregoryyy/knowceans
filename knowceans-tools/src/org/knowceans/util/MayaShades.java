@@ -19,9 +19,7 @@
  */
 package org.knowceans.util;
 
-import static java.lang.Math.*;
-import java.text.DecimalFormat;
-import java.text.NumberFormat;
+import static java.lang.Math.floor;
 
 /**
  * MayaShades creates Maya-esque visualisations of numeric data -- Maya-esqe

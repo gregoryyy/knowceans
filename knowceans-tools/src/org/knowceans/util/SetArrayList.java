@@ -26,10 +26,10 @@
 
 package org.knowceans.util;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Set;
-import java.util.ArrayList;
 
 /**
  * A Collection that implements both the List and the Set interface. Based on
