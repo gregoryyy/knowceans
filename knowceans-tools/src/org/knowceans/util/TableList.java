@@ -35,7 +35,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.knowceans.map.IMultiMap;
-import org.knowceans.sandbox.Histogram;
 
 /**
  * TableList handles parallel lists whose elements with same index can be

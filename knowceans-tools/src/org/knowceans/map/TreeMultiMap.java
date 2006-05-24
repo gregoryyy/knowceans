@@ -1,9 +1,5 @@
 /*
- * Created on Nov 10, 2003 To change the template for this generated file go to
- * Window - Preferences - Java - Code Generation - Code and Comments
- */
-/*
- * Copyright (c) 2002-5 Gregor Heinrich. All rights reserved. Redistribution and
+ * Copyright (c) 2005-2006 Gregor Heinrich. All rights reserved. Redistribution and
  * use in source and binary forms, with or without modification, are permitted
  * provided that the following conditions are met: 1. Redistributions of source
  * code must retain the above copyright notice, this list of conditions and the
@@ -25,12 +21,9 @@ package org.knowceans.map;
 
 import java.util.Comparator;
 import java.util.HashSet;
-import java.util.Hashtable;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * Implementation of the IMultiMap interface backed by a TreeMap. Maps a key to
@@ -67,11 +60,11 @@ public class TreeMultiMap<X, Y> extends TreeMap<X, Set<Y>> implements
         super();
     }
 
-    public TreeMultiMap(Comparator c) {
+    public TreeMultiMap(Comparator<X> c) {
         super(c);
     }
 
-    public TreeMultiMap(Map m) {
+    public TreeMultiMap(Map<X, Set<Y>> m) {
         super(m);
     }
 
@@ -86,7 +79,6 @@ public class TreeMultiMap<X, Y> extends TreeMap<X, Set<Y>> implements
         b.add("d", 4);
         Map m = new TreeMap<String, Set<Integer>>(b);
         System.out.println(m);
-        Map n = new InvertibleHashMap<String, Set<Integer>>();
         b.remove("aa");
         b.remove("b", 22);
         System.out.println(b);
@@ -119,7 +111,7 @@ public class TreeMultiMap<X, Y> extends TreeMap<X, Set<Y>> implements
      * method removes the complete key and set of values.
      */
     public void remove(X key, Y value) {
-        Set values = (Set) get(key);
+        Set values = get(key);
         if (values == null) {
             return;
         }

@@ -1,6 +1,26 @@
 /*
  * Created on 06.04.2006
  */
+/*
+ * Copyright (c) 2006 Gregor Heinrich. All rights reserved. Redistribution and
+ * use in source and binary forms, with or without modification, are permitted
+ * provided that the following conditions are met: 1. Redistributions of source
+ * code must retain the above copyright notice, this list of conditions and the
+ * following disclaimer. 2. Redistributions in binary form must reproduce the
+ * above copyright notice, this list of conditions and the following disclaimer
+ * in the documentation and/or other materials provided with the distribution.
+ * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESSED OR
+ * IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+ * MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO
+ * EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+ * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
+ * OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+ * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
+ * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
+ * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+
 package org.knowceans.util;
 
 import java.util.Arrays;
@@ -43,7 +63,7 @@ public class Which {
      * 
      * @return
      */
-    public static List<StackTraceElement> fullstack() {
+    public synchronized static List<StackTraceElement> fullstack() {
         String clazz = null;
         try {
             throw new Exception();
@@ -60,7 +80,7 @@ public class Which {
      * 
      * @return
      */
-    public static List<String> stack() {
+    public synchronized static List<String> stack() {
         List<StackTraceElement> t = fullstack();
         t = t.subList(1, t.size());
         Vector<String> v = new Vector<String>();
@@ -72,7 +92,7 @@ public class Which {
         return v;
     }
 
-    private static String getShortClass(StackTraceElement e) {
+    private synchronized static String getShortClass(StackTraceElement e) {
         String c = e.getClassName();
         String f = e.getFileName();
         f = f.substring(0, f.length() - 5);
@@ -94,7 +114,7 @@ public class Which {
      * @param c
      * @return
      */
-    private static String shortClassName(String c) {
+    private synchronized static String shortClassName(String c) {
         String d = c.substring(c.lastIndexOf('.') + 1);
         // PatternString pc = PatternString.create(c);
         // String d = null;
@@ -110,7 +130,7 @@ public class Which {
      * @param d short class name
      * @return
      */
-    private static String resolveAnonymous(String c, String d) {
+    private synchronized static String resolveAnonymous(String c, String d) {
         // if anonymous
         if (d.matches(".*\\$\\d+")) {
             String g = "Object";
@@ -134,7 +154,7 @@ public class Which {
      * @param d short class name
      * @return
      */
-    private static String resolveAnonymous(Object c, String d) {
+    private synchronized static String resolveAnonymous(Object c, String d) {
         String g;
         // if anonymous
         if (d.matches(".*\\$\\d+")) {
@@ -155,7 +175,7 @@ public class Which {
      * 
      * @return
      */
-    public static String thread() {
+    public synchronized static String thread() {
         String clazz = null;
         try {
             throw new Exception();
@@ -173,7 +193,7 @@ public class Which {
      * 
      * @return
      */
-    public static String main() {
+    public synchronized static String main() {
         Map<Thread, StackTraceElement[]> a = Thread.getAllStackTraces();
         for (Thread th : a.keySet()) {
             if (th.getName().equals("main")) {
@@ -192,7 +212,7 @@ public class Which {
      * @param t
      * @return
      */
-    public static Object thisclass(Object t) {
+    public synchronized static Object thisclass(Object t) {
         String s = t.getClass().toString();
         s = shortClassName(s);
         s = resolveAnonymous(t, s);

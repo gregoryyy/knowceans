@@ -1,5 +1,8 @@
 /*
- * Copyright (c) 2002-5 Gregor Heinrich. All rights reserved. Redistribution and
+ * Created on Mar 28, 2005
+ */
+/*
+ * Copyright (c) 2005-2006 Gregor Heinrich. All rights reserved. Redistribution and
  * use in source and binary forms, with or without modification, are permitted
  * provided that the following conditions are met: 1. Redistributions of source
  * code must retain the above copyright notice, this list of conditions and the
@@ -16,9 +19,6 @@
  * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
  * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
-/*
- * Created on Mar 28, 2005
  */
 package org.knowceans.map;
 

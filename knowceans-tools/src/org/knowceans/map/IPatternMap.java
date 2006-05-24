@@ -5,7 +5,7 @@
  * Window&gt;Preferences&gt;Java&gt;Code Generation&gt;Code and Comments
  */
 /*
- * Copyright (c) 2002-5 Gregor Heinrich. All rights reserved. Redistribution and
+ * Copyright (c) 2003-2006 Gregor Heinrich. All rights reserved. Redistribution and
  * use in source and binary forms, with or without modification, are permitted
  * provided that the following conditions are met: 1. Redistributions of source
  * code must retain the above copyright notice, this list of conditions and the

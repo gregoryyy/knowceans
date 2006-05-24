@@ -1,9 +1,5 @@
 /*
- * Created on Nov 10, 2003 To change the template for this generated file go to
- * Window - Preferences - Java - Code Generation - Code and Comments
- */
-/*
- * Copyright (c) 2002-5 Gregor Heinrich. All rights reserved. Redistribution and
+ * Copyright (c) 2005-2006 Gregor Heinrich. All rights reserved. Redistribution and
  * use in source and binary forms, with or without modification, are permitted
  * provided that the following conditions are met: 1. Redistributions of source
  * code must retain the above copyright notice, this list of conditions and the
@@ -21,12 +17,10 @@
  * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-
 package org.knowceans.map;
 
 import java.util.Comparator;
 import java.util.HashSet;
-import java.util.Hashtable;
 import java.util.Map;
 import java.util.Set;
 
