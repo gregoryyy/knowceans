@@ -64,7 +64,7 @@ public class InvertibleTreeMap<X, Y> extends TreeMap<X, Y> {
      * 
      * @param c
      */
-    public InvertibleTreeMap(Comparator<Object> c) {
+    public InvertibleTreeMap(Comparator<? super X> c) {
         super(c);
         inverse = new HashMultiMap<Y, X>();
     }

@@ -94,7 +94,7 @@ public class BijectiveTreeMap<X, Y> extends TreeMap<X, Y> implements
      * 
      * @param forward
      */
-    public BijectiveTreeMap(Comparator<X> forward) {
+    public BijectiveTreeMap(Comparator< ? super X> forward) {
         super(forward);
         inverse = new TreeMap<Y, X>();
     }
@@ -104,7 +104,8 @@ public class BijectiveTreeMap<X, Y> extends TreeMap<X, Y> implements
      * 
      * @param forward
      */
-    public BijectiveTreeMap(Comparator<X> forward, Comparator<Y> backward) {
+    public BijectiveTreeMap(Comparator< ? super X> forward,
+        Comparator< ? super Y> backward) {
         super(forward);
         inverse = new TreeMap<Y, X>(backward);
     }
@@ -135,7 +136,7 @@ public class BijectiveTreeMap<X, Y> extends TreeMap<X, Y> implements
      * removes the key and its value from the map. In the inverse map, the value
      * is removed. Returns the value
      */
-    //public Y remove(X key) {
+    // public Y remove(X key) {
     public Y remove(Object key) {
         Y val = super.remove(key);
         if (val != null)

@@ -65,7 +65,7 @@ public class PatternTreeMultiMap<X, Y> extends TreeMultiMap<X, Y> implements
         super();
     }
 
-    public PatternTreeMultiMap(Comparator c) {
+    public PatternTreeMultiMap(Comparator<? super X> c) {
         super(c);
     }
 

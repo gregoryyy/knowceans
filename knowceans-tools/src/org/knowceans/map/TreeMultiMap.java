@@ -60,7 +60,7 @@ public class TreeMultiMap<X, Y> extends TreeMap<X, Set<Y>> implements
         super();
     }
 
-    public TreeMultiMap(Comparator<X> c) {
+    public TreeMultiMap(Comparator<? super X> c) {
         super(c);
     }
 
