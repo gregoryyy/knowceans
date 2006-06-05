@@ -319,6 +319,6 @@ public class Conf extends Properties {
     }
 
     public static void main(String[] args) {
-        System.out.println(Conf.get("test", new String[] {"dude"}));
+        System.out.println(Conf.get("test", new String[] {"***"}));
     }
 }
