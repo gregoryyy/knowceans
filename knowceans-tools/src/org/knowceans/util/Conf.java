@@ -28,33 +28,37 @@
  */
 package org.knowceans.util;
 
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.text.MessageFormat;
 import java.util.Properties;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
  * Reads configuration information from a properties file. Implemented as
- * singleton. The default location of this file is ./conf.properties, however,
- * this can be changed if the system property conf.properties.file is set at
- * startup: java -Dknowceans.properties.file=somewhere.prop e.g.,
- * -Dknowceans.properties.file=d:\eclipse\workspace\indexer.properties
+ * singleton.
  * <p>
- * Also, the possibility to define a base path is provided in the properties
- * file itself (property xpt.indexer.basepath) or in the basepath field of this
- * class. To make properties dependent on the basepath, set the relative path
- * statement ./path to
+ * The file is looked up according to the following priorities list:
+ * <ul>
+ * <li>./[Content of system property conf.properties.file if set] (e.g.,
+ * runtime jvm option
+ * -Dknowceans.properties.file=d:\eclipse\workspace\indexer.properties)
+ * <li>./[Main class name without package declaration and .class
+ * suffix].properties
+ * <li>./knowceans.properties
+ * </ul>
+ * <p>
+ * This version allows the definition of variables that can be expanded at
+ * readtime:
  * 
- * @/path .
- *        <p>
- *        This version allows the definition of variables that can be expanded
- *        at readtime:
+ * <pre> 
  * @{x1} in values will be expanded according to the respective property
  * @x1=val. The user MUST avoid circular references.
- *          <p>
- *          Re-packaging of Conf by knowceans.org.
+ * </pre>
+ * 
  * @author heinrich
  */
 public class Conf extends Properties {
@@ -92,9 +96,23 @@ public class Conf extends Properties {
     public static String get(String key) {
         String p = Conf.get().getProperty(key);
         if (p != null) {
-            p = instance.resolveVariables(p);
+            p = instance.resolveVariables(p).trim();
         }
         return p;
+    }
+    
+
+    /**
+     * Get the property and replace the braced values with the array given.
+     * 
+     * @param key
+     * @param braces
+     * @return
+     */
+    private static Object get(String key, String[] braces) {
+        String a = get(key);
+        MessageFormat mf = new MessageFormat(a);
+        return mf.format(braces);
     }
 
     /**
@@ -187,13 +205,13 @@ public class Conf extends Properties {
         return false;
     }
 
+    /**
+     * Protected constructor
+     */
     protected Conf() {
 
         super();
-        System.out.println(System.getProperty("user.dir"));
-        String temp = System.getProperty("knowceans.properties.file");
-        if (temp != null)
-            propFile = temp;
+        lookupPropFile();
         try {
             load(new FileInputStream(propFile));
             varPattern = Pattern.compile("(\\@\\{([^\\}]+)\\})+");
@@ -203,6 +221,24 @@ public class Conf extends Properties {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    private void lookupPropFile() {
+        // property controlled file
+        // System.out.println(System.getProperty("user.dir"));
+        String temp = System.getProperty("knowceans.properties.file");
+        if (temp != null) {
+            propFile = temp;
+            return;
+        }
+        // try to find a properties file that is called same as the main type
+        String b = Which.main();
+        b += ".properties";
+        if (new File(b).exists()) {
+            propFile = b;
+            return;
+        }
+        // (default already in propfile)
     }
 
     /**
@@ -255,5 +291,9 @@ public class Conf extends Properties {
      */
     public static void setPropFile(String string) {
         propFile = string;
+    }
+
+    public static void main(String[] args) {
+        System.out.println(Conf.get("test", new String[]{"Gregor"}));
     }
 }

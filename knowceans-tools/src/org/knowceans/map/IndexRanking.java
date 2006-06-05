@@ -35,19 +35,24 @@ import java.util.Set;
  * @author gregor
  */
 public class IndexRanking extends RankingMap<Double, Integer> {
-    
+
     public class IndexEntry extends RankingMap<Double, Integer>.RankEntry {
 
         public IndexEntry(Double key, Integer value) {
             super(key, value);
         }
-        
+
         public int getIndex() {
             return value;
         }
-        
+
         public double getScore() {
             return key;
+        }
+
+        @Override
+        public String toString() {
+            return value + ": " + key;
         }
     }
 
@@ -105,7 +110,7 @@ public class IndexRanking extends RankingMap<Double, Integer> {
         }
         return head;
     }
-    
+
     /**
      * Get sorted key-value pairs with duplicate scores resolved
      * 
@@ -127,7 +132,7 @@ public class IndexRanking extends RankingMap<Double, Integer> {
         return a;
 
     }
-    
+
     @Override
     public List<IndexEntry> entryList() {
         return entryList(Integer.MAX_VALUE);

@@ -461,7 +461,7 @@ public class Samplers {
         // TODO: use insertion point formula in Array.binarySearch()
         i = binarySearch(cumPp, randNum);
 
-        System.out.println(Vectors.print(pp) + " " + i);
+//        System.out.println(Vectors.print(pp) + " " + i);
 
         return i;
     }
