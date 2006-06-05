@@ -100,7 +100,6 @@ public class Conf extends Properties {
         }
         return p;
     }
-    
 
     /**
      * Get the property and replace the braced values with the array given.
@@ -206,6 +205,32 @@ public class Conf extends Properties {
     }
 
     /**
+     * Get an instance of the class that corresponds to the property name and
+     * has a default constructor. If no default constructor exists, use
+     * getClass() instantiate in the client code.
+     * 
+     * @param clazz
+     * @return an instance of the class
+     * @throws Exception
+     */
+    public static Object getInstance(String clazz) throws Exception {
+        Class cls = getClass(clazz);
+        return cls.newInstance();
+    }
+
+    /**
+     * Get class with the name specified by the property, using the default
+     * class loader.
+     * 
+     * @param clazz
+     * @return
+     * @throws ClassNotFoundException
+     */
+    public static Class getClass(String clazz) throws ClassNotFoundException {
+        return Class.forName(clazz);
+    }
+
+    /**
      * Protected constructor
      */
     protected Conf() {
@@ -294,6 +319,6 @@ public class Conf extends Properties {
     }
 
     public static void main(String[] args) {
-        System.out.println(Conf.get("test", new String[]{"Gregor"}));
+        System.out.println(Conf.get("test", new String[] {"dude"}));
     }
 }
