@@ -196,6 +196,76 @@ public class Densities {
     }
 
     /**
+     * Estimator for the Dirichlet parameters. After Minka (2003) Estimating a
+     * Dirichlet distribution
+     *
+     * @param multinomial parameters p
+     * @return ML estimate of the corresponding parameters alpha
+     */
+    public static double[] estDirichlet(double[][] pp) {
+        //
+        int K = pp[0].length;
+        int N = pp.length;
+
+        // (5) log means of p_k (= observed sufficient statistics)
+        // and first and second moments
+        double[] suffstats = new double[K];
+        double[] pmean = new double[K];
+        double[] pmean2 = new double[K];
+        for (int i = 0; i < N; i++) {
+            for (int k = 0; k < K; k++) {
+                suffstats[k] += Math.log(pp[i][k]);
+                pmean[k] += pp[i][k];
+                pmean2[k] += pp[i][k] * pp[i][k];
+            }
+        }
+        for (int k = 0; k < K; k++) {
+            suffstats[k] /= N;
+            pmean[k] /= N;
+            pmean2[k] /= N;
+        }
+        // System.out.println("pmean: " + Vectors.print(pmean));
+        // System.out.println("pmean2: " + Vectors.print(pmean2));
+        // System.out.println("1/N sum log p_i: " + Vectors.print(suffstats));
+
+        // init alpha_k using moments method (19-21)
+        double[] alpha = Vectors.copy(pmean);
+        double precision = 0;
+
+        // estimate s for each dimension (21) and take the mean
+        for (int k = 0; k < K; k++) {
+            precision += (pmean[k] - pmean2[k])
+                / (pmean2[k] - pmean[k] * pmean[k]);
+        }
+        precision /= K;
+        // System.out.println("precision = " + precision);
+        // alpha_k = mean_k * precision
+        for (int k = 0; k < K; k++) {
+            alpha[k] = pmean[k] * precision;
+        }
+        // System.out.println("initial estimate for alpha: " +
+        // Vectors.print(alpha));
+
+        // using (9)
+        int fixits = 500;
+        double[] alphadiff = new double[K];
+        for (int i = 0; i < fixits; i++) {
+            System.arraycopy(alpha, 0, alphadiff, 0, K);
+            double sumalpha = Vectors.sum(alpha);
+            for (int k = 0; k < K; k++) {
+                alpha[k] = Gamma.invdigamma(Gamma.digamma(sumalpha)
+                    + suffstats[k]);
+                alphadiff[k] = Math.abs(alpha[k] - alphadiff[k]);
+            }
+            if (Vectors.sum(alphadiff) < 1e-4) {
+                // System.out.println(i);
+                break;
+            }
+        }
+        return alpha;
+    }
+
+    /**
      * Mult(nn|pp) using logarithmic multinomial coefficient
      *
      * @param nn counts for each category
@@ -231,11 +301,11 @@ public class Densities {
     }
 
     public static void main(String[] args) {
-        double[] alpha = new double[] {2, 1};
-        for (float i = 0; i < 1; i += .01) {
-            System.out.println(i + "   "
-                + pdfDirichlet(new double[] {i, 1 - i}, alpha));
-        }
+        // testing estimation of alpha from p
+        double[] alpha = {0.5, .10, 5.0};
+        double[][] pp = Samplers.randDir(alpha, 2000);
+        double[] alphaguess = estDirichlet(pp);
+        System.out.println(Vectors.print(alphaguess));
 
     }
 }
