@@ -42,6 +42,8 @@ public class Which {
         }
     }
 
+    private static String mainClass;
+
     public static void main(String[] args) {
         run();
     }
@@ -190,10 +192,16 @@ public class Which {
 
     /**
      * return the class that the main method was started with.
+     * <p>
+     * FIXME: how can the calling class be determined when its main thread is.
+     * As a provisorical method, Which.setMain() is called in the main function.
+     * finished?
      * 
      * @return
      */
     public synchronized static String main() {
+        if (mainClass != null)
+            return shortClassName(mainClass);
         Map<Thread, StackTraceElement[]> a = Thread.getAllStackTraces();
         for (Thread th : a.keySet()) {
             if (th.getName().equals("main")) {
@@ -203,7 +211,18 @@ public class Which {
                 return clazz;
             }
         }
-        return "impossible: no 'main' thread";
+        return "impossible: no 'main' thread alive.";
+    }
+
+    /**
+     * For multithreaded applications that finish the main thread, call this
+     * method in the main() method. The first call to this method is kept.
+     */
+    public static void setMain() {
+        if (mainClass == null) {
+            StackTraceElement[] t = Thread.currentThread().getStackTrace();
+            mainClass = t[t.length - 1].getClassName();
+        }
     }
 
     /**

@@ -25,14 +25,14 @@ package org.knowceans.util;
 /**
  * Densities calculates for different density functions the likelihood of a data
  * item given the parameters
- * 
+ *
  * @author heinrich
  */
 public class Densities {
 
     /**
      * Normal likelihood
-     * 
+     *
      * @param x
      * @param mu
      * @param sigma
@@ -46,7 +46,7 @@ public class Densities {
 
     /**
      * GMM likelihood
-     * 
+     *
      * @param x
      * @param k
      * @param probs
@@ -54,18 +54,57 @@ public class Densities {
      * @param sigma
      * @return
      */
-    public static double pdfGmm(double x, int k, double[] probs, double[] mean,
+    public static double pdfGmm(double x, double[] probs, double[] mean,
         double[] sigma) {
         double p = 0;
-        for (int i = 0; i < k; i++) {
+        for (int i = 0; i < probs.length; i++) {
             p += probs[i] * pdfNorm(x, mean[i], sigma[i]);
         }
         return p;
     }
 
     /**
+     * Dirichlet mixture likelihood using mean and precision
+     *
+     * @param x
+     * @param probs
+     * @param basemeasure -- multinomial parameter around which the distribution
+     *        scatters, m = alpha / s
+     * @param precision -- s = sum alpha
+     * @return
+     */
+    public static double pdfDmm(double x[], double[] probs,
+        double[][] basemeasure, double[] precision) {
+        double p = 0;
+        for (int k = 0; k < probs.length; k++) {
+            p += probs[k] * pdfDirichlet(x, basemeasure[k], precision[k]);
+        }
+        return p;
+    }
+
+    /**
+     * Dirichlet mixture likelihood using Dirichlet parameters and assuming
+     * independence between components.
+     *
+     * @param x
+     * @param k
+     * @param probs
+     * @param mean
+     * @param precision
+     * @return
+     */
+    public static double pdfDmm(double xx[], double[] probs,
+        double[][] parameters) {
+        double p = 0;
+        for (int i = 0; i < probs.length; i++) {
+            p += probs[i] * pdfDirichlet(xx, parameters[i]);
+        }
+        return p;
+    }
+
+    /**
      * gamma likelihood p(x|a,b) = x^(a-1) * e^(-x/b) / (b^a * Gamma(a))
-     * 
+     *
      * @param x value
      * @param a (shape?)
      * @param b (scale?)
@@ -78,7 +117,7 @@ public class Densities {
 
     /**
      * beta likelihood
-     * 
+     *
      * @param x data item
      * @param a pseudo counts for success
      * @param b pseudo counts for failure
@@ -94,7 +133,7 @@ public class Densities {
      * Dir(xx|alpha) =
      * <p>
      * Gamma(sum_i alpha[i])/(prod_i Gamma(alpha[i])) prod_i xx[i]^(alpha[i]-1)
-     * 
+     *
      * @param xx multivariate convex data item (sum=1)
      * @param alpha Dirichlet parameter vector
      * @return
@@ -112,10 +151,35 @@ public class Densities {
     }
 
     /**
+     * Dirichlet likelihood using logarithmic calculation
+     * <p>
+     * Dir(xx|alpha) =
+     * <p>
+     * Gamma(sum_i alpha[i])/(prod_i Gamma(alpha[i])) prod_i xx[i]^(alpha[i]-1)
+     *
+     * @param xx multivariate convex data item (sum=1)
+     * @param basemeasure -- normalised coefficients (= mean)
+     * @param precision -- central moment ...
+     * @return
+     */
+    public static double pdfDirichlet(double[] xx, double[] basemeasure,
+        double precision) {
+        double sumAlpha = 0.;
+        double sumLgammaAlpha = 0.;
+        double logLik = 0.;
+        for (int i = 0; i < xx.length; i++) {
+            sumAlpha += basemeasure[i] * precision;
+            sumLgammaAlpha += Gamma.lgamma(basemeasure[i] * precision);
+            logLik += Math.log(xx[i]) * (basemeasure[i] * precision - 1);
+        }
+        return Math.exp(Gamma.lgamma(sumAlpha) - sumLgammaAlpha + logLik);
+    }
+
+    /**
      * Symmetric Dirichlet likelihood:
      * <p>
      * Dir(xx|alpha) = Gamma(k * alpha)/Gamma(alpha)^k prod_i xx[i]^(alpha - 1)
-     * 
+     *
      * @param xx multivariate convex data item (sum=1)
      * @param alpha symmetric parameter
      * @return
@@ -133,7 +197,7 @@ public class Densities {
 
     /**
      * Mult(nn|pp) using logarithmic multinomial coefficient
-     * 
+     *
      * @param nn counts for each category
      * @param pp convex probability vector for categories
      * @return
@@ -153,7 +217,7 @@ public class Densities {
 
     /**
      * Binom(n | N, p) using linear binomial coefficient
-     * 
+     *
      * @param n
      * @param N
      * @param p

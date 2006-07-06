@@ -57,7 +57,7 @@ import java.util.regex.Pattern;
  * <p>
  * TODO: make pattern string with a constant (and pre-compilable pattern). TODO:
  * fix problems with cascading substitution.
- * 
+ *
  * @author gregor heinrich arbylon.net
  */
 public class PatternString implements CharSequence, MatchResult {
@@ -91,19 +91,19 @@ public class PatternString implements CharSequence, MatchResult {
 
         Vector<PatternString> b = s.findAll("b ?c", "i");
         System.out.println(b);
-        
+
         s = new PatternString("abc dlcid c bC ab c");
-        
+
         Vector<PatternString> v = s.findAll("(b ?c)", "i$1$1", "i");
         System.out.println(v);
-        
+
     }
 
     public boolean debug = false;
 
     /**
      * Create a PatternString from the input, with an empty matcher.
-     * 
+     *
      * @param text
      */
     public PatternString(String text) {
@@ -112,7 +112,7 @@ public class PatternString implements CharSequence, MatchResult {
 
     /**
      * Create a PatternString from the input, with an empty matcher.
-     * 
+     *
      * @param text
      */
     public PatternString(StringBuffer text) {
@@ -122,7 +122,7 @@ public class PatternString implements CharSequence, MatchResult {
     /**
      * Create a empty PatternString. The object text can be changed using
      * setB().
-     * 
+     *
      * @param s
      */
     public PatternString() {
@@ -133,7 +133,7 @@ public class PatternString implements CharSequence, MatchResult {
      * copies the pattern string content with an new matcher set to the region
      * of the current one but the matchresult my set, ie., all references to
      * groups information of the last match are kept.
-     * 
+     *
      * @return
      */
     public PatternString copy() {
@@ -146,7 +146,7 @@ public class PatternString implements CharSequence, MatchResult {
 
     /**
      * convenience method to get a pattern string.
-     * 
+     *
      * @param s
      * @return
      */
@@ -166,7 +166,7 @@ public class PatternString implements CharSequence, MatchResult {
 
     /**
      * Like perl, but resets the parser before.
-     * 
+     *
      * @param patternCommand
      * @return
      */
@@ -183,7 +183,7 @@ public class PatternString implements CharSequence, MatchResult {
      * FIXME: with cascaded substitution, the string of the matcher is always
      * reset to the first value (the field text diverges from the internal state
      * of the matcher).
-     * 
+     *
      * @param patternCommand -- everything that appears right of a
      *        <code>=~</code> in Perl, i.e., the expression includes commands
      *        and delimiters. Examples: <code>/abc/</code> for finding,
@@ -235,7 +235,7 @@ public class PatternString implements CharSequence, MatchResult {
     /**
      * emulates a perl find expression like:
      * <code> this =~ /expression/perlFlags</code>
-     * 
+     *
      * @param expression
      * @param perlFlags (see putPerlFlags)
      * @return
@@ -252,7 +252,7 @@ public class PatternString implements CharSequence, MatchResult {
     /**
      * emulates a perl find expression like:
      * <code> this =~ /expression/perlFlags</code>
-     * 
+     *
      * @param expression
      * @param perlFlags {@see Pattern.compile}
      * @return
@@ -269,7 +269,7 @@ public class PatternString implements CharSequence, MatchResult {
 
     /**
      * Emulates a perl find expression like: <code> this =~ /expression/ </code>
-     * 
+     *
      * @param expression
      * @return
      */
@@ -285,7 +285,7 @@ public class PatternString implements CharSequence, MatchResult {
      * because the search is exhaustive and the matcher of this pattern string
      * is positioned at the end of the last match. Can be used to use find in a
      * Java foreach construct. Use reset() to start at the beginning.
-     * 
+     *
      * @param expression
      * @return
      */
@@ -317,7 +317,7 @@ public class PatternString implements CharSequence, MatchResult {
      * Finds all occurrences of the expression and substitutes them with the
      * replacement. Does not change the internal string but resets the internal
      * matcher and those of the generated pattern strings.
-     * 
+     *
      * @param expression
      * @return
      */
@@ -343,7 +343,7 @@ public class PatternString implements CharSequence, MatchResult {
      * Finds the next occurrence of the pattern and returns it (i.e., return
      * group(0)). The success of this find() operation can be checked with
      * found(), and the actual groups can be checked with group(...).
-     * 
+     *
      * @return
      */
     public PatternString findNext() {
@@ -365,7 +365,7 @@ public class PatternString implements CharSequence, MatchResult {
     /**
      * Returns true whether the last find or matching operation has been
      * successful, i.e., the pattern has been found.
-     * 
+     *
      * @return
      */
     public boolean found() {
@@ -375,7 +375,7 @@ public class PatternString implements CharSequence, MatchResult {
     /**
      * Emulates a perl matching expression like:
      * <code> this =~ m/expression/perlFlags</code>
-     * 
+     *
      * @param expression
      * @param perlFlags (see putPerlFlags)
      * @return the matched string
@@ -388,7 +388,7 @@ public class PatternString implements CharSequence, MatchResult {
     /**
      * emulates a perl match expression like:
      * <code> this =~ /expression/perlFlags</code>
-     * 
+     *
      * @param expression
      * @param perlFlags {@see Pattern.compile}
      * @return
@@ -413,7 +413,7 @@ public class PatternString implements CharSequence, MatchResult {
 
     /**
      * Same as found().
-     * 
+     *
      * @return
      */
     public boolean matched() {
@@ -423,7 +423,7 @@ public class PatternString implements CharSequence, MatchResult {
     /**
      * emulates a perl substitution expression like:
      * <code> this =~ s/expression/replacement/perlFlags</code>
-     * 
+     *
      * @param expression
      * @param replacement
      * @param perlFlags (see putPerlFlags)
@@ -444,7 +444,7 @@ public class PatternString implements CharSequence, MatchResult {
     /**
      * emulates a perl substitution expression like:
      * <code> this =~ s/expression/replacement/perlFlags</code>
-     * 
+     *
      * @param expression
      * @param replacement
      * @param perlFlags (see Pattern)
@@ -468,7 +468,7 @@ public class PatternString implements CharSequence, MatchResult {
 
     /**
      * Replaces the next occurrence of the pattern.
-     * 
+     *
      * @param replacement
      * @return
      */
@@ -500,7 +500,7 @@ public class PatternString implements CharSequence, MatchResult {
      * Replaces all occurrences of the pattern from the current state of the
      * matcher. If replaceAll should be used, call reset() prior to
      * replaceRemaining()
-     * 
+     *
      * @param replacement
      * @return true if at least one replacement has been done.
      */
@@ -536,7 +536,7 @@ public class PatternString implements CharSequence, MatchResult {
 
     /**
      * save the current matcher state and reset it to new input pattern
-     * 
+     *
      * @param text
      * @param regstart
      * @param regend
@@ -554,7 +554,7 @@ public class PatternString implements CharSequence, MatchResult {
     /**
      * emulates a perl substitution expression like:
      * <code> this =~ s/expression/replacement/</code>
-     * 
+     *
      * @param expression
      * @param replacement
      * @return this
@@ -567,7 +567,7 @@ public class PatternString implements CharSequence, MatchResult {
      * performs global replace of the string expression with the replacement.
      * After the operation, the internal string buffer is filled with the
      * substitute (and the original string lost).
-     * 
+     *
      * @param expression
      * @param replacement
      * @return this
@@ -598,7 +598,7 @@ public class PatternString implements CharSequence, MatchResult {
      * variable expression yields a restarting loop! TODO: check if this makes
      * sense in practice, e.g., with on the fly string concatenations. If not,
      * change == to equals.
-     * 
+     *
      * @param expression
      * @param flags
      * @return
@@ -616,7 +616,7 @@ public class PatternString implements CharSequence, MatchResult {
 
     /**
      * sets the matcher with the new pattern
-     * 
+     *
      * @param p
      */
     public void configureMatcher(Pattern p) {
@@ -660,7 +660,7 @@ public class PatternString implements CharSequence, MatchResult {
      * <li>m - multiline (i.e., match ^$ at newlines)
      * <li>s - singleline (i.e., . matches \n)
      * </ul>
-     * 
+     *
      * @param perlFlags
      * @return the corresponding the Pattern flags value.
      */
@@ -683,7 +683,7 @@ public class PatternString implements CharSequence, MatchResult {
 
     /**
      * return the group with the number after the last match
-     * 
+     *
      * @param number
      * @return
      */
@@ -693,7 +693,7 @@ public class PatternString implements CharSequence, MatchResult {
 
     /**
      * return the group with the number after the last match
-     * 
+     *
      * @param number
      * @return
      */
@@ -703,7 +703,7 @@ public class PatternString implements CharSequence, MatchResult {
 
     /**
      * return the start of the internal matcher's region
-     * 
+     *
      * @return
      */
     public int regionStart() {
@@ -712,7 +712,7 @@ public class PatternString implements CharSequence, MatchResult {
 
     /**
      * return the end of the internal matcher's region
-     * 
+     *
      * @return
      */
     public int regionEnd() {
@@ -721,7 +721,7 @@ public class PatternString implements CharSequence, MatchResult {
 
     /**
      * sets the region for this pattern string
-     * 
+     *
      * @param start
      * @param end
      */
@@ -733,7 +733,7 @@ public class PatternString implements CharSequence, MatchResult {
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see java.util.regex.MatchResult#start()
      */
     public int start() {
@@ -742,7 +742,7 @@ public class PatternString implements CharSequence, MatchResult {
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see java.util.regex.MatchResult#end()
      */
     public int end() {
@@ -751,7 +751,7 @@ public class PatternString implements CharSequence, MatchResult {
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see java.util.regex.MatchResult#start(int)
      */
     public int start(int group) {
@@ -760,7 +760,7 @@ public class PatternString implements CharSequence, MatchResult {
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see java.util.regex.MatchResult#end(int)
      */
     public int end(int group) {
@@ -769,7 +769,7 @@ public class PatternString implements CharSequence, MatchResult {
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see java.util.regex.MatchResult#group()
      */
     public String group() {
@@ -778,7 +778,7 @@ public class PatternString implements CharSequence, MatchResult {
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see java.util.regex.MatchResult#groupCount()
      */
     public int groupCount() {
@@ -798,7 +798,7 @@ public class PatternString implements CharSequence, MatchResult {
      * <li>$` (dollar backtick) holds the part of the string before (to the
      * left of) the regex match.
      * </ul>
-     * 
+     *
      * @param perlVar
      * @return
      */
@@ -820,7 +820,7 @@ public class PatternString implements CharSequence, MatchResult {
      * <li>$` (dollar backtick) holds the part of the string before (to the
      * left of) the regex match.
      * </ul>
-     * 
+     *
      * @param perlVar
      * @return
      */
@@ -845,7 +845,7 @@ public class PatternString implements CharSequence, MatchResult {
 
     /**
      * shows which groups have matched which strings.
-     * 
+     *
      * @return
      */
     public String debugString() {
@@ -882,7 +882,7 @@ public class PatternString implements CharSequence, MatchResult {
     /**
      * parses the pattern and outputs the capturing and non-capturing group
      * positions.
-     * 
+     *
      * @param pattern
      * @return
      */
@@ -899,7 +899,7 @@ public class PatternString implements CharSequence, MatchResult {
     /**
      * assembles a string that shows the group boundaries of the current
      * pattern.
-     * 
+     *
      * @return
      */
     private StringBuffer[] groupsStrings(String pattern) {
@@ -925,7 +925,7 @@ public class PatternString implements CharSequence, MatchResult {
 
     /**
      * create a StringBuffer with len space characters.
-     * 
+     *
      * @param len
      * @return
      */
@@ -945,14 +945,14 @@ public class PatternString implements CharSequence, MatchResult {
      * looks at parentheses. Elements are [startpos, endpos, type] where type =
      * 1 and 0 for capturing and non-capturing groups. The list is ordered by
      * the group start positions.
-     * 
+     *
      * @param pattern
      * @return
      */
     private List<int[]> getGroupBounds(String pattern) {
 
         // the stack contains the groups in
-        // 
+        //
         Stack<int[]> pp = new Stack<int[]>();
         Vector<int[]> qq = new Vector<int[]>();
 

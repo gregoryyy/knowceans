@@ -43,8 +43,9 @@ import java.util.regex.Pattern;
  * <p>
  * The file is looked up according to the following priorities list:
  * <ul>
- * <li>./[Content of system property conf.properties.file if set] (e.g.,
- * runtime jvm option
+ * <li>[Explicitly named file using load()]
+ * <li>[Content of system property conf.properties.file if set] (e.g., runtime
+ * jvm option
  * -Dknowceans.properties.file=d:\eclipse\workspace\indexer.properties)
  * <li>./[Main class name without package declaration and .class
  * suffix].properties
@@ -89,9 +90,29 @@ public class Conf extends Properties {
     }
 
     /**
+     * Instantiate the configuration, e.g., in the main class.
+     * 
+     * @param file
+     * @return false if as the result of this call the configuration could NOT
+     *         be loaded (can be used to find a conf file), false otherwise (if
+     *         loading was successful or if class instance already exists)
+     */
+    public static boolean load(String file) {
+        if (instance == null) {
+            if (new File(file).exists()) {
+                instance = new Conf(file);
+                return true;
+            } else {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
      * get the named property from the singleton object
      * 
-     * @return
+     * @return the value or null
      */
     public static String get(String key) {
         String p = Conf.get().getProperty(key);
@@ -227,7 +248,7 @@ public class Conf extends Properties {
      * @throws ClassNotFoundException
      */
     public static Class getClass(String clazz) throws ClassNotFoundException {
-        return Class.forName(clazz);
+        return Class.forName(get(clazz));
     }
 
     /**
@@ -237,6 +258,10 @@ public class Conf extends Properties {
 
         super();
         lookupPropFile();
+        loadFile();
+    }
+
+    private void loadFile() {
         try {
             load(new FileInputStream(propFile));
             varPattern = Pattern.compile("(\\@\\{([^\\}]+)\\})+");
@@ -246,6 +271,12 @@ public class Conf extends Properties {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    public Conf(String file) {
+        super();
+        propFile = file;
+        loadFile();
     }
 
     private void lookupPropFile() {

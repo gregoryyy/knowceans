@@ -34,7 +34,7 @@ import java.util.Vector;
  * TODO: The question remains whether it makes sense to have a formal IntVector,
  * analoguous to IntMatrix that allows performing search and indexing
  * operations, such as views, etc.
- * 
+ *
  * @author heinrich
  */
 public class Vectors {
@@ -46,7 +46,7 @@ public class Vectors {
      * Set the format of the following double print calls to the column width
      * and number of digits. Note that this is a static setting, it can be
      * undone using unsetFormat.
-     * 
+     *
      * @param colwidth
      * @param ndigits
      */
@@ -57,7 +57,7 @@ public class Vectors {
 
     /**
      * Get the format settings for doubles.
-     * 
+     *
      * @return
      */
     public static final int[] getFormat() {
@@ -99,7 +99,7 @@ public class Vectors {
     /**
      * create sequence [start : step : end] of double values. TODO: check
      * precision.
-     * 
+     *
      * @param start double value of start, if integer, use "1.0" notation.
      * @param end double value of end, if integer, use "1.0" notation.
      * @param step double value of step size
@@ -126,7 +126,7 @@ public class Vectors {
 
     /**
      * sum the elements of vec
-     * 
+     *
      * @param vec
      * @return
      */
@@ -141,7 +141,7 @@ public class Vectors {
 
     /**
      * sum the elements of vec
-     * 
+     *
      * @param vec
      * @return
      */
@@ -155,7 +155,7 @@ public class Vectors {
 
     /**
      * cumulative sum of the elements, starting at element 0.
-     * 
+     *
      * @param vec
      * @return vector containing the cumulative sum of the elements of vec
      */
@@ -170,7 +170,7 @@ public class Vectors {
 
     /**
      * maximum value in vec
-     * 
+     *
      * @param vec
      * @return
      */
@@ -185,7 +185,7 @@ public class Vectors {
 
     /**
      * maximum value in vec
-     * 
+     *
      * @param vec
      * @return
      */
@@ -200,7 +200,7 @@ public class Vectors {
 
     /**
      * minimum value in vec
-     * 
+     *
      * @param vec
      * @return
      */
@@ -215,7 +215,7 @@ public class Vectors {
 
     /**
      * minimum value in vec
-     * 
+     *
      * @param vec
      * @return
      */
@@ -242,7 +242,7 @@ public class Vectors {
 
     /**
      * w = [x y z]
-     * 
+     *
      * @param x
      * @param y
      * @return [x y z]
@@ -257,7 +257,7 @@ public class Vectors {
 
     /**
      * Create new vector of larger size and data of the argument.
-     * 
+     *
      * @param vector source array
      * @param moreelements number of elements to add
      * @return larger vector
@@ -270,7 +270,7 @@ public class Vectors {
 
     /**
      * Create new matrix of larger size and data of the argument.
-     * 
+     *
      * @param matrix
      * @param more rows
      * @param more cols
@@ -293,7 +293,7 @@ public class Vectors {
 
     /**
      * Create new vector with data of the argument and removed element.
-     * 
+     *
      * @param vector
      * @param element
      * @return shorter vector
@@ -308,7 +308,7 @@ public class Vectors {
 
     /**
      * Create new matrix with data of the argument and removed rows and columns.
-     * 
+     *
      * @param matrix
      * @param rows ordered vector of rows to remove
      * @param cols ordered vector of cols to remove
@@ -322,7 +322,7 @@ public class Vectors {
 
     /**
      * Create new vector with data of the argument and removed elements.
-     * 
+     *
      * @param vector
      * @param elements ordered elements to remove
      * @return smaller vector
@@ -334,7 +334,7 @@ public class Vectors {
     /**
      * return the complement of the sorted subset of the set 0:length-1 in
      * Matlab notation
-     * 
+     *
      * @param set sorted set of elements < length
      * @param length of superset of set and its returned complement
      * @return
@@ -357,7 +357,7 @@ public class Vectors {
     /**
      * Create a matrix that contains the rows and columns of the argument matrix
      * in the order given by rows and cols
-     * 
+     *
      * @param matrix
      * @param rows
      * @param cols
@@ -378,7 +378,7 @@ public class Vectors {
     /**
      * Create vector that contains the elements of the argument in the order as
      * given by keep
-     * 
+     *
      * @param vector
      * @param keep
      * @return
@@ -393,8 +393,25 @@ public class Vectors {
     }
 
     /**
+     * Extract the column from the 2-dim matrix / array (stored row-wise in
+     * Java)
+     *
+     * @param matrix
+     * @param col column number to choose (must exist in each row of the
+     *        matrix)
+     * @return
+     */
+    public static double[] chooseColumn(double[][] matrix, int col) {
+        double[] column = new double[matrix.length];
+        for (int i = 0; i < matrix.length; i++) {
+            column[i] = matrix[i][col];
+        }
+        return column;
+    }
+
+    /**
      * Create new vector of larger size and data of the argument.
-     * 
+     *
      * @param vector source array
      * @param moreelements number of elements to add
      * @return larger vector
@@ -407,7 +424,7 @@ public class Vectors {
 
     /**
      * Create new matrix of larger size and data of the argument.
-     * 
+     *
      * @param matrix
      * @param more rows
      * @param more cols
@@ -430,7 +447,7 @@ public class Vectors {
 
     /**
      * Create new vector with data of the argument and removed element.
-     * 
+     *
      * @param vector
      * @param element
      * @return shorter vector
@@ -445,7 +462,7 @@ public class Vectors {
 
     /**
      * Create new matrix with data of the argument and removed rows and columns.
-     * 
+     *
      * @param matrix
      * @param rows ordered vector of rows to remove
      * @param cols ordered vector of cols to remove
@@ -459,7 +476,7 @@ public class Vectors {
 
     /**
      * Create new vector with data of the argument and removed elements.
-     * 
+     *
      * @param vector
      * @param elements ordered elements to remove
      * @return smaller vector
@@ -471,7 +488,7 @@ public class Vectors {
     /**
      * Create a matrix that contains the rows and columns of the argument matrix
      * in the order given by rows and cols
-     * 
+     *
      * @param matrix
      * @param rows
      * @param cols
@@ -491,7 +508,7 @@ public class Vectors {
     /**
      * Create vector that contains the elements of the argument in the order as
      * given by keep
-     * 
+     *
      * @param vector
      * @param keep
      * @return
@@ -507,7 +524,7 @@ public class Vectors {
 
     /**
      * prints a double representation of the vector.
-     * 
+     *
      * @param x
      * @return
      */
@@ -525,7 +542,7 @@ public class Vectors {
 
     /**
      * Print the array of objects via their toString() methods.
-     * 
+     *
      * @param x
      * @return
      */
@@ -536,7 +553,7 @@ public class Vectors {
     /**
      * Print the array of objects via their toString() methods, using the
      * delimiter.
-     * 
+     *
      * @param x
      * @param delim
      * @return
@@ -563,7 +580,7 @@ public class Vectors {
 
     /**
      * prints a double representation of an array.
-     * 
+     *
      * @param x
      * @return
      */
@@ -581,7 +598,7 @@ public class Vectors {
 
     /**
      * prints a double representation of the vector.
-     * 
+     *
      * @param x
      * @return
      */
@@ -599,7 +616,7 @@ public class Vectors {
 
     /**
      * prints a double representation of an array.
-     * 
+     *
      * @param x
      * @return
      */
@@ -659,7 +676,7 @@ public class Vectors {
 
     /**
      * cast a double[] to an int[]
-     * 
+     *
      * @param vec
      * @return
      */
@@ -673,7 +690,7 @@ public class Vectors {
 
     /**
      * cast a double[] to an int[]
-     * 
+     *
      * @param vec
      * @return
      */
@@ -687,7 +704,7 @@ public class Vectors {
 
     /**
      * find indices with val
-     * 
+     *
      * @param vec
      * @param val
      * @return vector with 0-based indices.
@@ -709,7 +726,7 @@ public class Vectors {
     /**
      * returns a copy of the vector elements with the given indices in the
      * original vector.
-     * 
+     *
      * @param indices
      * @return
      */
@@ -724,7 +741,7 @@ public class Vectors {
     /**
      * returns a copy of the vector elements with the given indices in the
      * original vector.
-     * 
+     *
      * @param cols
      * @return
      */
@@ -753,7 +770,7 @@ public class Vectors {
     /**
      * set the elements of vec at indices with the respective replacements.
      * TODO: implement views as in the colt library
-     * 
+     *
      * @param vec
      * @param indices
      * @param replacements
@@ -768,7 +785,7 @@ public class Vectors {
     /**
      * set the elements of vec at indices with the replacement. TODO: implement
      * views as in the colt library
-     * 
+     *
      * @param vec
      * @param indices
      * @param replacement
@@ -782,7 +799,7 @@ public class Vectors {
 
     /**
      * add a scalar to the vector
-     * 
+     *
      * @param vec
      * @param scalar
      */
@@ -795,7 +812,7 @@ public class Vectors {
     /**
      * set the elements of a copy of vec at indices with the respective
      * replacements. TODO: implement views as in the colt library
-     * 
+     *
      * @param vec
      * @param indices
      * @param replacements
@@ -812,7 +829,7 @@ public class Vectors {
 
     /**
      * copies a the source to the destination
-     * 
+     *
      * @param alpha
      * @return
      */
@@ -826,7 +843,7 @@ public class Vectors {
 
     /**
      * copies a the source to the destination
-     * 
+     *
      * @param alpha
      * @return
      */
@@ -840,7 +857,7 @@ public class Vectors {
 
     /**
      * multiplicates the vector with a scalar. The argument is modified.
-     * 
+     *
      * @param ds
      * @param d
      * @return
@@ -856,7 +873,7 @@ public class Vectors {
     /**
      * multiplicates the vector with a vector (inner product). The argument is
      * not modified.
-     * 
+     *
      * @param ds
      * @param d
      * @return
@@ -873,7 +890,7 @@ public class Vectors {
 
     /**
      * transpose the matrix
-     * 
+     *
      * @param mat
      * @return
      */
@@ -889,7 +906,7 @@ public class Vectors {
 
     /**
      * transpose the matrix
-     * 
+     *
      * @param mat
      * @return
      */

@@ -20,10 +20,23 @@ import java.util.Arrays;
  * generator used is a Mersenne Twister (Cokus), which is the only dependency.
  * <p>
  * FIXME: markov condition in random generator, see random string?
- * 
+ *
  * @author heinrich (partly adapted from Yee Whye Teh's npbayes Matlab / C code)
  */
 public class Samplers {
+
+    public static void main(String[] args) {
+        double x = 0.4;
+        double y = 0.8;
+        double[] probs = {0.6, 0.4};
+        double[][] mean = { {x, 1 - x}, {y, 1 - y}};
+        double[] precisions = {15, 15};
+        double[][] xx = new double[200000][];
+        xx = randDmm(200000, probs, mean, precisions);
+        double[] result = Vectors.chooseColumn(xx, 0);
+        System.out.println(Histogram.hist(System.out, result, 100));
+
+    }
 
     protected static boolean haveNextNextGaussian = false;
 
@@ -35,7 +48,7 @@ public class Samplers {
 
     /**
      * uses same approach as java.util.Random()
-     * 
+     *
      * @param mu
      * @param sigma
      * @return
@@ -63,7 +76,36 @@ public class Samplers {
 
     /**
      * GMM sampling
-     * 
+     *
+     * @param probs mixture responsibilities
+     * @param mean mean vector
+     * @param sigma stddev vector
+     * @return
+     */
+    public static double randGmm(double[] probs, double[] mean, double[] sigma) {
+        return randGmm(1, probs, mean, sigma, null)[0];
+    }
+
+    /**
+     * GMM sampling
+     *
+     * @param probs mixture responsibilities
+     * @param mean mean vector
+     * @param sigma stddev vector
+     * @param component [out] componentn[0] is filled with the sampled component
+     *        index
+     * @return
+     */
+    public static double randGmm(double[] probs, double[] mean, double[] sigma,
+        int[] component) {
+        return randGmm(1, probs, mean, sigma, null)[0];
+    }
+
+    /**
+     * GMM sampling
+     *
+     * @param n number of samples to take (this saves the calculation of the
+     *        cumulative probabilities for successive trials)
      * @param probs mixture responsibilities
      * @param mean mean vector
      * @param sigma stddev vector
@@ -71,6 +113,23 @@ public class Samplers {
      */
     public static double[] randGmm(int n, double[] probs, double[] mean,
         double[] sigma) {
+        return randGmm(n, probs, mean, sigma, null);
+    }
+
+    /**
+     * GMM sampling
+     *
+     * @param n number of samples to take (this saves the calculation of the
+     *        cumulative probabilities for successive trials)
+     * @param probs mixture responsibilities
+     * @param mean mean vector
+     * @param sigma stddev vector
+     * @param components [out] n-vector is filled with the sampled component
+     *        indices (ignored if null)
+     * @return
+     */
+    public static double[] randGmm(int n, double[] probs, double[] mean,
+        double[] sigma, int[] components) {
         double[] x = new double[n];
         int k = probs.length;
         // init random number generator
@@ -91,40 +150,101 @@ public class Samplers {
                 if (s < cumprobs[c])
                     break;
             }
+            if (components != null) {
+                components[i] = c;
+            }
             // normal component sampling
             x[i] = randNorm(mean[c], sigma[c]);
         }
         return x;
-        // double[] x = new double[n];
-        // int k = probs.length;
-        // // init random number generator
-        // Random r = new Random();
-        //
-        // // multinomial cdf for probs
-        // double[] cumprobs = new double[k];
-        // cumprobs[0] = probs[0];
-        // for (int i = 1; i < k; i++) {
-        // cumprobs[i] = cumprobs[i - 1] + probs[i];
-        // }
-        //
-        // for (int i = 0; i < n; i++) {
-        //
-        // // multinomial index sampling
-        // double s = r.nextDouble();
-        // int c = 0;
-        // for (c = 0; c < k; c++) {
-        // if (s < cumprobs[c])
-        // break;
-        // }
-        // // normal component sampling
-        // x[i] = r.nextGaussian() * sigma[c] + mean[c];
-        // }
-        // return x;
+    }
+
+    /**
+     * DMM sampling
+     *
+     * @param probs mixture responsibilities
+     * @param mean mean vector of vectors
+     * @param precision precision vector
+     * @return
+     */
+    public static double[] randDmm(double[] probs, double[][] mean,
+        double[] precision) {
+        return randDmm(1, probs, mean, precision, null)[0];
+    }
+
+    /**
+     * DMM sampling
+     *
+     * @param probs mixture responsibilities
+     * @param mean mean vector of vectors
+     * @param precision precision vector
+     * @param component [out] sampled component of the mixture (or ignored if
+     *        null)
+     * @return
+     */
+    public static double[] randDmm(double[] probs, double[][] mean,
+        double[] precision, int[] component) {
+        return randDmm(1, probs, mean, precision, component)[0];
+    }
+
+    /**
+     * DMM sampling
+     *
+     * @param probs mixture responsibilities
+     * @param mean mean vector of vectors
+     * @param precision precision vector
+     * @return
+     */
+    public static double[][] randDmm(int n, double[] probs, double[][] mean,
+        double[] precision) {
+        return randDmm(n, probs, mean, precision, null);
+    }
+
+    /**
+     * DMM sampling
+     *
+     * @param n number of trials
+     * @param probs mixture responsibilities
+     * @param mean mean vector of vectors
+     * @param precision precision vector
+     * @param components n-vector is filled with the sampled component indices
+     *        (ignored if null)
+     * @return
+     */
+    public static double[][] randDmm(int n, double[] probs, double[][] mean,
+        double[] precision, int[] components) {
+        double[][] x = new double[n][];
+        int k = probs.length;
+        // init random number generator
+
+        // multinomial cdf for probs
+        double[] cumprobs = new double[k];
+        cumprobs[0] = probs[0];
+        for (int i = 1; i < k; i++) {
+            cumprobs[i] = cumprobs[i - 1] + probs[i];
+        }
+
+        for (int i = 0; i < n; i++) {
+
+            // multinomial index sampling
+            double s = drand48();
+            int c = 0;
+            for (c = 0; c < k; c++) {
+                if (s < cumprobs[c])
+                    break;
+            }
+            if (components != null) {
+                components[i] = c;
+            }
+            // normal component sampling
+            x[i] = randDir(mean[c], precision[c]);
+        }
+        return x;
     }
 
     /**
      * beta as two-dimensional Dirichlet
-     * 
+     *
      * @param aa
      * @param bb
      * @return
@@ -138,7 +258,7 @@ public class Samplers {
     /**
      * randbeta(aa, bb) Generates beta samples, one for each element in aa/bb,
      * and scale 1.
-     * 
+     *
      * @param aa
      */
     public static double[] randBeta(double[] aa, double[] bb) {
@@ -152,7 +272,7 @@ public class Samplers {
     /**
      * self-contained gamma generator. Multiply result with scale parameter (or
      * divide by rate parameter). After Teh (npbayes).
-     * 
+     *
      * @param rr shape parameter
      * @return
      */
@@ -202,7 +322,7 @@ public class Samplers {
 
     /**
      * randgamma(aa) Generates gamma samples, one for each element in aa.
-     * 
+     *
      * @param aa
      */
     public static double[] randGamma(double[] aa) {
@@ -223,7 +343,7 @@ public class Samplers {
      * sampling, the following are equivalent: Gamma(a,1)*b <=> Gamma(a,b), with
      * shape parametrisation; Gamma(a,1)/r <=> Gamma(a,r) with rate
      * parametrisation.
-     * 
+     *
      * @param shape
      * @param scale
      * @return
@@ -235,7 +355,7 @@ public class Samplers {
     /**
      * Random permutation of size elements (symbols '0'.. '[size-1]'). This
      * works a bit like sampling without replacement or a factorial.
-     * 
+     *
      * @param size
      * @return
      */
@@ -254,7 +374,7 @@ public class Samplers {
 
     /**
      * symmetric Dirichlet sample.
-     * 
+     *
      * @param aa
      * @return
      */
@@ -269,7 +389,7 @@ public class Samplers {
      * parameters alpha. ORIG: Generates Dirichlet samples, with weights given
      * in aa. The output sums to 1 along normdim, and each such sum corresponds
      * to one Dirichlet sample.
-     * 
+     *
      * @param aa
      * @param normdim
      * @return
@@ -288,11 +408,27 @@ public class Samplers {
     }
 
     /**
+     * randdir(aa) generates one Dirichlet sample vector according to the
+     * parameters alpha.
+     *
+     * @param mean (mean_i = alpha_i / sum_j alpha_j)
+     * @param precision (precision = alpha_i / mean_i)
+     * @return
+     */
+    public static double[] randDir(double[] mean, double precision) {
+        double[] aa = new double[mean.length];
+        for (int i = 0; i < mean.length; i++) {
+            aa[i] = mean[i] * precision;
+        }
+        return randDir(aa);
+    }
+
+    /**
      * Generate as many Dirichlet column samples as there are columns (direction =
      * 1; randdir(A, 1)) or row samples as there are rows (direction = 2,
      * randdir(A, 2)) in aa (aa[][]), taking the respective parameters. After
      * Teh (npbayes).
-     * 
+     *
      * @param aa
      * @param direction -- 2 is more efficient (row-major Java matrix structure)
      * @return
@@ -322,7 +458,7 @@ public class Samplers {
 
     /**
      * Generate n Dirichlet samples taking parameters aa.
-     * 
+     *
      * @param aa
      * @return
      */
@@ -337,7 +473,7 @@ public class Samplers {
     /**
      * Multiply sample a multinomial distribution and return a vector with
      * category frequencies.
-     * 
+     *
      * @param pp
      * @param repetitions
      * @return vector of frequencies of the categories
@@ -358,7 +494,7 @@ public class Samplers {
     /**
      * Multiply sample a multinomial distribution and return a vector with all
      * samples.
-     * 
+     *
      * @param pp
      * @param repetitions
      * @return vector of all samples.
@@ -375,7 +511,7 @@ public class Samplers {
 
     /**
      * old version of the randMult method
-     * 
+     *
      * @param pp
      * @return
      */
@@ -461,7 +597,7 @@ public class Samplers {
         // TODO: use insertion point formula in Array.binarySearch()
         i = binarySearch(cumPp, randNum);
 
-//        System.out.println(Vectors.print(pp) + " " + i);
+        // System.out.println(Vectors.print(pp) + " " + i);
 
         return i;
     }
@@ -504,7 +640,7 @@ public class Samplers {
     /**
      * perform a binary search and return the first index i at which a[i] >= p.
      * Adapted from java.util.Arrays.binarySearch.
-     * 
+     *
      * @param a
      * @param p
      * @return
@@ -535,7 +671,7 @@ public class Samplers {
 
     /**
      * draw a binomial sample (by counting Bernoulli samples).
-     * 
+     *
      * @param N
      * @param p
      */
@@ -551,7 +687,7 @@ public class Samplers {
 
     /**
      * draw a Bernoulli sample.
-     * 
+     *
      * @param p success probability
      * @return 1 if sucessful, 0 otherwise
      */
@@ -572,7 +708,7 @@ public class Samplers {
      * Modification of Escobar and West. Works for multiple groups of data.
      * numdata, numclass are row vectors, one element per group. After Teh
      * (npbayes).
-     * 
+     *
      * @param alpha alpha
      * @param numgroup number of components ??
      * @param numdata number of data items per class
@@ -610,7 +746,7 @@ public class Samplers {
      * Sample the Dirichlet process concetration parameter given the topic and
      * data counts and gamma hyperparameters alphaa and alphab. After Escobar
      * and West (1995).
-     * 
+     *
      * @param alpha
      * @param numdata
      * @param numtopic
@@ -661,7 +797,7 @@ public class Samplers {
      * new customer". cc is sequence of indicator variables denoting which class
      * each data item is in ("on which table each customer sits"), and numclass
      * is the generated number of classes. After Teh (npbayes).
-     * 
+     *
      * @param alpha
      * @param numdata
      * @return
@@ -707,7 +843,7 @@ public class Samplers {
 
     /**
      * data structure for a Chinese restaurant process CrpData
-     * 
+     *
      * @author heinrich
      */
     public static class CrpData {
@@ -726,7 +862,7 @@ public class Samplers {
      * generates the number of tables given concentration parameter (weights)
      * and number of data items (maxtable). From npbayes-2.1. enumClass seems to
      * be the expected value of randNumTable. After Teh (npbayes).
-     * 
+     *
      * @param weights
      * @param maxtable
      * @return
@@ -750,7 +886,7 @@ public class Samplers {
      * randstick(alpha,numclass) Generates stick-breaking weights with
      * concentration parameter for numclass "sticks". XXX: untested. After Teh
      * (npbayes).
-     * 
+     *
      * @param alpha
      * @param numclass
      * @return
@@ -781,7 +917,7 @@ public class Samplers {
     /**
      * enumclass(alpha,numdata) The expected number of tables in a CRP with
      * concentration parameter alpha and numdata items. After Teh (npbayes).
-     * 
+     *
      * @param alpha
      * @param numdata
      * @return
@@ -799,7 +935,7 @@ public class Samplers {
 
     /**
      * create a random string of length alphanumeric characters.
-     * 
+     *
      * @param length of output
      * @param alphabet alphabet to be used or null
      * @return
@@ -821,7 +957,7 @@ public class Samplers {
      * meanlik(lik) Computes estimated likelihood from individual samples.
      * Basically does a harmonic mean of lik in 3rd dimension, followed by
      * normal mean in 2nd. After Teh (npbayes).
-     * 
+     *
      * @param lik
      * @return
      */
@@ -849,7 +985,7 @@ public class Samplers {
     protected static double[][] allss = new double[MAXSTIRLING][];
 
     /**
-     * 
+     *
      */
     protected static double[] logmaxss = new double[MAXSTIRLING];
 
@@ -860,7 +996,7 @@ public class Samplers {
      * kind s(nn,*) in ss. ss(i) = s(nn,i-1). ss is normalized so that maximum
      * value is 1, and the log of normalization is given in lmss (static
      * variable). After Teh (npbayes).
-     * 
+     *
      * @param nn
      * @return
      */
