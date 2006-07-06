@@ -28,13 +28,13 @@ public class Samplers {
     public static void main(String[] args) {
         double x = 0.4;
         double y = 0.8;
-        double[] probs = {0.6, 0.4};
+        double[] probs = {0.5, 0.5};
         double[][] mean = { {x, 1 - x}, {y, 1 - y}};
         double[] precisions = {15, 15};
         double[][] xx = new double[200000][];
-        xx = randDmm(200000, probs, mean, precisions);
+        xx = randDmm(xx.length, probs, mean, precisions);
         double[] result = Vectors.chooseColumn(xx, 0);
-        System.out.println(Histogram.hist(System.out, result, 100));
+        Histogram.hist(System.out, result, 100);
 
     }
 
