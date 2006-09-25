@@ -25,19 +25,23 @@ package org.knowceans.util;
 import java.io.PrintStream;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.Map;
+import java.util.TreeMap;
 
 /**
  * Histogram is a static class to output histogram data graphically on an output
  * print stream. It uses lines as columns for the bins.
- * 
+ *
  * @author gregor
  */
 public class Histogram {
 
     /**
      * print histogram of the data
-     * 
+     *
      * @param out stream to print to
      * @param data vector of evidence
      * @param low lower bin limit
@@ -90,7 +94,7 @@ public class Histogram {
         }
         String legend = "x" + nf.format(hmax / fmax * 10) + " ";
         if (legend.length() < 9) {
-            char[] fill = new char[8-legend.length()];
+            char[] fill = new char[8 - legend.length()];
             Arrays.fill(fill, ' ');
             legend += new String(fill);
         } else {
@@ -116,7 +120,7 @@ public class Histogram {
     /**
      * print histogram that spans the complete data set and chooses the
      * proportion of the histogram to be good at a given size (max freqency).
-     * 
+     *
      * @param out output stream
      * @param data data vector
      * @param size controls max frequency and bin number
@@ -135,6 +139,44 @@ public class Histogram {
         low -= (high - low) * 2 / bins;
         high += (high - low) * 2 / bins;
         return hist(out, data, low, high, bins, size);
+    }
+
+    /**
+     * Print a histogram of the categorical data. All categories whose frequency
+     * is zero are omitted, therefore the method returns a treemap with the
+     * non-zero frequencies (unnormalised) and not the complete interval between
+     * the min and max of the data values.
+     *
+     * @param out
+     * @param data
+     * @param size
+     * @return
+     */
+    public static TreeMap<Integer, Integer> hist(PrintStream out, int[] data,
+        int size) {
+        TreeMap<Integer, Integer> hist = new TreeMap<Integer, Integer>();
+        for (int i = 0; i < data.length; i++) {
+            if (hist.containsKey(data[i])) {
+                hist.put(data[i], hist.get(data[i]) + 1);
+            } else {
+                hist.put(data[i], 1);
+            }
+        }
+        ArrayList<Integer> v = new ArrayList<Integer>(hist.values());
+        Collections.sort(v);
+        int max = v.get(v.size() - 1);
+        double factor = size / (double) max;
+        for (Map.Entry<Integer, Integer> e : hist.entrySet()) {
+            out.print(e.getKey() + "\t");
+            for (int j = 0; j < Math.round(e.getValue() * factor); j++) {
+                if ((j + 1) % 10 == 0)
+                    out.print("]");
+                else
+                    out.print("|");
+            }
+            out.println();
+        }
+        return hist;
     }
 
 }

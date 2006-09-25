@@ -26,14 +26,19 @@ import static java.lang.Math.log;
 
 /**
  * Gamma represents the Gamma function and its derivatives
- * 
+ *
  * @author heinrich
  */
+
 public class Gamma {
+    /**
+     * Euler-Mascheroni constant
+     */
+    public static final double GAMMA = 0.57721566490153286;
 
     /**
      * truncated Taylor series of log Gamma(x). From lda-c
-     * 
+     *
      * @param x
      * @return
      */
@@ -53,7 +58,7 @@ public class Gamma {
 
     /**
      * gamma function
-     * 
+     *
      * @param x
      * @return
      */
@@ -63,7 +68,7 @@ public class Gamma {
 
     /**
      * faculty of an integer.
-     * 
+     *
      * @param n
      * @return
      */
@@ -77,7 +82,7 @@ public class Gamma {
      * fdelta(a) = prod_k fgamma(a_k) / fgamma( sum_k a_k ) = int_(sum x = 1)
      * prod_k x_k^(a_k-1) dx. See G. Heinrich: Parameter estimation for text
      * analysis (http://www.arbylon.net/publications/text-est.pdf)
-     * 
+     *
      * @param x
      * @return
      */
@@ -93,7 +98,7 @@ public class Gamma {
 
     /**
      * truncated Taylor series of Psi(x) = d/dx Gamma(x). From lda-c
-     * 
+     *
      * @param x
      * @return
      */
@@ -111,8 +116,28 @@ public class Gamma {
     }
 
     /**
+     * coarse approximation of the inverse of the digamma function (after Eqs.
+     * 132-135 in Minka (2003), Estimating a Dirichlet distribution)
+     */
+    public static double invdigamma(double y) {
+        double x = 0;
+        // initialisation (135)
+        if (y >= -2.22) {
+            x = Math.exp(y) + .5;
+        } else {
+            // gamma = - digamma(1)
+            x = -1 / (y + GAMMA);
+        }
+        // Newton's method (132)
+        for (int i = 0; i < 5; i++) {
+            x = x - (digamma(x) - y) / trigamma(x);
+        }
+        return x;
+    }
+
+    /**
      * truncated Taylor series of d/dx Psi(x) = d^2/dx^2 Gamma(x). From lda-c
-     * 
+     *
      * @param x
      * @return
      */
@@ -133,10 +158,10 @@ public class Gamma {
         }
         return (p);
     }
-    
+
     /**
      * Recursive implementation of the faculty.
-     * 
+     *
      * @param i
      * @return
      */

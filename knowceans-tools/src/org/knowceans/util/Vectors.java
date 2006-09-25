@@ -919,5 +919,4 @@ public class Vectors {
         }
         return a;
     }
-
 }

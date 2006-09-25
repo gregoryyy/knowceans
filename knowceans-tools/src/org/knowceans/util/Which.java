@@ -30,7 +30,7 @@ import java.util.Vector;
 
 /**
  * Which is a debug class that provides a stacktrace at runtime
- * 
+ *
  * @author gregor
  */
 public class Which {
@@ -62,7 +62,7 @@ public class Which {
 
     /**
      * returns a stack trace at the current point
-     * 
+     *
      * @return
      */
     public synchronized static List<StackTraceElement> fullstack() {
@@ -79,7 +79,7 @@ public class Which {
     /**
      * returns a stack trace at the current point, without package names and
      * line numbers
-     * 
+     *
      * @return
      */
     public synchronized static List<String> stack() {
@@ -127,7 +127,7 @@ public class Which {
 
     /**
      * resolve the anonymous supertype of the class name c
-     * 
+     *
      * @param c class name
      * @param d short class name
      * @return
@@ -151,7 +151,7 @@ public class Which {
 
     /**
      * resolve the anonymous supertype of the object
-     * 
+     *
      * @param c object
      * @param d short class name
      * @return
@@ -174,7 +174,7 @@ public class Which {
 
     /**
      * class that this thread was started with and the thread name
-     * 
+     *
      * @return
      */
     public synchronized static String thread() {
@@ -196,7 +196,7 @@ public class Which {
      * FIXME: how can the calling class be determined when its main thread is.
      * As a provisorical method, Which.setMain() is called in the main function.
      * finished?
-     * 
+     *
      * @return
      */
     public synchronized static String main() {
@@ -227,7 +227,7 @@ public class Which {
 
     /**
      * short description of runtime class (with supertype if anonymous)
-     * 
+     *
      * @param t
      * @return
      */
@@ -241,7 +241,7 @@ public class Which {
     /**
      * get the memory currently used as a double (in megabytes) rounded to two
      * decimal digits.
-     * 
+     *
      * @return
      */
     public static double usedMemory() {

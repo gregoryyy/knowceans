@@ -55,7 +55,7 @@ import java.util.zip.ZipOutputStream;
  * <p>
  * TODO: The binary methods could be considered for change to a subclass of
  * DataInputStream and DataOutputStream.
- * 
+ *
  * @author gregor
  */
 public class ArrayIo {
@@ -63,7 +63,7 @@ public class ArrayIo {
     /**
      * Loads a matrix from a binary file, optionally a zip file. The method
      * actually reads a float matrix.
-     * 
+     *
      * @param filename
      * @return
      */
@@ -96,7 +96,7 @@ public class ArrayIo {
     /**
      * Writes matrix to binary file. If the file name ends with zip, the output
      * is zipped. Note: The method actually saves float values.
-     * 
+     *
      * @param filename
      * @param a
      */
@@ -123,7 +123,7 @@ public class ArrayIo {
 
     /**
      * Read matrix from file.
-     * 
+     *
      * @param bw
      * @return
      * @throws IOException
@@ -141,7 +141,7 @@ public class ArrayIo {
 
     /**
      * Read vector from file.
-     * 
+     *
      * @param bw
      * @return
      * @throws IOException
@@ -155,9 +155,19 @@ public class ArrayIo {
         return vector;
     }
 
+    public static double[][][] readDoubleTensor(DataInputStream bw)
+        throws IOException {
+        int slices = bw.readInt();
+        double[][][] tensor = new double[slices][][];
+        for (int i = 0; i < slices; i++) {
+            tensor[i] = readDoubleMatrix(bw);
+        }
+        return tensor;
+    }
+
     /**
      * Read matrix from file.
-     * 
+     *
      * @param bw
      * @return
      * @throws IOException
@@ -174,7 +184,7 @@ public class ArrayIo {
 
     /**
      * Read vector from file.
-     * 
+     *
      * @param bw
      * @return
      * @throws IOException
@@ -191,7 +201,7 @@ public class ArrayIo {
 
     /**
      * Read matrix from file.
-     * 
+     *
      * @param bw
      * @return
      * @throws IOException
@@ -208,7 +218,7 @@ public class ArrayIo {
 
     /**
      * Read vector from file.
-     * 
+     *
      * @param bw
      * @return
      * @throws IOException
@@ -229,7 +239,7 @@ public class ArrayIo {
      * Writes an integer matrix in the format
      * rows,cols1,a11,a12,a1...,cols2,a21,... This way, matrices can be stored
      * that have variable row lengths.
-     * 
+     *
      * @param bw
      * @param matrix
      * @throws IOException
@@ -244,7 +254,7 @@ public class ArrayIo {
 
     /**
      * Writes an integer vector in the format size,v1,v2,...
-     * 
+     *
      * @param bw
      * @param vector
      * @throws IOException
@@ -258,9 +268,24 @@ public class ArrayIo {
     }
 
     /**
+     * Writes a double tensor (here = 3d matrix).
+     *
+     * @param bw
+     * @param tensor
+     * @throws IOException
+     */
+    public static void writeDoubleTensor(DataOutputStream bw,
+        double[][][] tensor) throws IOException {
+        bw.writeInt(tensor.length);
+        for (int r = 0; r < tensor.length; r++) {
+            writeDoubleMatrix(bw, tensor[r]);
+        }
+    }
+
+    /**
      * Writes a double matrix in the format
      * rows,cols1,a11,a12,a1...,cols2,a21,...
-     * 
+     *
      * @param bw
      * @param matrix
      * @throws IOException
@@ -269,13 +294,13 @@ public class ArrayIo {
         throws IOException {
         bw.writeInt(matrix.length);
         for (int i = 0; i < matrix.length; i++) {
-            writeDoubleVector(bw, matrix[0]);
+            writeDoubleVector(bw, matrix[i]);
         }
     }
 
     /**
      * Writes a double vector in the format size,v1,v2,...
-     * 
+     *
      * @param bw
      * @param vector
      * @throws IOException
@@ -290,7 +315,7 @@ public class ArrayIo {
 
     /**
      * Writes a float matrix in the format rows,cols,a11,a12,a1...,a21,...
-     * 
+     *
      * @param bw
      * @param matrix
      * @throws IOException
@@ -305,7 +330,7 @@ public class ArrayIo {
 
     /**
      * Writes a float vector in the format size,v1,v2,...
-     * 
+     *
      * @param bw
      * @param vector
      * @throws IOException
@@ -391,7 +416,7 @@ public class ArrayIo {
      * Opens a data output stream with optional zip compression. The returned
      * DataOutputStream can be written to and must be closed using
      * closeStream(DataOutputStream dos) or dos.close().
-     * 
+     *
      * @param filename
      * @return
      * @throws FileNotFoundException
@@ -417,7 +442,7 @@ public class ArrayIo {
     /**
      * Close the data output, which results in flushing the write buffer and
      * closing the file.
-     * 
+     *
      * @param dos
      * @throws IOException
      */
@@ -430,7 +455,7 @@ public class ArrayIo {
      * Opens a data input stream with optional zip compression. The returned
      * DataInputStream can be read from and must be closed using
      * closeStream(DataOutputStream dos) or dos.close().
-     * 
+     *
      * @param filename
      * @return
      * @throws FileNotFoundException
@@ -456,7 +481,7 @@ public class ArrayIo {
 
     /**
      * Close the input stream
-     * 
+     *
      * @param dis
      * @throws IOException
      */

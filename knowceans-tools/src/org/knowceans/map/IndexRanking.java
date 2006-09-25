@@ -31,7 +31,7 @@ import java.util.Set;
 /**
  * IndexSorter is a convenience class that sorts Integer indices (values) by
  * their scores (keys).
- * 
+ *
  * @author gregor
  */
 public class IndexRanking extends RankingMap<Double, Integer> {
@@ -57,7 +57,7 @@ public class IndexRanking extends RankingMap<Double, Integer> {
     }
 
     /**
-     * 
+     *
      */
     public IndexRanking() {
         super();
@@ -98,7 +98,7 @@ public class IndexRanking extends RankingMap<Double, Integer> {
 
     /**
      * creates a new map with count values referenced (but not
-     * 
+     *
      * @param count
      */
     public IndexRanking headMap(int count) {
@@ -113,7 +113,7 @@ public class IndexRanking extends RankingMap<Double, Integer> {
 
     /**
      * Get sorted key-value pairs with duplicate scores resolved
-     * 
+     *
      * @param count maximum number of entries returned
      * @return
      */
@@ -130,7 +130,6 @@ public class IndexRanking extends RankingMap<Double, Integer> {
             }
         }
         return a;
-
     }
 
     @Override

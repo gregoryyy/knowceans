@@ -32,7 +32,7 @@ import java.util.TreeMap;
  * In relational terms, this class implements a m:n relation, but without
  * reverse lookup.
  * <p>
- * 
+ *
  * @author heinrich
  */
 public class TreeMultiMap<X, Y> extends TreeMap<X, Set<Y>> implements
@@ -54,18 +54,23 @@ public class TreeMultiMap<X, Y> extends TreeMap<X, Set<Y>> implements
     private boolean patternMustMatch = true;
 
     /**
-     * 
+     *
      */
     public TreeMultiMap() {
         super();
     }
 
-    public TreeMultiMap(Comparator<? super X> c) {
+    public TreeMultiMap(Comparator< ? super X> c) {
         super(c);
     }
 
     public TreeMultiMap(Map<X, Set<Y>> m) {
         super(m);
+    }
+
+    public TreeMultiMap(Map<X, Set<Y>> m, Comparator< ? super X> c) {
+        super(c);
+        putAll(m);
     }
 
     public static void main(String[] args) {
@@ -123,7 +128,7 @@ public class TreeMultiMap<X, Y> extends TreeMap<X, Set<Y>> implements
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see org.knowceans.map.IMultiMap#getInverse(java.lang.Object)
      */
     public Set<X> getInverse(Y value) {

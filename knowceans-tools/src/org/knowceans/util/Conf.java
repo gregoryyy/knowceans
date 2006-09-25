@@ -13,16 +13,16 @@
  *    the documentation and/or other materials provided with the
  *    distribution.
  *
- * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESSED 
- * OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
- * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE 
- * ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY 
- * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL 
- * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE 
- * GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS 
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER 
- * IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR 
- * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN 
+ * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESSED
+ * OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY
+ * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE
+ * GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER
+ * IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
+ * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
  * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  */
@@ -49,17 +49,18 @@ import java.util.regex.Pattern;
  * -Dknowceans.properties.file=d:\eclipse\workspace\indexer.properties)
  * <li>./[Main class name without package declaration and .class
  * suffix].properties
- * <li>./knowceans.properties
+ * <li>./knowceans.conf, ./knowceans.properties
+ * <li>c:/knowceans.conf, c:/knowceans.properties
  * </ul>
  * <p>
  * This version allows the definition of variables that can be expanded at
  * readtime:
- * 
- * <pre> 
+ *
+ * <pre>
  * @{x1} in values will be expanded according to the respective property
  * @x1=val. The user MUST avoid circular references.
  * </pre>
- * 
+ *
  * @author heinrich
  */
 public class Conf extends Properties {
@@ -72,13 +73,16 @@ public class Conf extends Properties {
      * Comment for <code>serialVersionUID</code>
      */
     protected static Conf instance;
-    protected static String propFile = "knowceans.properties";
+    protected static String[] propFiles = {"knowceans.conf",
+        "knowceans.properties"};
+    protected static String[] basePaths = {"./", "c:/"};
+    protected static String propFile = propFiles[0] + basePaths[0];
     protected static String basePath = ".";
     Pattern varPattern;
 
     /**
      * get the instance of the singleton object
-     * 
+     *
      * @return
      */
     public static Conf get() {
@@ -90,8 +94,21 @@ public class Conf extends Properties {
     }
 
     /**
+     * Allows to check if a configuration has been loaded from a file already
+     * (to reduce dynamic loading overhead).
+     *
+     * @return
+     */
+    public static boolean exists() {
+        if (instance != null) {
+            return true;
+        }
+        return false;
+    }
+
+    /**
      * Instantiate the configuration, e.g., in the main class.
-     * 
+     *
      * @param file
      * @return false if as the result of this call the configuration could NOT
      *         be loaded (can be used to find a conf file), false otherwise (if
@@ -111,7 +128,7 @@ public class Conf extends Properties {
 
     /**
      * get the named property from the singleton object
-     * 
+     *
      * @return the value or null
      */
     public static String get(String key) {
@@ -124,7 +141,7 @@ public class Conf extends Properties {
 
     /**
      * Get the property and replace the braced values with the array given.
-     * 
+     *
      * @param key
      * @param braces
      * @return
@@ -137,7 +154,7 @@ public class Conf extends Properties {
 
     /**
      * get a numeric value.
-     * 
+     *
      * @param key
      * @return
      */
@@ -152,7 +169,7 @@ public class Conf extends Properties {
 
     /**
      * get a numeric value.
-     * 
+     *
      * @param key
      * @return
      */
@@ -163,7 +180,7 @@ public class Conf extends Properties {
 
     /**
      * Get an integer value.
-     * 
+     *
      * @param key
      * @return
      */
@@ -174,7 +191,7 @@ public class Conf extends Properties {
     /**
      * Get a double array from the file, where the vales are separated by comma,
      * semicolon or space.
-     * 
+     *
      * @param key
      * @return
      */
@@ -194,7 +211,7 @@ public class Conf extends Properties {
     /**
      * Get an integer array from the file, where the vales are separated by
      * comma, semicolon or space.
-     * 
+     *
      * @param key
      * @return
      */
@@ -214,7 +231,7 @@ public class Conf extends Properties {
     /**
      * get a boolean value: true and 1 are allowed for true, anything else for
      * false
-     * 
+     *
      * @param key
      * @return
      */
@@ -229,7 +246,7 @@ public class Conf extends Properties {
      * Get an instance of the class that corresponds to the property name and
      * has a default constructor. If no default constructor exists, use
      * getClass() instantiate in the client code.
-     * 
+     *
      * @param clazz
      * @return an instance of the class
      * @throws Exception
@@ -242,7 +259,7 @@ public class Conf extends Properties {
     /**
      * Get class with the name specified by the property, using the default
      * class loader.
-     * 
+     *
      * @param clazz
      * @return
      * @throws ClassNotFoundException
@@ -294,6 +311,14 @@ public class Conf extends Properties {
             propFile = b;
             return;
         }
+        for (int i = 0; i < basePaths.length; i++) {
+            for (int j = 0; j < propFiles.length; j++) {
+                propFile = basePaths[i] + propFiles[j];
+                if (new File(propFile).exists()) {
+                    return;
+                }
+            }
+        }
         // (default already in propfile)
     }
 
@@ -301,7 +326,7 @@ public class Conf extends Properties {
      * Resolves all variables of the argument string using the respective
      * properties. The method works recursively, so dependent variables are
      * resolved.
-     * 
+     *
      * @param p
      * @return
      */
