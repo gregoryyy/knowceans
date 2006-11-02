@@ -241,6 +241,130 @@ public class Vectors {
     }
 
     /**
+     * @param x
+     * @param y
+     * @param rowwise ? [x; y] : [x, y]
+     * @return [x {;,} y]
+     */
+    public static double[][] concat(double[][] x, double[] y, boolean rowwise) {
+
+
+        if (rowwise) {
+            double[][] a = new double[1][];
+            a[1] = y;
+            x = concat(x, a, true);
+            return x;
+
+        } else {
+            if (x.length != y.length) {
+                throw new IllegalArgumentException(
+                    "[x; y] needs x and y to have equal column dimensions.");
+            }
+            double[][] z = new double[x.length][];
+            for (int i = 0; i < x.length; i++) {
+                z[i] = new double[x[i].length + y.length];
+                z[i][z[i].length - 1] = y[i];
+                System.arraycopy(x[i], 0, z[i], 0, x[i].length);
+            }
+            return z;
+        }
+    }
+
+    /**
+     * @param x
+     * @param y
+     * @param rowwise ? [x; y] : [x, y]
+     * @return [x {;,} y]
+     */
+    public static double[][] concat(double[][] x, double[][] y, boolean rowwise) {
+        if (rowwise) {
+            double[][] z = new double[x.length + y.length][];
+            System.arraycopy(x, 0, z, 0, x.length);
+            System.arraycopy(y, 0, z, x.length, y.length);
+            return z;
+        } else {
+            if (x.length != y.length) {
+                throw new IllegalArgumentException(
+                    "[x; y] needs x and y to have equal column dimensions.");
+            }
+            double[][] z = new double[x.length][];
+            for (int i = 0; i < x.length; i++) {
+                z[i] = new double[x[i].length + y[i].length];
+                System.arraycopy(x[i], 0, z[i], 0, x[i].length);
+                System.arraycopy(y[i], 0, z[i], x[i].length, y[i].length);
+            }
+            return z;
+        }
+    }
+
+    /**
+     * @param x
+     * @param y
+     * @param rowwise ? [x; y] : [x, y]
+     * @return [x {;,} y]
+     */
+    public static int[][] concat(int[][] x, int[][] y, boolean rowwise) {
+        if (rowwise) {
+            int[][] z = new int[x.length + y.length][];
+            System.arraycopy(x, 0, z, 0, x.length);
+            System.arraycopy(y, 0, z, x.length, y.length);
+            return z;
+        } else {
+            if (x.length != y.length) {
+                throw new IllegalArgumentException(
+                    "[x; y] needs x and y to have equal column dimensions.");
+            }
+            int[][] z = new int[x.length][];
+            for (int i = 0; i < x.length; i++) {
+                z[i] = new int[x[i].length + y[i].length];
+                System.arraycopy(x[i], 0, z[i], 0, x[i].length);
+                System.arraycopy(y[i], 0, z[i], x[i].length, y[i].length);
+            }
+            return z;
+        }
+    }
+
+    /**
+     * create matroid with matrix a as element repeated for rows and cols
+     *
+     * @param a
+     * @param rows
+     * @param cols
+     * @return
+     */
+    public static double[][] repmat(double[][] a, int rows, int cols) {
+        double[][] b = (double[][]) ArrayUtils.copy(a);
+        for (int i = 0; i < cols; i++) {
+            b = concat(b, a, false);
+        }
+        double[][] c = (double[][]) ArrayUtils.copy(b);
+        for (int i = 0; i < rows; i++) {
+            c = concat(c, b, true);
+        }
+        return c;
+    }
+
+    /**
+     * create matroid with matrix a as element repeated for rows and cols
+     *
+     * @param a
+     * @param rows
+     * @param cols
+     * @return
+     */
+    public static int[][] repmat(int[][] a, int rows, int cols) {
+        int[][] b = (int[][]) ArrayUtils.copy(a);
+        for (int i = 0; i < cols; i++) {
+            b = concat(b, a, false);
+        }
+        int[][] c = (int[][]) ArrayUtils.copy(b);
+        for (int i = 0; i < rows; i++) {
+            c = concat(c, b, true);
+        }
+        return c;
+    }
+
+    /**
      * w = [x y z]
      *
      * @param x
@@ -354,6 +478,25 @@ public class Vectors {
         return complement;
     }
 
+
+    /** get the column of the matrix */
+    public static int[] getColumn(int[][] matrix, int col) {
+        int[] a = new int[matrix.length];
+        for (int i = 0; i < matrix.length; i++) {
+            a[i] = matrix[i][col];
+        }
+        return a;
+    }
+
+    /** get the column of the matrix */
+    public static double[] getColumn(double[][] matrix, int col) {
+        double[] a = new double[matrix.length];
+        for (int i = 0; i < matrix.length; i++) {
+            a[i] = matrix[i][col];
+        }
+        return a;
+    }
+
     /**
      * Create a matrix that contains the rows and columns of the argument matrix
      * in the order given by rows and cols
@@ -397,8 +540,7 @@ public class Vectors {
      * Java)
      *
      * @param matrix
-     * @param col column number to choose (must exist in each row of the
-     *        matrix)
+     * @param col column number to choose (must exist in each row of the matrix)
      * @return
      */
     public static double[] chooseColumn(double[][] matrix, int col) {
@@ -810,6 +952,81 @@ public class Vectors {
     }
 
     /**
+     * add a scalar to the vector. This creates a new double vector.
+     *
+     * @param vec
+     * @param scalar
+     */
+    public static double[] add(int[] vec, double scalar) {
+        double[] aa = new double[vec.length];
+        for (int i = 0; i < vec.length; i++) {
+            aa[i] = scalar + vec[i];
+        }
+        return aa;
+    }
+
+    /**
+     * add a scalar to the matrix
+     *
+     * @param vec
+     * @param scalar
+     */
+    public static void add(double[][] mat, double scalar) {
+        for (int i = 0; i < mat.length; i++) {
+            add(mat[i], scalar);
+        }
+    }
+
+    /**
+     * add a scalar to the vector
+     *
+     * @param vec
+     * @param scalar
+     */
+    public static void add(double[] vec, double scalar) {
+        for (int i = 0; i < vec.length; i++) {
+            vec[i] += scalar;
+        }
+    }
+
+    /**
+     * a+=b
+     *
+     * @param a
+     * @param b
+     */
+    public static void add(double[] a, int[] b) {
+        for (int i = 0; i < a.length; i++) {
+            a[i] += b[i];
+        }
+    }
+
+    /**
+     * a+=b
+     *
+     * @param a
+     * @param b
+     */
+    public static void add(double[] a, double[] b) {
+        for (int i = 0; i < a.length; i++) {
+            a[i] += b[i];
+        }
+    }
+
+    /**
+     * a+=b
+     *
+     * @param a
+     * @param b
+     */
+    public static void add(int[] a, int[] b) {
+        for (int i = 0; i < a.length; i++) {
+            a[i] += b[i];
+        }
+    }
+
+
+    /**
      * set the elements of a copy of vec at indices with the respective
      * replacements. TODO: implement views as in the colt library
      *
@@ -856,18 +1073,44 @@ public class Vectors {
     }
 
     /**
+     * copies a the source to the destination
+     *
+     * @param alpha
+     * @return
+     */
+    public static double[] copyDouble(int[] source) {
+        if (source == null)
+            return null;
+        double[] dest = new double[source.length];
+        for (int i = 0; i < source.length; i++) {
+            dest[i] = source[i];
+        }
+        return dest;
+    }
+
+    /**
      * multiplicates the vector with a scalar. The argument is modified.
      *
      * @param ds
      * @param d
      * @return
      */
-    public static double[] mult(double[] ds, double d) {
+    public static void mult(double[] ds, double d) {
         for (int i = 0; i < ds.length; i++) {
             ds[i] *= d;
         }
-        return ds;
+    }
 
+    /**
+     * a *= b
+     *
+     * @param a
+     * @param scalar
+     */
+    public static void dotmult(double[] a, double[] b) {
+        for (int i = 0; i < a.length; i++) {
+            a[i] *= b[i];
+        }
     }
 
     /**
@@ -918,5 +1161,45 @@ public class Vectors {
             }
         }
         return a;
+    }
+
+    /**
+     * check if argument is nan or infinity
+     *
+     * @param alpha
+     * @return
+     */
+    public static boolean isDegenerate(double alpha) {
+        return Double.isInfinite(alpha) || Double.isNaN(alpha);
+    }
+
+    /**
+     * check if argument contains nan or infinity
+     *
+     * @param pp
+     * @return
+     */
+    private static boolean isDegenerate(double[] ds) {
+        for (int i = 0; i < ds.length; i++) {
+            if (isDegenerate(ds[i])) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * check if argument contains nan or infinity
+     *
+     * @param pp
+     * @return
+     */
+    public static boolean isDegenerate(double[][] pp) {
+        for (int i = 0; i < pp.length; i++) {
+            if (isDegenerate(pp[i])) {
+                return true;
+            }
+        }
+        return false;
     }
 }

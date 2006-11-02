@@ -96,6 +96,17 @@ public class Gamma {
         return Math.exp(lognum - lgamma(den));
     }
 
+    public static double fdelta(int[] x) {
+        double lognum = 1;
+        double den = 0;
+        for (int i = 0; i < x.length; i++) {
+            lognum += lgamma(x[i]);
+            den += x[i];
+        }
+        return Math.exp(lognum - lgamma(den));
+    }
+
+
     /**
      * truncated Taylor series of Psi(x) = d/dx Gamma(x). From lda-c
      *
