@@ -960,14 +960,14 @@ public class PatternString implements CharSequence, MatchResult {
 
         // neg lookbehind and pos lookahead for escapes, special group
         // to capture non-capturing groups
-        s.find("((?<!\\\\)\\((\\?)?|(?<!\\\\)\\))");
+        s.find("(?<!\\\\)\\((\\?)?|(?<!\\\\)\\)");
         while (s.found()) {
 
             if (s.group().startsWith("(")) {
                 // opening parenthesis
                 int[] a = {-1, -1, -1};
                 a[0] = s.start();
-                if (s.group(2) != null) {
+                if (s.group(1) != null) {
                     a[2] = 0;
                 } else {
                     a[2] = 1;

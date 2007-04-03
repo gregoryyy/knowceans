@@ -305,6 +305,7 @@ public class Conf extends Properties {
             return;
         }
         // try to find a properties file that is called same as the main type
+        // FIXME: this is the thread main type.
         String b = Which.main();
         b += ".properties";
         if (new File(b).exists()) {
