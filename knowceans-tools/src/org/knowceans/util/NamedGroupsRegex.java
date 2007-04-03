@@ -35,7 +35,11 @@ import java.util.regex.Pattern;
  * ({name}groupstring)
  * </pre>
  *
- * and the substitution syntax
+ * If an additional qualifier to the group is needed, such as multiline case
+ * insensitive <text>(?si:groupstring)</text>, this is inserted <i>after</i>
+ * the name brace, i.e., <text>({name}?si:groupstring)</text>.
+ * <p>
+ * The substitution syntax is:
  *
  * <pre>
  * substitionst${name}ring
@@ -47,8 +51,8 @@ import java.util.regex.Pattern;
  * ({name}groupstring) ${name}
  * </pre>
  *
- * (Because of the string in braces, the $ can be disambiguated from a line
- * ending.)
+ * (Because of the string in braces, the $ can be disambiguated from the
+ * end-of-line symbol.)
  * <p>
  * Usage: Before a pattern with named groups is used, a NamedGroupsDecoder
  * object is created for the pattern using <text>new NamedGroupsDecoder(String
