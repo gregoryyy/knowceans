@@ -48,7 +48,7 @@ import org.knowceans.map.IMultiMap;
  * as it iterates through all rows. Sorting, shuffling etc. are provided by the
  * static Collections methods. To find rows of large lists, first sort and then
  * do binary search via the collections interface.
- * 
+ *
  * @author gregor
  */
 public class TableList extends ArrayList<TableList.Fields> {
@@ -94,7 +94,6 @@ public class TableList extends ArrayList<TableList.Fields> {
         Collections.sort(list);
         System.out.println(StopWatch.format(StopWatch.lap()));
         System.out.println(list.size());
-                 v
         System.out.println("get sublist and sort by value");
         TableList list2 = list.getSubList(0, 5);
         list2.sort("value", false);
@@ -137,21 +136,21 @@ public class TableList extends ArrayList<TableList.Fields> {
         System.out.println(StopWatch.format(StopWatch.stop()));
         System.out.println("total memory");
         System.out.println(Which.usedMemory());
-        
+
         System.out.println("save a list to a file");
         list3.save("list3.zip");
-        
+
         System.out.println("load from the file");
         TableList list4 = TableList.load("list3.zip");
         System.out.println(list4.size());
-        
+
     }
 
     // helper classes
 
     /**
      * FieldSorter sorts fields according to a numeric field.
-     * 
+     *
      * @author gregor
      */
     public class FieldComparator implements Comparator<Fields> {
@@ -160,7 +159,7 @@ public class TableList extends ArrayList<TableList.Fields> {
 
         /**
          * Initialise the sorter using the field to sort by and the direction.
-         * 
+         *
          * @param field
          * @param reverse
          */
@@ -182,7 +181,7 @@ public class TableList extends ArrayList<TableList.Fields> {
      * Fields extends an array list by a comparison capability over the map
      * list. By default, the field in index 0 is the order key when using
      * Collections.sort(). For other fields, use a FieldSorter instance.
-     * 
+     *
      * @author gregor
      */
     @SuppressWarnings("serial")
@@ -206,7 +205,7 @@ public class TableList extends ArrayList<TableList.Fields> {
     /**
      * SingleFieldFilter represents the common case of filtering according to
      * the value of one field.
-     * 
+     *
      * @author gregor
      */
     public abstract class SingleFieldFilter implements Filter {
@@ -222,7 +221,7 @@ public class TableList extends ArrayList<TableList.Fields> {
 
     /**
      * FieldEquals is an equals condition
-     * 
+     *
      * @author gregor
      */
     public class FieldEquals extends SingleFieldFilter {
@@ -238,7 +237,7 @@ public class TableList extends ArrayList<TableList.Fields> {
 
     /**
      * FieldRegexFind matches field with the regular expression.
-     * 
+     *
      * @author gregor
      */
     public class FieldRegexFind extends SingleFieldFilter {
@@ -256,7 +255,7 @@ public class TableList extends ArrayList<TableList.Fields> {
 
     /**
      * FieldLessThan checks if field less than.
-     * 
+     *
      * @author gregor
      */
     public class FieldLessThan extends SingleFieldFilter {
@@ -277,7 +276,7 @@ public class TableList extends ArrayList<TableList.Fields> {
 
     /**
      * FieldLargerThan checks if field larger than value.
-     * 
+     *
      * @author gregor
      */
     public class FieldGreaterThan extends FieldLessThan {
@@ -299,7 +298,7 @@ public class TableList extends ArrayList<TableList.Fields> {
      * FieldBetween checks if the field is between low and high value.
      * <p>
      * TODO: with null values could be a generalisation of less and larger than.
-     * 
+     *
      * @author gregor
      */
     public class FieldBetween extends FieldLessThan {
@@ -327,7 +326,7 @@ public class TableList extends ArrayList<TableList.Fields> {
 
     // fields
     /**
-     * 
+     *
      */
     private static final long serialVersionUID = 8611765516306513144L;
     protected SetArrayList<String> fields = null;
@@ -335,7 +334,7 @@ public class TableList extends ArrayList<TableList.Fields> {
     // constructors
 
     /**
-     * 
+     *
      */
     public TableList() {
         super();
@@ -353,7 +352,7 @@ public class TableList extends ArrayList<TableList.Fields> {
     /**
      * Initialise the parallel list with an existing list. The sorting key is
      * set to 0 -- the first field.
-     * 
+     *
      * @param list
      * @param field
      */
@@ -364,7 +363,7 @@ public class TableList extends ArrayList<TableList.Fields> {
 
     /**
      * Copy constructor.
-     * 
+     *
      * @param list
      */
     public TableList(TableList list) {
@@ -374,7 +373,7 @@ public class TableList extends ArrayList<TableList.Fields> {
 
     /**
      * Inner constructor to prepare list copying. The field names are copied.
-     * 
+     *
      * @param fields
      * @param sortField
      */
@@ -386,7 +385,7 @@ public class TableList extends ArrayList<TableList.Fields> {
 
     /**
      * Initialise the table list from the file.
-     * 
+     *
      * @param file
      * @throws ClassNotFoundException
      * @throws IOException
@@ -407,7 +406,7 @@ public class TableList extends ArrayList<TableList.Fields> {
 
     /**
      * Save the table list to a file.
-     * 
+     *
      * @param file
      */
     public void save(String file) {
@@ -433,7 +432,7 @@ public class TableList extends ArrayList<TableList.Fields> {
 
     /**
      * Add a list to the internal maps.
-     * 
+     *
      * @param a
      */
     public void addList(String field, List< ? extends Object> a) {
@@ -456,7 +455,7 @@ public class TableList extends ArrayList<TableList.Fields> {
     /**
      * Adds an index plus an offset to the list. After sorting, this way the
      * original sorting order can be tracked.
-     * 
+     *
      * @param field
      */
     public void addIndexList(String field, int offset) {
@@ -469,7 +468,7 @@ public class TableList extends ArrayList<TableList.Fields> {
     /**
      * Add an index plus to the list. After sorting, this way the original
      * sorting order can be tracked.
-     * 
+     *
      * @param field
      */
     public void addIndexList(String field) {
@@ -482,7 +481,7 @@ public class TableList extends ArrayList<TableList.Fields> {
      * empty or if the size of the map is exactly the size of the list or the
      * key and value field are exactly the same as the two only fields in the
      * map, in which case the map is added to the end of the list.
-     * 
+     *
      * @param keyfield name of the field for the keys
      * @param valfield name of the field for the values.
      * @param map
@@ -519,7 +518,7 @@ public class TableList extends ArrayList<TableList.Fields> {
 
     /**
      * Add the complete map to the end of this list.
-     * 
+     *
      * @param map
      */
     private void addMap(Map< ? extends Object, ? extends Object> map) {
@@ -538,7 +537,7 @@ public class TableList extends ArrayList<TableList.Fields> {
      * both unique. Uniqueness in maps is automatically ensured by overwriting
      * exsting values along the iteration. Use a multi map to allow non-unique
      * map keys.
-     * 
+     *
      * @param keyfield
      * @param valfield
      */
@@ -561,7 +560,7 @@ public class TableList extends ArrayList<TableList.Fields> {
 
     /**
      * Remove the list with key from the internal maps.
-     * 
+     *
      * @param field
      */
     public void removeList(String field) {
@@ -574,7 +573,7 @@ public class TableList extends ArrayList<TableList.Fields> {
 
     /**
      * Get the list with the specified key.
-     * 
+     *
      * @param index
      */
     public ArrayList< ? > getList(String field) {
@@ -583,7 +582,7 @@ public class TableList extends ArrayList<TableList.Fields> {
 
     /**
      * Get the list with the specified key.
-     * 
+     *
      * @param index
      */
     public ArrayList< ? > getList(int index) {
@@ -597,7 +596,7 @@ public class TableList extends ArrayList<TableList.Fields> {
 
     /**
      * Get one element of the list with the specified key.
-     * 
+     *
      * @param field
      * @param index
      * @return
@@ -608,7 +607,7 @@ public class TableList extends ArrayList<TableList.Fields> {
 
     /**
      * Get one element of the list with the specified key.
-     * 
+     *
      * @param field
      * @param index
      * @return
@@ -619,7 +618,7 @@ public class TableList extends ArrayList<TableList.Fields> {
 
     /**
      * Set the field at the index with the value.
-     * 
+     *
      * @param field
      * @param index
      * @param value
@@ -630,7 +629,7 @@ public class TableList extends ArrayList<TableList.Fields> {
 
     /**
      * Set the field at the index with the value.
-     * 
+     *
      * @param field
      * @param index
      * @param value
@@ -644,7 +643,7 @@ public class TableList extends ArrayList<TableList.Fields> {
      * Get a sublist of this list according to the indices of the current
      * sorting, as a copy. The actual values are referenced, field names are
      * copied.
-     * 
+     *
      * @param filt
      * @return
      */
@@ -656,7 +655,7 @@ public class TableList extends ArrayList<TableList.Fields> {
 
     /**
      * Get an object array of the field.
-     * 
+     *
      * @param field
      * @return
      */
@@ -672,7 +671,7 @@ public class TableList extends ArrayList<TableList.Fields> {
     /**
      * Get a sublist of this list according to the filter criterion. The actual
      * values and field names are referenced.
-     * 
+     *
      * @param filt
      * @return
      */
@@ -692,7 +691,7 @@ public class TableList extends ArrayList<TableList.Fields> {
      * actual values and field names are referenced. The result is a 2-array
      * with the elements that satisfy the filter condition in the 0-element, and
      * those that don't in the 1-element.
-     * 
+     *
      * @param filt
      * @return
      */
@@ -712,7 +711,7 @@ public class TableList extends ArrayList<TableList.Fields> {
 
     /**
      * Find all indices that the field matches with key.
-     * 
+     *
      * @param field
      * @param key
      * @return
@@ -730,7 +729,7 @@ public class TableList extends ArrayList<TableList.Fields> {
 
     /**
      * Find all indices that are valid for the filter.
-     * 
+     *
      * @param filt
      * @return
      */
@@ -747,7 +746,7 @@ public class TableList extends ArrayList<TableList.Fields> {
 
     /**
      * Find the first index the field matches with key.
-     * 
+     *
      * @param field
      * @param key
      * @return
@@ -763,7 +762,7 @@ public class TableList extends ArrayList<TableList.Fields> {
 
     /**
      * Find the first index valid for the filter.
-     * 
+     *
      * @param filt
      * @return
      */
@@ -778,7 +777,7 @@ public class TableList extends ArrayList<TableList.Fields> {
 
     /**
      * Find the last index the field matches with key.
-     * 
+     *
      * @param field
      * @param key
      * @return
@@ -795,7 +794,7 @@ public class TableList extends ArrayList<TableList.Fields> {
 
     /**
      * Find the last index that is valid for the filter.
-     * 
+     *
      * @param key
      * @param filt
      * @return
@@ -811,7 +810,7 @@ public class TableList extends ArrayList<TableList.Fields> {
 
     /**
      * Perform a binary search on the field.
-     * 
+     *
      * @param field
      * @param key
      * @return
@@ -829,7 +828,7 @@ public class TableList extends ArrayList<TableList.Fields> {
 
     /**
      * Perform a binary search, specifying the condition with a Comparator.
-     * 
+     *
      * @param comparator
      * @return
      */
@@ -846,7 +845,7 @@ public class TableList extends ArrayList<TableList.Fields> {
     /**
      * Sort the table list by the specified field. Use the Collections.sort() or
      * sort(Comparator<Fields>) method for other comparators.
-     * 
+     *
      * @param field
      * @param reverse
      * @return this
@@ -860,7 +859,7 @@ public class TableList extends ArrayList<TableList.Fields> {
     /**
      * Sort the table with the specific comparator given. Alternative to
      * Collections.sort().
-     * 
+     *
      * @param comp
      * @return this
      */
@@ -871,7 +870,7 @@ public class TableList extends ArrayList<TableList.Fields> {
 
     /**
      * Get field index of key.
-     * 
+     *
      * @param field
      * @return
      */
@@ -881,7 +880,7 @@ public class TableList extends ArrayList<TableList.Fields> {
 
     /**
      * Get key of field index.
-     * 
+     *
      * @param field
      * @return
      */
@@ -891,7 +890,7 @@ public class TableList extends ArrayList<TableList.Fields> {
 
     /**
      * Get the field names of the table list.
-     * 
+     *
      * @return
      */
     public List<String> getFields() {
