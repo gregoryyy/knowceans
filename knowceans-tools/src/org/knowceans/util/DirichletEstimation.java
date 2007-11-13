@@ -28,10 +28,10 @@ public class DirichletEstimation {
         // sufficient statistics
         double[] suffstats = suffStats(pp);
 
-        double[] pmean = estMean(pp);
+        double[] pmean = guessMean(pp);
 
         // initial guess for alpha
-        double[] alpha = estAlpha(pp, pmean);
+        double[] alpha = guessAlpha(pp, pmean);
         // System.out.println("initial estimate for alpha: " +
         // System.out.println(Vectors.print(alpha));
 
@@ -54,9 +54,9 @@ public class DirichletEstimation {
      *         the data, pp[0].length.
      */
     public static double[] estimateMeanPrec(double[][] pp) {
-        double[] mean = estMean(pp);
-        double[] meansq = colMoments(pp, 2);
-        double prec = estPrecision(mean, meansq);
+        double[] mean = guessMean(pp);
+        double[] meansq = columnMoments(pp, 2);
+        double prec = guessPrecision(mean, meansq);
         double[] suffstats = suffStats(pp);
 
         for (int i = 0; i < 5; i++) {
@@ -105,15 +105,9 @@ public class DirichletEstimation {
      * @return
      */
     public static double[] getAlpha(double[] meanPrec) {
-        double[] retval = new double[meanPrec.length];
-        System.arraycopy(meanPrec, 0, retval, 0, meanPrec.length - 1);
-        double sum = 0;
-        double prec = meanPrec[meanPrec.length - 1];
-        for (int k = 0; k < meanPrec.length - 1; k++) {
-            sum += meanPrec[k] * prec;
-        }
-        retval[meanPrec.length - 1] = 1 - sum;
-        return retval;
+        double[] aa = getMean(meanPrec);
+        Vectors.mult(aa, getPrec(meanPrec));
+        return aa;
     }
 
     /**
@@ -123,15 +117,15 @@ public class DirichletEstimation {
      * @param pmean first moment of pp
      * @return
      */
-    public static double[] estAlpha(double[][] pp, double[] pmean) {
+    public static double[] guessAlpha(double[][] pp, double[] pmean) {
         // first and second moments of the columns of p
 
         int K = pp[0].length;
-        double[] pmeansq = colMoments(pp, 2);
+        double[] pmeansq = columnMoments(pp, 2);
 
         // init alpha_k using moments method (19-21)
         double[] alpha = Vectors.copy(pmean);
-        double precision = estPrecision(pmean, pmeansq);
+        double precision = guessPrecision(pmean, pmeansq);
         precision /= K;
         // System.out.println("precision = " + precision);
         // alpha_k = mean_k * precision
@@ -147,8 +141,8 @@ public class DirichletEstimation {
      * @param pp
      * @return
      */
-    public static double[] estMean(double[][] pp) {
-        return colMoments(pp, 1);
+    public static double[] guessMean(double[][] pp) {
+        return columnMoments(pp, 1);
     }
 
     /**
@@ -215,7 +209,7 @@ public class DirichletEstimation {
      * @param pmeansq
      * @return
      */
-    public static double estPrecision(double[] pmean, double[] pmeansq) {
+    public static double guessPrecision(double[] pmean, double[] pmeansq) {
         double precision = 0;
 
         int K = pmean.length;
@@ -235,7 +229,7 @@ public class DirichletEstimation {
      * @param order
      * @return
      */
-    private static double[] colMoments(double[][] xx, int order) {
+    private static double[] columnMoments(double[][] xx, int order) {
         int K = xx[0].length;
         int N = xx.length;
 
@@ -366,22 +360,29 @@ public class DirichletEstimation {
     public static void main(String[] args) {
         // testing estimation of alpha from p
         double[] alpha = {0.495, 1.10, 0.69};
-        double[][] pp = Samplers.randDir(alpha, 10000);
+        double[][] pp = Samplers.randDir(alpha, 100000);
         double[] alphaguess = estimateAlpha(pp);
-        System.out.println("estimated alpha");
+        System.out.println("guessed alpha");
         System.out.println(Vectors.print(alphaguess));
 
-        System.out.println("estimated mean");
-        double[] mean = estMean(pp);
+        System.out.println("guessed mean");
+        double[] mean = guessMean(pp);
         double[] suffstats = suffStats(pp);
         System.out.println(Vectors.print(mean));
 
-        System.out.println("estimated mean (Newton)");
+        System.out.println("guessed mean (Newton)");
         meanGenNewton(suffstats, mean, 2.5);
         System.out.println(Vectors.print(mean));
 
-        System.out.println("estimated mean / precision");
+        System.out.println("guessed precision");
         double[] mp = estimateMeanPrec(pp);
-        System.out.println(Vectors.print(mp));
+        System.out.println(getPrec(mp));
+        System.out.println(Vectors.print(getMean(mp)));
+        System.out.println(Vectors.print(getAlpha(mp)));
+        
+        
+        
+
     }
+
 }
