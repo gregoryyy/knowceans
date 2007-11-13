@@ -33,8 +33,8 @@ import static java.lang.Math.floor;
  * In addition to purely "shaded" numerical output, if data are over a specified
  * maximum value, the numeric value is shown instead, resulting in a "heavier"
  * shade that makes it consistent with the symbolic shades. This allows
- * presentation of a specific middle range of data with "analogous" shading,
- * which has proven very useful to layout discrete probability distributions.
+ * presentation of a specific middle range of data with "analogue" shading,
+ * which has proven very useful to visualise discrete probability distributions.
  * <p>
  * To layout the numeric data in an appropriate width, specific number
  * formatting (unavailable in the NumberFormat framework in the the Java API) is

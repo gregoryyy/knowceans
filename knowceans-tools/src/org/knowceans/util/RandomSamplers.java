@@ -12,19 +12,18 @@
 package org.knowceans.util;
 
 import java.util.Arrays;
+import java.util.Random;
 
 /**
- * Diverse sampling methods, including beta, gamma, multinomial, and Dirichlet
- * distributions as well as Dirichlet processes, using Sethurahman's
- * stick-breaking construction and Chinese restaurant process. The random
- * generator used is a Mersenne Twister (Cokus), which is the only dependency.
- * <p>
- * FIXME: markov condition in random generator, see random string?
+ * Instance-based samplers with diverse sampling methods, including beta, gamma,
+ * multinomial, and Dirichlet distributions as well as Dirichlet processes,
+ * using Sethurahman's stick-breaking construction and Chinese restaurant
+ * process. The random generator used is provided in the constructor.
  * 
  * @author heinrich (partly adapted from Yee Whye Teh's npbayes Matlab / C code)
  */
-public class Samplers {
-    
+public class RandomSamplers {
+
     // TODO: hook to random number generator instance
 
     public static void main(String[] args) {
@@ -35,21 +34,40 @@ public class Samplers {
         double[] precisions = {15, 15};
         double[][] xx = new double[200000][];
         int[] comps = new int[xx.length];
-        xx = randDmm(xx.length, probs, means, precisions, comps);
+        RandomSamplers rs = new RandomSamplers();
+        xx = rs.randDmm(xx.length, probs, means, precisions, comps);
         double[] result = Vectors.chooseColumn(xx, 0);
         Histogram.hist(System.out, result, 100);
         Histogram.hist(System.out, comps, 10);
 
     }
 
-    protected static boolean haveNextNextGaussian = false;
+    private Random rand;
 
-    protected static double nextNextGaussian;
+    /**
+     * init random sampler using Mersenne twister with default seed.
+     */
+    public RandomSamplers() {
+        rand = new CokusRandom();
+    }
 
-    public static double lastRand;
+    /**
+     * init random sampler with random number generator provided.
+     * 
+     * @param rand
+     */
+    public RandomSamplers(Random rand) {
+        this.rand = rand;
+    }
 
-    protected static double drand48() {
-        return Cokus.randDouble();
+    protected boolean haveNextNextGaussian = false;
+
+    protected double nextNextGaussian;
+
+    public double lastRand;
+
+    protected double drand() {
+        return rand.nextDouble();
     }
 
     /**
@@ -59,7 +77,7 @@ public class Samplers {
      * @param sigma
      * @return
      */
-    public static double randNorm(double mu, double sigma) {
+    public double randNorm(double mu, double sigma) {
 
         // Random r = new Random();
         // return r.nextGaussian() * sigma + mu;
@@ -69,8 +87,8 @@ public class Samplers {
         } else {
             double v1, v2, s;
             do {
-                v1 = 2 * drand48() - 1; // between -1 and 1
-                v2 = 2 * drand48() - 1; // between -1 and 1
+                v1 = 2 * drand() - 1; // between -1 and 1
+                v2 = 2 * drand() - 1; // between -1 and 1
                 s = v1 * v1 + v2 * v2;
             } while (s >= 1 || s == 0);
             double multiplier = Math.sqrt(-2 * Math.log(s) / s);
@@ -88,7 +106,7 @@ public class Samplers {
      * @param sigma stddev vector
      * @return
      */
-    public static double randGmm(double[] probs, double[] mean, double[] sigma) {
+    public double randGmm(double[] probs, double[] mean, double[] sigma) {
         return randGmm(1, probs, mean, sigma, null)[0];
     }
 
@@ -98,13 +116,13 @@ public class Samplers {
      * @param probs mixture responsibilities
      * @param mean mean vector
      * @param sigma stddev vector
-     * @param component [out] componentn[0] is filled with the sampled component
-     *        index
+     * @param component [out] component[0] is filled with the sampled component
+     *        index, but can be null if not needed.
      * @return
      */
-    public static double randGmm(double[] probs, double[] mean, double[] sigma,
+    public double randGmm(double[] probs, double[] mean, double[] sigma,
         int[] component) {
-        return randGmm(1, probs, mean, sigma, null)[0];
+        return randGmm(1, probs, mean, sigma, component)[0];
     }
 
     /**
@@ -117,8 +135,7 @@ public class Samplers {
      * @param sigma stddev vector
      * @return
      */
-    public static double[] randGmm(int n, double[] probs, double[] mean,
-        double[] sigma) {
+    public double[] randGmm(int n, double[] probs, double[] mean, double[] sigma) {
         return randGmm(n, probs, mean, sigma, null);
     }
 
@@ -134,7 +151,7 @@ public class Samplers {
      *        indices (ignored if null)
      * @return
      */
-    public static double[] randGmm(int n, double[] probs, double[] mean,
+    public double[] randGmm(int n, double[] probs, double[] mean,
         double[] sigma, int[] components) {
         double[] x = new double[n];
         int k = probs.length;
@@ -150,7 +167,7 @@ public class Samplers {
         for (int i = 0; i < n; i++) {
 
             // multinomial index sampling
-            double s = drand48();
+            double s = drand();
             int c = 0;
             for (c = 0; c < k; c++) {
                 if (s < cumprobs[c])
@@ -173,8 +190,7 @@ public class Samplers {
      * @param precision precision vector
      * @return
      */
-    public static double[] randDmm(double[] probs, double[][] mean,
-        double[] precision) {
+    public double[] randDmm(double[] probs, double[][] mean, double[] precision) {
         return randDmm(1, probs, mean, precision, null)[0];
     }
 
@@ -188,7 +204,7 @@ public class Samplers {
      *        null)
      * @return
      */
-    public static double[] randDmm(double[] probs, double[][] mean,
+    public double[] randDmm(double[] probs, double[][] mean,
         double[] precision, int[] component) {
         return randDmm(1, probs, mean, precision, component)[0];
     }
@@ -201,7 +217,7 @@ public class Samplers {
      * @param precisions precision vector
      * @return
      */
-    public static double[][] randDmm(int n, double[] probs, double[][] means,
+    public double[][] randDmm(int n, double[] probs, double[][] means,
         double[] precisions) {
         return randDmm(n, probs, means, precisions, null);
     }
@@ -217,7 +233,7 @@ public class Samplers {
      *        (ignored if null)
      * @return
      */
-    public static double[][] randDmm(int n, double[] probs, double[][] means,
+    public double[][] randDmm(int n, double[] probs, double[][] means,
         double[] precisions, int[] components) {
         double[][] x = new double[n][];
         // init random number generator
@@ -231,7 +247,7 @@ public class Samplers {
         int len = i;
 
         for (i = 0; i < n; i++) {
-            double randNum = Cokus.randDouble() * cumprobs[len - 1];
+            double randNum = drand() * cumprobs[len - 1];
             int c = binarySearch(cumprobs, randNum);
             if (components != null) {
                 components[i] = c;
@@ -248,7 +264,7 @@ public class Samplers {
      * @param bb
      * @return
      */
-    public static double randBeta(double aa, double bb) {
+    public double randBeta(double aa, double bb) {
 
         double[] p = randDir(new double[] {aa, bb});
         return p[0];
@@ -260,7 +276,7 @@ public class Samplers {
      * 
      * @param aa
      */
-    public static double[] randBeta(double[] aa, double[] bb) {
+    public double[] randBeta(double[] aa, double[] bb) {
         double[] beta = new double[aa.length];
         for (int i = 0; i < beta.length; i++) {
             beta[i] = randBeta(aa[i], bb[i]);
@@ -275,8 +291,8 @@ public class Samplers {
      * @param rr shape parameter
      * @return
      */
-    public static double randGamma(double rr) {
-        double aa, bb, cc, dd;
+    public double randGamma(double rr) {
+        double bb, cc, dd;
         double uu, vv, ww, xx, yy, zz;
 
         if (rr <= 0.0) {
@@ -284,17 +300,17 @@ public class Samplers {
             return 0.0;
         } else if (rr == 1.0) {
             /* Exponential */
-            return -Math.log(drand48());
+            return -Math.log(drand());
         } else if (rr < 1.0) {
             /* Use Johnks generator */
             cc = 1.0 / rr;
             dd = 1.0 / (1.0 - rr);
             while (true) {
-                xx = Math.pow(drand48(), cc);
-                yy = xx + Math.pow(drand48(), dd);
+                xx = Math.pow(drand(), cc);
+                yy = xx + Math.pow(drand(), dd);
                 if (yy <= 1.0) {
                     assert yy != 0 && xx / yy > 0;
-                    return -Math.log(drand48()) * xx / yy;
+                    return -Math.log(drand()) * xx / yy;
                 }
             }
         } else { /* rr > 1.0 */
@@ -302,8 +318,8 @@ public class Samplers {
             bb = rr - 1.0;
             cc = 3.0 * rr - 0.75;
             while (true) {
-                uu = drand48();
-                vv = drand48();
+                uu = drand();
+                vv = drand();
                 ww = uu * (1.0 - uu);
                 yy = Math.sqrt(cc / ww) * (uu - 0.5);
                 xx = bb + yy;
@@ -324,7 +340,7 @@ public class Samplers {
      * 
      * @param aa
      */
-    public static double[] randGamma(double[] aa) {
+    public double[] randGamma(double[] aa) {
         double[] gamma = new double[aa.length];
         for (int i = 0; i < gamma.length; i++) {
             gamma[i] = randGamma(aa[i]);
@@ -347,28 +363,91 @@ public class Samplers {
      * @param scale
      * @return
      */
-    public static double randGamma(double shape, double scale) {
+    public double randGamma(double shape, double scale) {
         return randGamma(shape) * scale;
     }
 
     /**
-     * Random permutation of size elements (symbols '0'.. '[size-1]'). This
-     * works a bit like sampling without replacement or a factorial.
+     * Random permutation of size elements (symbols '0'.. '[size-1]').
      * 
      * @param size
      * @return
      */
-    public static int[] randPerm(int size) {
+    public int[] randPerm(int size) {
+
         int[] perm = Vectors.range(0, size - 1);
-        for (int i = size - 1; i > 0; i--) {
-            int k = (int) (Cokus.randDouble() * (i + 1));
+        return randPerm(perm);
+    }
+
+    /**
+     * Random permutation of existing set of integers.
+     * 
+     * @param set
+     * @return
+     */
+    private int[] randPerm(int[] set) {
+        // works a bit like sampling without replacement or a factorial.
+        for (int i = set.length - 1; i > 0; i--) {
+            int k = (int) (drand() * (i + 1));
             if (k != i) {
-                int buf = perm[i];
-                perm[i] = perm[k];
-                perm[k] = buf;
+                int buf = set[i];
+                set[i] = set[k];
+                set[k] = buf;
             }
         }
-        return perm;
+        return set;
+    }
+
+    /**
+     * Hierarchical random permutation. Permutes set of items (indexed from 0 to
+     * size-1) and partitions it into a set of parts elements with random
+     * handling of the modulus size/parts. The concatenation of rows from
+     * randPerm(size, parts) is identical to randPerm(size).
+     * 
+     * @param size
+     * @param parts
+     * @return
+     */
+    public int[][] randPerm(int size, int parts) {
+        int[] items = randPerm(size);
+        return randParts(items, parts);
+
+    }
+
+    /**
+     * Partitions set of items into a set of parts elements with random handling
+     * of the modulus size/parts. The concatenation of rows from randPerm(size,
+     * parts) is identical to randPerm(size).
+     * 
+     * @param items
+     * @param parts
+     * @return
+     */
+    private int[][] randParts(int[] items, int parts) {
+        int partSize = items.length / parts;
+        int nModItems = items.length % parts;
+
+        int[][] partitions = new int[parts][];
+        int index = 0;
+
+        // distribute remaining items to first of (random-index) partitions
+        int[] modItems = randPerm(parts);
+        modItems = Arrays.copyOf(modItems, nModItems);
+        Arrays.sort(modItems);
+
+        for (int i = 0; i < parts; i++) {
+            if (Arrays.binarySearch(modItems, i) >= 0) {
+                partitions[i] = Arrays.copyOfRange(items, index, index
+                    + partSize + 1);
+                index++;
+            } else {
+                partitions[i] = Arrays.copyOfRange(items, index, index
+                    + partSize);
+            }
+            index += partSize;
+        }
+
+        return partitions;
     }
 
     /**
@@ -377,7 +456,7 @@ public class Samplers {
      * @param aa
      * @return
      */
-    public static double[] randDir(double a, int dimension) {
+    public double[] randDir(double a, int dimension) {
         double[] aa = new double[dimension];
         Arrays.fill(aa, a);
         return randDir(aa);
@@ -393,7 +472,7 @@ public class Samplers {
      * @param normdim
      * @return
      */
-    public static double[] randDir(double[] aa) {
+    public double[] randDir(double[] aa) {
         double[] ww = randGamma(aa);
 
         double sum = 0;
@@ -414,7 +493,7 @@ public class Samplers {
      * @param precision (precision = alpha_i / mean_i)
      * @return
      */
-    public static double[] randDir(double[] mean, double precision) {
+    public double[] randDir(double[] mean, double precision) {
         double[] aa = new double[mean.length];
         for (int i = 0; i < mean.length; i++) {
             aa[i] = mean[i] * precision;
@@ -432,7 +511,7 @@ public class Samplers {
      * @param direction -- 2 is more efficient (row-major Java matrix structure)
      * @return
      */
-    public static double[][] randDir(double[][] aa, int direction) {
+    public double[][] randDir(double[][] aa, int direction) {
         double[][] ww = null;
         if (direction == 1) {
             ww = new double[aa.length][aa[0].length];
@@ -461,7 +540,7 @@ public class Samplers {
      * @param aa
      * @return
      */
-    public static double[][] randDir(double[] aa, int repetitions) {
+    public double[][] randDir(double[] aa, int repetitions) {
         double[][] ww = new double[repetitions][aa.length];
         for (int i = 0; i < repetitions; i++) {
             ww[i] = randDir(aa);
@@ -477,7 +556,7 @@ public class Samplers {
      * @param repetitions
      * @return vector of frequencies of the categories
      */
-    public static int[] randMultFreqs(double[] pp, int repetitions) {
+    public int[] randMultFreqs(double[] pp, int repetitions) {
         int[] freqs = new int[pp.length];
         for (int i = 0; i < freqs.length; i++) {
             freqs[i] = 0;
@@ -498,7 +577,7 @@ public class Samplers {
      * @param repetitions
      * @return vector of all samples.
      */
-    public static int[] randMult(double[] pp, int repetitions) {
+    public int[] randMult(double[] pp, int repetitions) {
         int[] samples = new int[repetitions];
 
         for (int i = 0; i < repetitions; i++) {
@@ -514,7 +593,7 @@ public class Samplers {
      * @param pp
      * @return
      */
-    public static int randMultSimple(final double[] pp) {
+    public int randMultSimple(final double[] pp) {
 
         int i;
         double[] cumPp = new double[pp.length];
@@ -526,7 +605,7 @@ public class Samplers {
 
         }
         // this automatically normalises.
-        double randNum = Cokus.randDouble() * cumPp[i - 1];
+        double randNum = drand() * cumPp[i - 1];
 
         // TODO: use binarySearch().
         for (i = 0; i < cumPp.length; i++) {
@@ -538,27 +617,29 @@ public class Samplers {
         return i;
     }
 
-    public static void testMult() {
+    public void testMult() {
         int N = 100000;
 
         int[][] a = new int[2][N];
 
+        RandomSamplers s = new RandomSamplers(new CokusRandom());
+
         // double[] p = new double[] {.3, .4, .1, .2};
-        double[] p = randDir(.1, 10000);
+        double[] p = s.randDir(.1, 10000);
         System.out.println(Vectors.print(p));
 
-        Cokus.seed(4357);
+        s.getRand().setSeed(4357);
         long t0 = System.currentTimeMillis();
         for (int i = 0; i < N; i++) {
-            a[0][i] = randMult(p);
+            a[0][i] = s.randMult(p);
         }
         long t1 = System.currentTimeMillis();
         System.out.println();
-        Cokus.seed(4357);
+        s.getRand().setSeed(4357);
 
         long t2 = System.currentTimeMillis();
         for (int i = 0; i < N; i++) {
-            a[1][i] = randMult(p);
+            a[1][i] = s.randMult(p);
         }
         long t3 = System.currentTimeMillis();
 
@@ -579,7 +660,7 @@ public class Samplers {
      * version uses a binary search algorithm and does not require
      * normalisation.
      */
-    public static int randMult(final double[] pp) {
+    public int randMult(final double[] pp) {
 
         int i;
         double[] cumPp = new double[pp.length];
@@ -591,7 +672,7 @@ public class Samplers {
 
         }
         // this automatically normalises.
-        double randNum = Cokus.randDouble() * cumPp[i - 1];
+        double randNum = drand() * cumPp[i - 1];
 
         // TODO: use insertion point formula in Array.binarySearch()
         i = binarySearch(cumPp, randNum);
@@ -609,7 +690,7 @@ public class Samplers {
      * normalisation. Note that the parameters used <i>directly</i> changed
      * because the multinomial is cumulated to save memory and copying time.
      */
-    public static int randMultDirect(double[] pp) {
+    public int randMultDirect(double[] pp) {
 
         int i;
         for (i = 1; i < pp.length; i++) {
@@ -617,21 +698,21 @@ public class Samplers {
 
         }
         // this automatically normalises.
-        double randNum = Cokus.randDouble() * pp[i - 1];
+        double randNum = drand() * pp[i - 1];
         lastRand = randNum;
 
         // TODO: use insertion point formula in Array.binarySearch()
         i = binarySearch(pp, randNum);
 
         // System.out.println(Vectors.print(pp) + " " + i);
-        
+
         return i;
     }
-    
+
     /**
      * Like randMultDirect, but the random number is given as argument.
      */
-    public static int randMultDirect(double[] pp, double rand) {
+    public int randMultDirect(double[] pp, double randnum) {
 
         int i;
         for (i = 1; i < pp.length; i++) {
@@ -641,10 +722,10 @@ public class Samplers {
         // this automatically normalises.
 
         // TODO: use insertion point formula in Array.binarySearch()
-        i = binarySearch(pp, rand);
+        i = binarySearch(pp, randnum);
 
         // System.out.println(Vectors.print(pp) + " " + i);
-        
+
         return i;
     }
 
@@ -656,7 +737,7 @@ public class Samplers {
      * @param p
      * @return
      */
-    public static int binarySearch(double[] a, double p) {
+    public int binarySearch(double[] a, double p) {
         if (p < a[0]) {
             return 0;
         }
@@ -686,7 +767,7 @@ public class Samplers {
      * @param N
      * @param p
      */
-    public static int randBinom(double N, double p) {
+    public int randBinom(double N, double p) {
         int n = 0;
         for (int i = 0; i < N; i++) {
             if (randBernoulli(p) == 1) {
@@ -702,8 +783,8 @@ public class Samplers {
      * @param p success probability
      * @return 1 if sucessful, 0 otherwise
      */
-    public static int randBernoulli(double p) {
-        double a = Cokus.randDouble();
+    public int randBernoulli(double p) {
+        double a = drand();
         if (a < p) {
             return 1;
         }
@@ -729,8 +810,8 @@ public class Samplers {
      * @param numiter number of iterations
      * @return
      */
-    public static double randConParam(double alpha, int numgroup,
-        int[] numdata, int[] numtable, double alphaa, double alphab, int numiter) {
+    public double randConParam(double alpha, int numgroup, int[] numdata,
+        int[] numtable, double alphaa, double alphab, int numiter) {
         int iter, jj, nd, zz;
         double aa, bb, eta;
 
@@ -743,7 +824,7 @@ public class Samplers {
                 nd = numdata[jj];
                 eta = randBeta(alpha + 1.0, nd);
                 // zz = (drand48() * (alpha + nd) < nd);
-                zz = (drand48() * (alpha + nd) < nd) ? 1 : 0;
+                zz = (drand() * (alpha + nd) < nd) ? 1 : 0;
 
                 aa += numtable[jj] - (zz);
                 bb -= Math.log(eta);
@@ -766,9 +847,9 @@ public class Samplers {
      * @param numiter
      * @return
      */
-    public static double randConParam(double alpha, int numdata, int numtopic,
+    public double randConParam(double alpha, int numdata, int numtopic,
         double alphaa, double alphab, int numiter) {
-        int iter, jj, nd, zz;
+        int iter, zz;
         double aa, bb, eta;
 
         // Escobar and West's method
@@ -785,7 +866,7 @@ public class Samplers {
             double pi = 1 / (numdata * (alphab - Math.log(eta))
                 / (alphaa + numtopic - 1) + 1);
             // choose between the two gamma components
-            zz = (drand48() > pi) ? 1 : 0;
+            zz = (drand() > pi) ? 1 : 0;
 
             // sample gamma
             aa += numtopic - zz;
@@ -797,7 +878,7 @@ public class Samplers {
         return alphaAvg / numiter;
     }
 
-    public static CrpData randCrp(double alpha, int numdata) {
+    public CrpData randCrp(double alpha, int numdata) {
         return randCrp(new double[] {alpha}, numdata);
     }
 
@@ -813,7 +894,7 @@ public class Samplers {
      * @param numdata
      * @return
      */
-    public static CrpData randCrp(double[] alpha, int numdata) {
+    public CrpData randCrp(double[] alpha, int numdata) {
         // function [cc, numclass] = randcrp(alpha, numdata);
         // % generates a CRP partition of numdata items, with concentration
         // parameter
@@ -857,7 +938,7 @@ public class Samplers {
      * 
      * @author heinrich
      */
-    public static class CrpData {
+    public class CrpData {
         public int[] cc;
 
         public int numclass;
@@ -878,7 +959,7 @@ public class Samplers {
      * @param maxtable
      * @return
      */
-    public static int randNumTable(double alpha, int numdata) {
+    public int randNumTable(double alpha, int numdata) {
         int ii, numtable;
 
         if (numdata == 0) {
@@ -886,7 +967,7 @@ public class Samplers {
         } else {
             numtable = 1;
             for (ii = 1; ii < numdata; ii++) {
-                if (drand48() < alpha / (ii + alpha))
+                if (drand() < alpha / (ii + alpha))
                     numtable++;
             }
             return numtable;
@@ -902,7 +983,7 @@ public class Samplers {
      * @param numclass
      * @return
      */
-    public static double[] randStick(double[] alpha, int numclass) {
+    public double[] randStick(double[] alpha, int numclass) {
         // function beta = randstick(alpha,numclass);
         //
         // one = ones(1,numclass);
@@ -910,7 +991,7 @@ public class Samplers {
         // beta = zz .* cumprod([1 1-zz(1:numclass-1)]);
 
         double[] beta = new double[numclass];
-        double[] one = Vectors.ones(numclass, 1.0);
+        // double[] one = Vectors.ones(numclass, 1.0);
         double[] zz = new double[numclass];
         for (int i = 0; i < zz.length; i++) {
             zz[i] = randBeta(1, alpha[i]);
@@ -933,7 +1014,7 @@ public class Samplers {
      * @param numdata
      * @return
      */
-    public static double enumClass(double alpha, int numdata) {
+    public double enumClass(double alpha, int numdata) {
         // function numclass = enumclass(alpha,numdata);
         //
         // numclass = alpha*sum(1./(alpha-1+(1:numdata)));
@@ -951,67 +1032,51 @@ public class Samplers {
      * @param alphabet alphabet to be used or null
      * @return
      */
-    public static String randString(int length, byte[] alphabet) {
+    public String randString(int length, byte[] alphabet) {
         if (alphabet == null)
             alphabet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890"
                 .getBytes();
         byte[] pass = new byte[length];
 
         for (int k = 0; k < length; k++) {
-            int i = (int) Math.floor(Cokus.randDouble() * alphabet.length);
+            int i = (int) Math.floor(drand() * alphabet.length);
             pass[k] = alphabet[i];
         }
         return new String(pass);
     }
 
     /**
-     * meanlik(lik) Computes estimated likelihood from individual samples.
-     * Basically does a harmonic mean of lik in 3rd dimension, followed by
-     * normal mean in 2nd. After Teh (npbayes).
-     * 
-     * @param lik
-     * @return
-     */
-    public static double meanLik(double lik) {
-        // function lik = meanlik(lik);
-        //
-        // lik = logmeanexp(-logmeanexp(-lik,3),2);
-
-        return 0;
-    }
-
-    /**
      * TODO: MAXSTIRLING should be made variable
      */
-    protected static int MAXSTIRLING = 40;
+    protected int MAXSTIRLING = 40;
 
     /**
      * maximum stirling number in allss
      */
-    protected static int maxnn = 1;
+    protected int maxnn = 1;
 
     /**
      * contains all stirling number iteratively calculated so far
      */
-    protected static double[][] allss = new double[MAXSTIRLING][];
+    protected double[][] allss = new double[MAXSTIRLING][];
 
     /**
      *
      */
-    protected static double[] logmaxss = new double[MAXSTIRLING];
+    protected double[] logmaxss = new double[MAXSTIRLING];
 
-    protected static double lmss = 0;
+    protected double lmss = 0;
 
     /**
      * [ss lmss] = stirling(nn) Gives unsigned Stirling numbers of the first
      * kind s(nn,*) in ss. ss(i) = s(nn,i-1). ss is normalized so that maximum
-     * value is 1, and the log of normalization is given in lmss (static
-     * variable). After Teh (npbayes).
+     * value is 1, and the log of normalization is given in lmss ( variable).
+     * After Teh (npbayes).
      * 
      * @param nn
      * @return
      */
-    public static double[] stirling(int nn) {
+    public double[] stirling(int nn) {
         if (allss[0] == null) {
             allss[0] = new double[1];
             allss[0][0] = 1;
@@ -1045,16 +1110,24 @@ public class Samplers {
      * @param numclass
      * @return
      */
-    public static double randUniform(double numvalue) {
-        return drand48() * numvalue;
+    public double randUniform(double numvalue) {
+        return drand() * numvalue;
     }
 
     /**
      * @param numclass
      * @return
      */
-    public static int randUniform(int numvalue) {
-        return (int) Math.floor(drand48() * numvalue);
+    public int randUniform(int numvalue) {
+        return (int) Math.floor(drand() * numvalue);
+    }
+
+    public final Random getRand() {
+        return rand;
+    }
+
+    public final void setRand(Random rand) {
+        this.rand = rand;
     }
 
 }

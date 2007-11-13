@@ -103,9 +103,9 @@ public class NamedGroupsRegex {
     private String javaSub;
 
     /**
-     * java-compliant pattern string
+     * java pattern
      */
-    private String javaPattern;
+    private Pattern javaPattern;
 
     public static void main(String[] args) {
         String s = "teststring with some groups.";
@@ -116,18 +116,22 @@ public class NamedGroupsRegex {
         NamedGroupsRegex named = new NamedGroupsRegex(p, q);
         // named replacement
         System.out.println(s);
-        s = s.replaceAll(named.getJavaPattern(), named.getJavaSub());
+        s = s.replaceAll(named.getJavaPatternString(), named.getJavaSub());
         System.out.println(s);
 
         s = "how wow pow sow now row vow tow cow mow cow mow";
-        p = "({repeat}\\w.)..${repeat}";
+        System.out.println("s = " + s);
+        // p = "({repeat}\\w.)..${repeat}";
+        System.out.println();
+        System.out.println();
+
+        p = "({test}\\w+)..${test}";
 
         named = new NamedGroupsRegex(p);
-        p = named.getJavaPattern();
-        System.out.println(p);
-        Matcher m = Pattern.compile(p).matcher(s);
-        if (m.find()) {
-            System.out.println(m.group(named.getGroup("repeat")));
+        Matcher m = named.getMatcher(s);
+        System.out.println(named.getJavaPattern());
+        while (m.find()) {
+            System.out.println(m.group(named.getGroup("test")));
         }
 
     }
@@ -138,7 +142,8 @@ public class NamedGroupsRegex {
      * @param pattern
      */
     public NamedGroupsRegex(String pattern) {
-        findNamedGroups(pattern);
+        String p = findNamedGroups(pattern);
+        this.javaPattern = Pattern.compile(p);
     }
 
     /**
@@ -153,12 +158,32 @@ public class NamedGroupsRegex {
     }
 
     /**
+     * Gets the complile pattern for the regex.
+     *
+     * @return
+     */
+    public Pattern getJavaPattern() {
+        return javaPattern;
+    }
+
+
+    /**
+     * Creates a matcher for the regex.
+     *
+     * @param seq
+     * @return
+     */
+    public Matcher getMatcher(CharSequence seq) {
+        return javaPattern.matcher(seq);
+    }
+
+    /**
      * fills the table of named groups and creates the java-compliant regex
      * string.
      *
      * @param pattern
      */
-    private void findNamedGroups(String pattern) {
+    private String findNamedGroups(String pattern) {
 
         name2group = new Hashtable<String, Integer>();
 
@@ -177,8 +202,9 @@ public class NamedGroupsRegex {
         }
         // make anonymous group from named group
         m = ngs.matcher(pattern);
-        javaPattern = m.replaceAll("\\(");
-        javaPattern = replaceNamedBackrefs(javaPattern, false);
+        String patstring = m.replaceAll("\\(");
+        patstring = replaceNamedBackrefs(patstring, false);
+        return patstring;
     }
 
     /**
@@ -212,8 +238,8 @@ public class NamedGroupsRegex {
      *
      * @return
      */
-    public final String getJavaPattern() {
-        return javaPattern;
+    public final String getJavaPatternString() {
+        return javaPattern.toString();
     }
 
     /**

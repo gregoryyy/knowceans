@@ -33,7 +33,9 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
 import java.text.NumberFormat;
+import java.util.Locale;
 import java.util.Vector;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
@@ -55,7 +57,7 @@ import java.util.zip.ZipOutputStream;
  * <p>
  * TODO: The binary methods could be considered for change to a subclass of
  * DataInputStream and DataOutputStream.
- *
+ * 
  * @author gregor
  */
 public class ArrayIo {
@@ -63,7 +65,7 @@ public class ArrayIo {
     /**
      * Loads a matrix from a binary file, optionally a zip file. The method
      * actually reads a float matrix.
-     *
+     * 
      * @param filename
      * @return
      */
@@ -96,7 +98,7 @@ public class ArrayIo {
     /**
      * Writes matrix to binary file. If the file name ends with zip, the output
      * is zipped. Note: The method actually saves float values.
-     *
+     * 
      * @param filename
      * @param a
      */
@@ -123,7 +125,7 @@ public class ArrayIo {
 
     /**
      * Read matrix from file.
-     *
+     * 
      * @param bw
      * @return
      * @throws IOException
@@ -141,7 +143,7 @@ public class ArrayIo {
 
     /**
      * Read vector from file.
-     *
+     * 
      * @param bw
      * @return
      * @throws IOException
@@ -167,7 +169,7 @@ public class ArrayIo {
 
     /**
      * Read matrix from file.
-     *
+     * 
      * @param bw
      * @return
      * @throws IOException
@@ -184,7 +186,7 @@ public class ArrayIo {
 
     /**
      * Read vector from file.
-     *
+     * 
      * @param bw
      * @return
      * @throws IOException
@@ -201,7 +203,7 @@ public class ArrayIo {
 
     /**
      * Read matrix from file.
-     *
+     * 
      * @param bw
      * @return
      * @throws IOException
@@ -218,7 +220,7 @@ public class ArrayIo {
 
     /**
      * Read vector from file.
-     *
+     * 
      * @param bw
      * @return
      * @throws IOException
@@ -239,7 +241,7 @@ public class ArrayIo {
      * Writes an integer matrix in the format
      * rows,cols1,a11,a12,a1...,cols2,a21,... This way, matrices can be stored
      * that have variable row lengths.
-     *
+     * 
      * @param bw
      * @param matrix
      * @throws IOException
@@ -254,7 +256,7 @@ public class ArrayIo {
 
     /**
      * Writes an integer vector in the format size,v1,v2,...
-     *
+     * 
      * @param bw
      * @param vector
      * @throws IOException
@@ -269,7 +271,7 @@ public class ArrayIo {
 
     /**
      * Writes a double tensor (here = 3d matrix).
-     *
+     * 
      * @param bw
      * @param tensor
      * @throws IOException
@@ -285,7 +287,7 @@ public class ArrayIo {
     /**
      * Writes a double matrix in the format
      * rows,cols1,a11,a12,a1...,cols2,a21,...
-     *
+     * 
      * @param bw
      * @param matrix
      * @throws IOException
@@ -300,7 +302,7 @@ public class ArrayIo {
 
     /**
      * Writes a double vector in the format size,v1,v2,...
-     *
+     * 
      * @param bw
      * @param vector
      * @throws IOException
@@ -315,7 +317,7 @@ public class ArrayIo {
 
     /**
      * Writes a float matrix in the format rows,cols,a11,a12,a1...,a21,...
-     *
+     * 
      * @param bw
      * @param matrix
      * @throws IOException
@@ -330,7 +332,7 @@ public class ArrayIo {
 
     /**
      * Writes a float vector in the format size,v1,v2,...
-     *
+     * 
      * @param bw
      * @param vector
      * @throws IOException
@@ -355,7 +357,8 @@ public class ArrayIo {
         return b.substring(0, length);
     }
 
-    static NumberFormat nf = new DecimalFormat("0.00000");
+    static NumberFormat nf = new DecimalFormat("0.00000", DecimalFormatSymbols
+        .getInstance(Locale.ENGLISH));
 
     /**
      * @param d
@@ -368,7 +371,7 @@ public class ArrayIo {
 
     }
 
-    public static double[][] readAscii(String filename) {
+    public static double[][] loadAscii(String filename) {
         Vector<double[]> a = new Vector<double[]>();
         try {
             BufferedReader br = new BufferedReader(new FileReader(filename));
@@ -392,17 +395,40 @@ public class ArrayIo {
     }
 
     /**
-     * saves the matrix in ascii format
+     * @param filename
+     * @param a
      */
     public static void saveAscii(String filename, double[][] a) {
         try {
             BufferedWriter bw = new BufferedWriter(new FileWriter(filename));
-            int d, k;
-            for (d = 0; d < a.length; d++) {
-                for (k = 0; k < a[0].length; k++) {
-                    if (k > 0)
+            int row, col;
+            for (row = 0; row < a.length; row++) {
+                for (col = 0; col < a[0].length; col++) {
+                    if (col > 0)
                         bw.write(' ');
-                    bw.write(formatDouble(a[d][k]));
+                    bw.write(formatDouble(a[row][col]));
+                }
+                bw.newLine();
+            }
+            bw.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * @param filename
+     * @param a matrix (with equal columns for each row)
+     */
+    public static void saveTransposedAscii(String filename, double[][] a) {
+        try {
+            BufferedWriter bw = new BufferedWriter(new FileWriter(filename));
+            int col, row;
+            for (col = 0; col < a[0].length; col++) {
+                for (row = 0; row < a.length; row++) {
+                    if (row > 0)
+                        bw.write(' ');
+                    bw.write(formatDouble(a[row][col]));
                 }
                 bw.newLine();
             }
@@ -416,7 +442,7 @@ public class ArrayIo {
      * Opens a data output stream with optional zip compression. The returned
      * DataOutputStream can be written to and must be closed using
      * closeStream(DataOutputStream dos) or dos.close().
-     *
+     * 
      * @param filename
      * @return
      * @throws FileNotFoundException
@@ -442,7 +468,7 @@ public class ArrayIo {
     /**
      * Close the data output, which results in flushing the write buffer and
      * closing the file.
-     *
+     * 
      * @param dos
      * @throws IOException
      */
@@ -455,7 +481,7 @@ public class ArrayIo {
      * Opens a data input stream with optional zip compression. The returned
      * DataInputStream can be read from and must be closed using
      * closeStream(DataOutputStream dos) or dos.close().
-     *
+     * 
      * @param filename
      * @return
      * @throws FileNotFoundException
@@ -481,7 +507,7 @@ public class ArrayIo {
 
     /**
      * Close the input stream
-     *
+     * 
      * @param dis
      * @throws IOException
      */
@@ -489,4 +515,71 @@ public class ArrayIo {
         dis.close();
     }
 
+    /**
+     * Save a matrix as shaded values using MayaShades. The values are
+     * normalised on the maximum.
+     * 
+     * @param filename
+     * @param a
+     */
+    public static void saveShades(String filename, double[][] a) {
+        double[] maxs = new double[a.length];
+        for (int i = 0; i < a.length; i++) {
+            maxs[i] = Vectors.max(a[i]);
+        }
+        double maxx = Vectors.max(maxs);
+
+        try {
+            BufferedWriter bw = new BufferedWriter(new FileWriter(filename));
+            int row;
+            bw.write("# [:::::] = " + maxx + ", [.    ] = " + maxx / 10.);
+            bw.newLine();
+            for (row = 0; row < a.length; row++) {
+                for (int col = 0; col < a[row].length; col++) {
+                    if (col > 0) {
+                        bw.write(' ');
+                    }
+                    bw.write(MayaShades.shadeDouble(a[row][col], maxx));
+                }
+                bw.newLine();
+            }
+            bw.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * Save a transposed matrix as shaded values using MayaShades. The values
+     * are normalised on the maximum.
+     * 
+     * @param filename
+     * @param a matrix with equal cols in each row
+     */
+    public static void saveTransposedShades(String filename, double[][] a) {
+        double[] maxs = new double[a.length];
+        for (int i = 0; i < a.length; i++) {
+            maxs[i] = Vectors.max(a[i]);
+        }
+        double maxx = Vectors.max(maxs);
+
+        try {
+            BufferedWriter bw = new BufferedWriter(new FileWriter(filename));
+            int col;
+            bw.write("# [:::::] = " + maxx + ", [.    ] = " + maxx / 10.);
+            bw.newLine();
+            for (col = 0; col < a[0].length; col++) {
+                for (int row = 0; row < a.length; row++) {
+                    if (row > 0) {
+                        bw.write(' ');
+                    }
+                    bw.write(MayaShades.shadeDouble(a[row][col], maxx));
+                }
+                bw.newLine();
+            }
+            bw.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
 }

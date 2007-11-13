@@ -46,6 +46,8 @@ public class CokusRandom extends Random {
      */
     private static final long serialVersionUID = 3256726169322797365L;
 
+    public static final long DEFAULTSEED = 4357;
+
     /* Period parameters */
     /**
      * length of state vector
