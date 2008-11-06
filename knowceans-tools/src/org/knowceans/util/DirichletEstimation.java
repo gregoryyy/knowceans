@@ -713,83 +713,39 @@ public class DirichletEstimation {
 
     public static double[] estimateAlphaMap(int[][] nmk, int[] nm,
         double[] alpha, double a, double b) {
-        int i, j, m, k, iter = 20;
-        double sumnum, sumden;
-        int M = nmk.length;
-        int K = nmk[0].length;
-        double[] alpha0 = new double[K];
-        double alphaK;
-        double prec = 1e-5;
 
-        // alpha_k = ( a - 1 + alpha_k * [sum_m digamma(n_mk + alpha_k) -
+        double[] alphanew;
+        double sumalpha, summk, summ;
+        int i, m, M, k, K, iter = 20;
+
+        M = nmk.length;
+        K = alpha.length;
+
+        alphanew = new double[K];
+
+        // alpha_k = alpha_k * ( [sum_m digamma(nmk + alpha_k) -
         // digamma(alpha_k)] ) /
-        // ( b + [sum_m digamma(n_m + sum_k alpha_k)] - M * digamma(sum_k
-        // alpha_k) )
-
-        for (i = 0; i < iter; i++) {
-            alphaK = Vectors.sum(alpha);
-            sumden = 0;
-            sumnum = 0;
-            for (k = 0; k < K; k++) {
-                for (m = 0; m < M; m++) {
-                    sumnum += digamma(alpha[k] + nmk[m][k]);
-                    if (k == 0) {
-                        sumden += digamma(alphaK + nm[m]);
-                    }
-                }
-                sumnum -= M * digamma(alpha[k]);
-                if (k == 0) {
-                    sumden -= M * digamma(alphaK);
-                }
-                alpha[k] = (a - 1 + alpha[k] * sumnum) / (b + sumden);
-                System.out.println(Vectors.print(alpha));
-            }
-            if (Vectors.dist(alpha, alpha0) < prec) {
-                System.out.println(i);
-                return alpha;
-            }
-            alpha0 = Vectors.copy(alpha);
-        }
-        return alpha;
-    }
-
-    public static double[] estimateAlphaEm(int[][] nmk, int[] nm, double[] alpha) {
-        int i, j, m, k, iter = 20;
-        double sumnum, sumden;
-        int M = nmk.length;
-        int K = nmk[0].length;
-        double[] alpha0 = new double[K];
-        double sumalpha;
-        double prec = 1e-5;
-
-        // alpha_k = alpha_k * (sum_m digamma(n_mk + alpha_k) -
-        // digamma(alpha_k)) /
-        // (sum_m digamma(n_m + alphaK) - digamma(alphaK))
+        // ( [sum_m digamma(nm + sum_k alpha_k) - digamma(sum_k * alpha_k)] )
 
         for (i = 0; i < iter; i++) {
             sumalpha = Vectors.sum(alpha);
-            sumden = 0;
-            sumnum = 0;
             for (k = 0; k < K; k++) {
+                summk = 0;
+                summ = 0;
                 for (m = 0; m < M; m++) {
-                    sumnum += digamma(alpha[k] + nmk[m][k]);
-                    if (k == 0) {
-                        // denominator equal for all k
-                        sumden += digamma(sumalpha + nm[m]);
-                    }
+                    summk += digamma(nmk[m][k] + alpha[k]);
+                    summ += digamma(nm[m] + sumalpha);
                 }
-                sumnum -= M * digamma(alpha[k]);
-                if (k == 0) {
-                    sumden -= M * digamma(sumalpha);
-                }
-                alpha[k] = alpha[k] * sumnum / sumden;
-                System.out.println(Vectors.print(alpha));
+                summk -= M * digamma(alpha[k]);
+                summ -= M * digamma(sumalpha);
+                // MAP version
+                alphanew[k] = alpha[k] * (a + summk) / (b / K + summ);
+                // ML version
+                // alphanew[k] = alpha[k] * summk / summ;
             }
-            if (Vectors.dist(alpha, alpha0) < prec) {
-                System.out.println(i);
-                return alpha;
-            }
-            alpha0 = Vectors.copy(alpha);
+            System.out.println(Vectors.print(alphanew));
+            // update alpha to new values
+            alpha = Vectors.copy(alphanew);
         }
         return alpha;
     }
@@ -798,15 +754,12 @@ public class DirichletEstimation {
         // testing estimation of alpha from p
 
         int M = 100;
-        int K = 3;
+        int K = 5;
         int N = 0;
         int N0 = 100;
         // FIXME: ARMS only works for higher alpha
-        double a0 = 10;
 
-        double[] alpha = Vectors.ones(K, a0);
-        alpha[1] = 1.5;
-        alpha[2] = 3;
+        double[] alpha = {1.35, 1.35, 0.45, 0.2, 0.1};
 
         System.out.println("original alpha");
         System.out.println(Vectors.print(alpha));
@@ -827,27 +780,11 @@ public class DirichletEstimation {
         }
         System.out.println(Vectors.print(nk));
 
-        // double estimatedAlpha = estimateAlphaC(nmk, nm);
-        // System.out
-        // .println("estimated alpha from counts via precision (moment
-        // matching)");
-        // System.out.println(estimatedAlpha);
-        //
-        // double[] sampledAlpha = sampleAlphaArms(nmk, 0.1, 0.1, 20);
-        // System.out
-        // .println("sampled alpha from counts (AR[M]S with Gamma prior)");
-        // for (int i = 0; i < sampledAlpha.length; i++) {
-        // System.out.println(sampledAlpha[i]);
-        // }
-        System.out
-            .println("estimated scalar alpha from counts via MAP and EM estimators:");
-        System.out.println(estimateAlphaMap(nmk, nm, 0.001, 1.0, 1.0));
-        System.out.println(estimateAlphaEm(nmk, nm, 0.001));
         System.out
             .println("estimated vector alpha from counts via MAP estimator");
-        // Vectors.print(estimateAlphaMap(nmk, nm, Vectors.ones(K, 0.1), 1.0,
-        // 1.0));
-        Vectors.print(estimateAlphaEm(nmk, nm, Vectors.ones(K, 0.1)));
+        double[] astart = Vectors.ones(K, 0.1);
+        Vectors.print(estimateAlphaMap(nmk, nm, astart, 0.5, 0.5));
+        // Vectors.print(estimateAlphaEm(nmk, nm, Vectors.ones(K, 0.1)));
     }
 
     // //////////////////////////////
