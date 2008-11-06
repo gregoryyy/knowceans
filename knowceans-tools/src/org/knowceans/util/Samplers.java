@@ -286,7 +286,7 @@ public class Samplers {
             /* Exponential */
             return -Math.log(drand48());
         } else if (rr < 1.0) {
-            /* Use Johnks generator */
+            /* Use Jöhnk's generator */
             cc = 1.0 / rr;
             dd = 1.0 / (1.0 - rr);
             while (true) {

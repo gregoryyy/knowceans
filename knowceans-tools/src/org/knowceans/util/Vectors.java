@@ -782,7 +782,7 @@ public class Vectors {
     public static double[] ones(int len, double factor) {
         double[] x = new double[len];
         for (int i = 0; i < x.length; i++) {
-            x[i] = 1;
+            x[i] = factor;
         }
         return x;
     }
@@ -1024,6 +1024,16 @@ public class Vectors {
             a[i] += b[i];
         }
     }
+    
+
+    public static double dist(double[] a, double[] b) {
+        double dist = 0;
+        for (int i = 0; i < a.length; i++) {
+            double diff = a[i] - b[i];
+            dist += diff * diff;
+        } 
+        return dist; 
+    }
 
 
     /**
@@ -1202,4 +1212,5 @@ public class Vectors {
         }
         return false;
     }
+
 }

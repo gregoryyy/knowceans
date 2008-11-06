@@ -63,6 +63,37 @@ import java.util.zip.ZipOutputStream;
 public class ArrayIo {
 
     /**
+     * Loads an integer matrix from a binary file, optionally a zip file. The
+     * method actually reads a float matrix.
+     * 
+     * @param filename
+     * @return
+     */
+    public static int[][] loadBinaryIntMatrix(String filename) {
+        int m, n;
+        int[][] a = null;
+        int i = 0, j = 0;
+        try {
+
+            DataInputStream dis = openInputStream(filename);
+            m = dis.readInt();
+            n = dis.readInt();
+            a = new int[m][n];
+            for (i = 0; i < m; i++) {
+                for (j = 0; j < n; j++) {
+                    a[i][j] = dis.readInt();
+                }
+            }
+            closeInputStream(dis);
+
+        } catch (IOException e) {
+            System.err.println(i + " " + j);
+            e.printStackTrace();
+        }
+        return a;
+    }
+
+    /**
      * Loads a matrix from a binary file, optionally a zip file. The method
      * actually reads a float matrix.
      * 
@@ -96,8 +127,36 @@ public class ArrayIo {
     // compatibility matrix r/w
 
     /**
-     * Writes matrix to binary file. If the file name ends with zip, the output
-     * is zipped. Note: The method actually saves float values.
+     * Writes integer matrix to binary file. If the file name ends with zip, the
+     * output is zipped. Note: The method actually saves float values.
+     * 
+     * @param filename
+     * @param a
+     */
+    public static void saveBinaryIntMatrix(String filename, int[][] a) {
+        int i = 0, j = 0;
+
+        try {
+            DataOutputStream dos = openOutputStream(filename);
+            dos.writeInt(a.length);
+            dos.writeInt(a[0].length);
+            for (i = 0; i < a.length; i++) {
+                for (j = 0; j < a[0].length; j++) {
+                    dos.writeInt(a[i][j]);
+                }
+            }
+            closeOutputStream(dos);
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            System.err.println(i + " " + j);
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * Writes matrix to binary file. If the file name ends with zip, the
+     * output is zipped. Note: The method actually saves float values.
      * 
      * @param filename
      * @param a

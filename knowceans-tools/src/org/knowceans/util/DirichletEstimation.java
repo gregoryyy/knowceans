@@ -10,16 +10,17 @@ import static org.knowceans.util.Gamma.trigamma;
 
 /**
  * DirichletEstimation provides a number of methods to estimate parameters of a
- * Dirichlet distribution. Most of the algorithms described in Minka (2003)
- * Estimating a Dirichlet distribution.
- *
+ * Dirichlet distribution and the Dirichlet-multinomial (Polya) distribution.
+ * Most of the algorithms described in Minka (2003) Estimating a Dirichlet
+ * distribution.
+ * 
  * @author gregor
  */
 public class DirichletEstimation {
 
     /**
      * Estimator for the Dirichlet parameters.
-     *
+     * 
      * @param multinomial parameters p
      * @return ML estimate of the corresponding parameters alpha
      */
@@ -32,8 +33,6 @@ public class DirichletEstimation {
 
         // initial guess for alpha
         double[] alpha = guessAlpha(pp, pmean);
-        // System.out.println("initial estimate for alpha: " +
-        // System.out.println(Vectors.print(alpha));
 
         boolean newton = false;
         if (newton) {
@@ -46,7 +45,7 @@ public class DirichletEstimation {
 
     /**
      * estimate mean and precision of the observations separately.
-     *
+     * 
      * @param pp input data with vectors in rows
      * @return a vector of the Dirichlet mean in the elements 0..K-2 (the last
      *         element is the difference between the others and 1) and Dirichlet
@@ -55,7 +54,7 @@ public class DirichletEstimation {
      */
     public static double[] estimateMeanPrec(double[][] pp) {
         double[] mean = guessMean(pp);
-        double[] meansq = columnMoments(pp, 2);
+        double[] meansq = colMoments(pp, 2);
         double prec = guessPrecision(mean, meansq);
         double[] suffstats = suffStats(pp);
 
@@ -70,8 +69,97 @@ public class DirichletEstimation {
     }
 
     /**
+     * Estimator for the Dirichlet parameters from counts. This corresponds to
+     * the estimation of the Polya distribution but is done via Dirichlet
+     * parameter estimation.
+     * 
+     * @param nn counts in each multinomial experiment
+     * @return ML estimate of the corresponding parameters alpha
+     */
+    public static double[] estimateAlpha(int[][] nmk) {
+        double[][] pmk = new double[nmk.length][];
+        int K = nmk[0].length;
+        // calculate sum
+        for (int m = 0; m < pmk.length; m++) {
+            int nm = Vectors.sum(nmk[m]);
+            pmk[m] = new double[K];
+            for (int k = 0; k < K; k++) {
+                pmk[m][k] = nmk[m][k] / (double) nm;
+            }
+        }
+        // System.out.println(Vectors.print(pmk));
+        // estimate dirichlet distributions
+        return estimateAlpha(pmk);
+    }
+
+    /**
+     * Polya estimation using the fixed point iteration of the leave-one-out
+     * likelihood, after Minka 2003. TODO: Gibbs sampler for Polya distribution.
+     * 
+     * @param alpha [in/out] Dirichlet parameter with element for each k
+     * @param nmk count matrix with individual observations in rows
+     *        ("documents") and categories in columns ("topics")
+     * @return number of iterations
+     */
+    public static int estimateAlphaLoo(double[] alpha, int[][] nmk) {
+        int[] nm = new int[nmk.length];
+        // int[] nk = new int[alpha.length];
+        double limdist = 0.000000001;
+        int iter = 20000;
+        double[] alphanew = new double[alpha.length];
+        alphanew = Vectors.copy(alpha);
+        double diffalpha;
+        double sumalpha;
+
+        // calculate sum
+        for (int m = 0; m < nm.length; m++) {
+            nm[m] = Vectors.sum(nmk[m]);
+        }
+        // Eq. 65: ak_new =
+        // ak sum_m (nmk / (nmk - 1 + ak))
+        // / sum_m (nm / (nm - 1 + sum_k ak))
+        for (int i = 0; i < iter; i++) {
+            sumalpha = Vectors.sum(alpha);
+            diffalpha = 0;
+            double den = 0;
+            for (int m = 0; m < nm.length; m++) {
+                den += nm[m] / (nm[m] - 1 + sumalpha);
+            }
+            for (int k = 0; k < alpha.length; k++) {
+                double num = 0;
+                for (int m = 0; m < nm.length; m++) {
+                    num += nmk[m][k] / (nmk[m][k] - 1 + alpha[k]);
+                }
+                alphanew[k] = alpha[k] * num / den;
+                diffalpha += Math.abs(alpha[k] - alphanew[k]);
+            }
+            // System.out.println(Vectors.print(aa));
+            if (diffalpha < limdist) {
+                return i;
+            }
+            alpha = Vectors.copy(alphanew);
+        }
+        return iter;
+    }
+
+    /**
+     * Estimate mean and precision of the observations separately from counts.
+     * This corresponds to estimation of the Polya distribution.
+     * 
+     * @param nn input data with vectors in rows
+     * @return a vector of the Dirichlet mean in the elements 0..K-2 (the last
+     *         element is the difference between the others and 1) and Dirichlet
+     *         precision in the element K-1, where K is the dimensionality of
+     *         the data, pp[0].length.
+     */
+    public static double[] estimateMeanPrec(int[][] nn) {
+        double[] retval = null;
+        return retval;
+    }
+
+    /**
      * Get the precision out of a mean precision combined vector
-     *
+     * 
      * @param meanPrec
      * @return
      */
@@ -82,7 +170,7 @@ public class DirichletEstimation {
     /**
      * Get the mean out of a mean precision combined vector. The mean vector is
      * copied.
-     *
+     * 
      * @param meanPrec
      * @return
      */
@@ -100,7 +188,7 @@ public class DirichletEstimation {
     /**
      * Get the alpha vector out of a mean precision combined vector. The vector
      * is copied.
-     *
+     * 
      * @param meanPrec
      * @return
      */
@@ -112,7 +200,7 @@ public class DirichletEstimation {
 
     /**
      * Estimate the dirichlet parameters using the moments method
-     *
+     * 
      * @param pp data with items in rows and dimensions in cols
      * @param pmean first moment of pp
      * @return
@@ -121,7 +209,7 @@ public class DirichletEstimation {
         // first and second moments of the columns of p
 
         int K = pp[0].length;
-        double[] pmeansq = columnMoments(pp, 2);
+        double[] pmeansq = colMoments(pp, 2);
 
         // init alpha_k using moments method (19-21)
         double[] alpha = Vectors.copy(pmean);
@@ -137,19 +225,19 @@ public class DirichletEstimation {
 
     /**
      * Estimate the Dirichlet mean of the data along columns
-     *
+     * 
      * @param pp
      * @return
      */
     public static double[] guessMean(double[][] pp) {
-        return columnMoments(pp, 1);
+        return colMoments(pp, 1);
     }
 
     /**
-     * Estimate the mean given the data and a guesses of the mean and precision.
+     * Estimate the mean given the data and a guess of the mean and precision.
      * This uses the gradient ascent method described in Minka (2003) and Huang
      * (2004).
-     *
+     * 
      * @param suffstats
      * @param mean [in / out]
      * @param prec
@@ -179,7 +267,7 @@ public class DirichletEstimation {
      * Estimate the precision given the data and a guesses of the mean and
      * precision. This uses the gradient ascent method described in Minka (2003)
      * and Huang (2004).
-     *
+     * 
      * @param suffstats
      * @param N
      * @param mean
@@ -203,8 +291,84 @@ public class DirichletEstimation {
     }
 
     /**
-     * Estimate the Dirichlet precision using a simple and crude moments method.
-     *
+     * guess alpha via Dirichlet parameter point estimate and Dirichlet moment
+     * matching.
+     * 
+     * @param nmk
+     * @return
+     */
+    public static double[] guessAlpha(int[][] nmk) {
+
+        double[][] pmk = new double[nmk.length][];
+        double[] pk;
+        int K = nmk[0].length;
+        // calculate sum
+        for (int m = 0; m < pmk.length; m++) {
+            int nm = Vectors.sum(nmk[m]);
+            pmk[m] = new double[K];
+            for (int k = 0; k < K; k++) {
+                pmk[m][k] = nmk[m][k] / (double) nm;
+            }
+        }
+        pk = guessMean(pmk);
+        return guessAlpha(pmk, pk);
+    }
+
+    /**
+     * guess alpha via "direct" moment matching on the Polya distribution (which
+     * is just Dirichlet moment matching in disguise). After Minka's (2003)
+     * Equation (19ff).
+     * 
+     * @param nmk
+     * @param nm sums of observations for all categories (eg document lengths,
+     *        ndsum)
+     */
+    public static double[] guessAlphaDirect(int[][] nmk, int[] nm) {
+        double[] pmean, pmk;
+        double pvark, prec;
+        int K = nmk[0].length;
+        int M = nm.length;
+
+        // all computations inline to easier port to C
+
+        // meank = 1/M sum_m nmk / nm
+        // vark = 1/M sum_m (nmk / nm - meank)^2
+        // mk = meank (1 - meank) / vark - 1
+        // alphak = prec * meank
+        // prec = exp( 1 / (K - 1) sum_(k=1..K-1) log mk
+
+        pmean = new double[K];
+        pmk = new double[M];
+        prec = 0;
+
+        // calculate pmean and pvar
+        for (int k = 0; k < K; k++) {
+            for (int m = 0; m < M; m++) {
+                // calculations more expensive than memory
+                pmk[m] = nmk[m][k] / (double) nm[m];
+                pmean[k] += pmk[m];
+            }
+            pmean[k] /= M;
+            // need variance for K-1 components
+            if (k < K - 1) {
+                pvark = 0;
+                for (int m = 0; m < M; m++) {
+                    double diff = pmk[m] - pmean[k];
+                    pvark += diff * diff;
+                }
+                pvark /= M;
+                prec += Math.log(pmean[k] * (1 - pmean[k]) / pvark - 1);
+            }
+        }
+        prec = Math.exp(1 / (K - 1) * prec);
+        // alpha = pmean * prec
+        Vectors.mult(pmean, prec);
+        return pmean;
+    }
+
+    /**
+     * Estimate the Dirichlet precision using moment matching method.
+     * 
      * @param pmean
      * @param pmeansq
      * @return
@@ -224,12 +388,12 @@ public class DirichletEstimation {
 
     /**
      * Moment of each column in an element of the returned vector
-     *
+     * 
      * @param xx
      * @param order
      * @return
      */
-    private static double[] columnMoments(double[][] xx, int order) {
+    private static double[] colMoments(double[][] xx, int order) {
         int K = xx[0].length;
         int N = xx.length;
 
@@ -251,19 +415,20 @@ public class DirichletEstimation {
 
     /**
      * Dirichlet sufficient statistics 1/N sum log p
-     *
+     * 
      * @param pp
      * @return
      */
     private static double[] suffStats(double[][] pp) {
         int K = pp[0].length;
         int N = pp.length;
+        double eps = 1e-6;
 
         double[] suffstats = new double[K];
 
         for (int i = 0; i < N; i++) {
             for (int k = 0; k < K; k++) {
-                suffstats[k] += Math.log(pp[i][k]);
+                suffstats[k] += Math.log(pp[i][k] + eps);
             }
         }
         for (int k = 0; k < K; k++) {
@@ -333,36 +498,438 @@ public class DirichletEstimation {
 
     /**
      * fixpoint iteration on alpha.
-     *
+     * 
      * @param suffstats
      * @param alpha [in/out]
      */
-    public static void alphaFixedPoint(double[] suffstats, double[] alpha) {
+    public static int alphaFixedPoint(double[] suffstats, double[] alpha) {
         int K = alpha.length;
+        double maxdiff = 1e-4;
+        int maxiter = 1000;
+        double alphadiff;
 
+        // TODO: update alpha element-wise correct ?
         // using (9)
-        int fixits = 500;
-        double[] alphadiff = new double[K];
-        for (int i = 0; i < fixits; i++) {
-            System.arraycopy(alpha, 0, alphadiff, 0, K);
+        for (int i = 0; i < maxiter; i++) {
+            alphadiff = 0;
             double sumalpha = Vectors.sum(alpha);
             for (int k = 0; k < K; k++) {
                 alpha[k] = invdigamma(digamma(sumalpha) + suffstats[k]);
-                alphadiff[k] = Math.abs(alpha[k] - alphadiff[k]);
+                alphadiff = Math.max(alphadiff, Math.abs(alpha[k] - alphadiff));
             }
-            if (Vectors.sum(alphadiff) < 1e-4) {
-                // System.out.println(i);
-                break;
+            if (alphadiff < maxdiff) {
+                return i;
             }
         }
+        return maxiter;
     }
 
-    public static void main(String[] args) {
+    /**
+     * fixpoint iteration on alpha using counts as input and estimating by Polya
+     * distribution directly. Eq. 55 in Minka (2003)
+     * 
+     * @param nmk count data (documents in rows, topic associations in cols)
+     * @param nm total counts across rows
+     * @param alpha [in/out]
+     */
+    public static int estimateAlphaFixedPoint(int[][] nmk, int[] nm,
+        double[] alpha) {
+        int K = alpha.length;
+        int M = nmk.length;
+        double maxdiff = 1e-4;
+        int iter = 500;
+        double alphadiff;
+        double[] newalpha = new double[alpha.length];
+
+        // all computations inline to easier port to C
+
+        // using (55)
+        // ak = ak * sum_m ( digamma(nmk + ak) - digamma(ak) )
+        // / sum_m ( digamma(nm + sum_k ak) - digamma(sum_k ak) )
+        for (int i = 0; i < iter; i++) {
+            alphadiff = 0;
+            double sumalpha = Vectors.sum(alpha);
+            double den = 0;
+            for (int m = 0; m < M; m++) {
+                den += digamma(nm[m] + sumalpha);
+            }
+            // could also use pochhammer digamma
+            den -= M * digamma(sumalpha);
+            for (int k = 0; k < K; k++) {
+                double num = 0;
+                for (int m = 0; m < M; m++) {
+                    num += digamma(nmk[m][k] + alpha[k]);
+                }
+                num -= M * digamma(alpha[k]);
+                newalpha[k] = alpha[k] * num / den;
+                alphadiff += Math.abs(newalpha[k] - alpha[k]);
+            }
+            System.arraycopy(newalpha, 0, alpha, 0, K);
+            if (alphadiff < maxdiff) {
+                return i;
+            }
+        }
+        return iter;
+    }
+
+    /**
+     * fixpoint iteration on scalar alpha using a Newton iteration. Does not
+     * work yet.
+     * 
+     * @param nk total counts across columns (eg, nwsum / ie topic strengths)
+     * @param alpha [in/out] initial value and final result (one element)
+     * @param K number of topics
+     * @param W number of word / topic tokens
+     * @return number of iterations
+     */
+    // FIXME: check theory why this does not work (no variance term, but
+    // Newton derivation seems valid...
+    public static int estimateAlphaScalar(int[] nk, double[] alpha, int K, int W) {
+        int i;
+        int maxiter = 500;
+        double maxdiff = 1e-7;
+        double anew = alpha[0];
+        double a = anew;
+        double aK;
+        double suffstats = 0;
+
+        // Newton iteration: alphanew = alpha - (digamma(K alpha) - K
+        // digamma(alpha) + sum_k log thetak)
+        // / (K trigamma(K alpha) - K trigamma(alpha))
+
+        for (i = 0; i < K; i++) {
+            suffstats += Math.log(nk[i] / (double) W);
+        }
+        System.out.println(suffstats);
+
+        for (i = 0; i < maxiter; i++) {
+            aK = a * K;
+            anew = a - (digamma(aK) - K * digamma(a) + suffstats)
+                / (K * (trigamma(aK) - trigamma(a)));
+            if (Math.abs(anew - a) < maxdiff) {
+                alpha[0] = anew;
+                return i;
+            }
+            a = anew;
+            System.out.println(a);
+        }
+        alpha[0] = anew;
+        return maxiter;
+    }
+
+    public static double estimateAlphaC(int[][] nmk, int[] nm) {
+        int k, m;
+        double precision = 0;
+        double pmk;
+        int K = nmk[0].length;
+        int M = nmk.length;
+        double eps = 1e-6;
+        double pmeank = 0, pmeansqk = 0;
+
+        for (k = 0; k < K; k++) {
+            for (m = 0; m < M; m++) {
+                pmk = (double) nmk[m][k] / (double) nm[m];
+                pmeank += pmk;
+                pmeansqk += pmk * pmk;
+            }
+            pmeank /= M;
+            pmeansqk /= M;
+            precision += (pmeank - pmeansqk)
+                / (pmeansqk - pmeank * pmeank + eps);
+        }
+        return precision / (K * K);
+    }
+
+    public static double estimateAlphaEm(int[][] nmk, int[] nm, double alpha) {
+        int i, m, k, iter = 200;
+        double summk, summ;
+        int M = nmk.length;
+        int K = nmk[0].length;
+        double alpha0 = 0;
+        double prec = 1e-5;
+
+        // alpha = ( alpha * [sum_m sum_k digamma(alpha + mnk) -
+        // digamma(alpha)] ) /
+        // ( K * [sum_m digamma(K * alpha + nm) - digamma(K * alpha)] )
+
+        for (i = 0; i < iter; i++) {
+            summk = 0;
+            summ = 0;
+            for (m = 0; m < M; m++) {
+                summ += digamma(K * alpha + nm[m]);
+                for (k = 0; k < K; k++) {
+                    summk += digamma(alpha + nmk[m][k]);
+                }
+            }
+            summ -= M * digamma(K * alpha);
+            summk -= M * K * digamma(alpha);
+            alpha = (alpha * summk) / (K * summ);
+            // System.out.println(alpha);
+            // System.out.println(Math.abs(alpha - alpha0));
+            if (Math.abs(alpha - alpha0) < prec) {
+                System.out.println(i);
+                return alpha;
+            }
+            alpha0 = alpha;
+        }
+        return alpha;
+    }
+
+    public static double estimateAlphaMap(int[][] nmk, int[] nm, double alpha,
+        double a, double b) {
+        int i, m, k, iter = 200;
+        double summk, summ;
+        int M = nmk.length;
+        int K = nmk[0].length;
+        double alpha0 = 0;
+        double prec = 1e-5;
+
+        // alpha = ( a - 1 + alpha * [sum_m sum_k digamma(alpha + mnk) -
+        // digamma(alpha)] ) /
+        // ( b + K * [sum_m digamma(K * alpha + nm) - digamma(K * alpha)] )
+
+        for (i = 0; i < iter; i++) {
+            summk = 0;
+            summ = 0;
+            for (m = 0; m < M; m++) {
+                summ += digamma(K * alpha + nm[m]);
+                for (k = 0; k < K; k++) {
+                    summk += digamma(alpha + nmk[m][k]);
+                }
+            }
+            summ -= M * digamma(K * alpha);
+            summk -= M * K * digamma(alpha);
+            alpha = (a - 1 + alpha * summk) / (b + K * summ);
+            // System.out.println(alpha);
+            // System.out.println(Math.abs(alpha - alpha0));
+            if (Math.abs(alpha - alpha0) < prec) {
+                System.out.println(i);
+                return alpha;
+            }
+            alpha0 = alpha;
+        }
+        return alpha;
+    }
+
+    public static double[] estimateAlphaMap(int[][] nmk, int[] nm,
+        double[] alpha, double a, double b) {
+        int i, j, m, k, iter = 20;
+        double sumnum, sumden;
+        int M = nmk.length;
+        int K = nmk[0].length;
+        double[] alpha0 = new double[K];
+        double alphaK;
+        double prec = 1e-5;
+
+        // alpha_k = ( a - 1 + alpha_k * [sum_m digamma(n_mk + alpha_k) -
+        // digamma(alpha_k)] ) /
+        // ( b + [sum_m digamma(n_m + sum_k alpha_k)] - M * digamma(sum_k
+        // alpha_k) )
+
+        for (i = 0; i < iter; i++) {
+            alphaK = Vectors.sum(alpha);
+            sumden = 0;
+            sumnum = 0;
+            for (k = 0; k < K; k++) {
+                for (m = 0; m < M; m++) {
+                    sumnum += digamma(alpha[k] + nmk[m][k]);
+                    if (k == 0) {
+                        sumden += digamma(alphaK + nm[m]);
+                    }
+                }
+                sumnum -= M * digamma(alpha[k]);
+                if (k == 0) {
+                    sumden -= M * digamma(alphaK);
+                }
+                alpha[k] = (a - 1 + alpha[k] * sumnum) / (b + sumden);
+                System.out.println(Vectors.print(alpha));
+            }
+            if (Vectors.dist(alpha, alpha0) < prec) {
+                System.out.println(i);
+                return alpha;
+            }
+            alpha0 = Vectors.copy(alpha);
+        }
+        return alpha;
+    }
+
+    public static double[] estimateAlphaEm(int[][] nmk, int[] nm, double[] alpha) {
+        int i, j, m, k, iter = 20;
+        double sumnum, sumden;
+        int M = nmk.length;
+        int K = nmk[0].length;
+        double[] alpha0 = new double[K];
+        double sumalpha;
+        double prec = 1e-5;
+
+        // alpha_k = alpha_k * (sum_m digamma(n_mk + alpha_k) -
+        // digamma(alpha_k)) /
+        // (sum_m digamma(n_m + alphaK) - digamma(alphaK))
+
+        for (i = 0; i < iter; i++) {
+            sumalpha = Vectors.sum(alpha);
+            sumden = 0;
+            sumnum = 0;
+            for (k = 0; k < K; k++) {
+                for (m = 0; m < M; m++) {
+                    sumnum += digamma(alpha[k] + nmk[m][k]);
+                    if (k == 0) {
+                        // denominator equal for all k
+                        sumden += digamma(sumalpha + nm[m]);
+                    }
+                }
+                sumnum -= M * digamma(alpha[k]);
+                if (k == 0) {
+                    sumden -= M * digamma(sumalpha);
+                }
+                alpha[k] = alpha[k] * sumnum / sumden;
+                System.out.println(Vectors.print(alpha));
+            }
+            if (Vectors.dist(alpha, alpha0) < prec) {
+                System.out.println(i);
+                return alpha;
+            }
+            alpha0 = Vectors.copy(alpha);
+        }
+        return alpha;
+    }
+
+    public static void main(String[] args) throws Exception {
         // testing estimation of alpha from p
-        double[] alpha = {0.495, 1.10, 0.69};
+
+        int M = 100;
+        int K = 3;
+        int N = 0;
+        int N0 = 100;
+        // FIXME: ARMS only works for higher alpha
+        double a0 = 10;
+
+        double[] alpha = Vectors.ones(K, a0);
+        alpha[1] = 1.5;
+        alpha[2] = 3;
+
+        System.out.println("original alpha");
+        System.out.println(Vectors.print(alpha));
+        int[][] nmk = new int[M][K];
+        int[] nm = new int[M];
+        int W = 0;
+        for (int m = 0; m < nmk.length; m++) {
+            nm[m] = (int) (N0 + N * Math.random());
+            nmk[m] = Samplers.randMultFreqs(Samplers.randDir(alpha), nm[m]);
+            W += nm[m];
+        }
+        double[] a = new double[] {1};
+        int[] nk = new int[K];
+        for (int k = 0; k < nk.length; k++) {
+            for (int m = 0; m < M; m++) {
+                nk[k] += nmk[m][k];
+            }
+        }
+        System.out.println(Vectors.print(nk));
+
+        // double estimatedAlpha = estimateAlphaC(nmk, nm);
+        // System.out
+        // .println("estimated alpha from counts via precision (moment
+        // matching)");
+        // System.out.println(estimatedAlpha);
+        //
+        // double[] sampledAlpha = sampleAlphaArms(nmk, 0.1, 0.1, 20);
+        // System.out
+        // .println("sampled alpha from counts (AR[M]S with Gamma prior)");
+        // for (int i = 0; i < sampledAlpha.length; i++) {
+        // System.out.println(sampledAlpha[i]);
+        // }
+        System.out
+            .println("estimated scalar alpha from counts via MAP and EM estimators:");
+        System.out.println(estimateAlphaMap(nmk, nm, 0.001, 1.0, 1.0));
+        System.out.println(estimateAlphaEm(nmk, nm, 0.001));
+        System.out
+            .println("estimated vector alpha from counts via MAP estimator");
+        // Vectors.print(estimateAlphaMap(nmk, nm, Vectors.ones(K, 0.1), 1.0,
+        // 1.0));
+        Vectors.print(estimateAlphaEm(nmk, nm, Vectors.ones(K, 0.1)));
+    }
+
+    // //////////////////////////////
+
+    /**
+     * @param nmk count matrix (rows for observations)
+     * @param a Gamma prior shape
+     * @param b Gamma prior scale
+     * @throws Exception
+     */
+    private static double[] sampleAlphaArms(int[][] nmk, double a, double b,
+        int n) throws Exception {
+        GammaPolyaArms arms;
+        GammaPolyaParams params = new GammaPolyaParams();
+        params.nmk = nmk;
+        params.a = a;
+        params.b = b;
+        arms = new GammaPolyaArms();
+        double[] xprev = new double[] {5};
+        double[] xl = new double[] {.00001};
+        double[] xr = new double[] {10.0};
+        double[] alpha = new double[n];
+        arms.hist(params, 0.1, 2.8, 200);
+        for (int i = 0; i < n; i++) {
+            alpha[i] = arms.armsSimple(params, 25, xl, xr, true, xprev);
+        }
+        return alpha;
+    }
+
+    static class GammaPolyaParams {
+        int[][] nmk;
+        double a;
+        double b;
+    }
+
+    static class GammaPolyaArms extends ArmSampler {
+
+        @Override
+        public double logpdf(double alpha, Object params) {
+            double logpaz = 0;
+            GammaPolyaParams gpp = (GammaPolyaParams) params;
+            // p(a | z) = 1/Z prod_m [fdelta(n[m][.], a) / fdelta(a)] p(a);
+            for (int m = 0; m < gpp.nmk.length; m++) {
+                logpaz += Gamma.ldelta(gpp.nmk[m], alpha);
+                logpaz -= Gamma.ldelta(gpp.nmk[m].length, alpha);
+            }
+            // logpaz += Math.log(Densities.pdfGamma(alpha, gpp.a, gpp.b));
+            return logpaz;
+        }
+
+        /**
+         * print a histogram of the likelihood
+         * 
+         * @param alpha
+         * @param params
+         * @param min
+         * @param max
+         */
+        public void hist(Object params, double amin, double amax, int n) {
+            double adiff = (amax - amin) / (n + 1);
+            GammaPolyaParams gpp = (GammaPolyaParams) params;
+            double a = amin;
+            for (int i = 0; i < n; i++) {
+                a += adiff;
+                double pa = logpdf(a, params);
+                System.out.println(a + "\t" + pa);
+            }
+        }
+
+    }
+
+    // ////////////////////////////
+
+    public static void main2(String[] args) {
+        // testing estimation of alpha from p
+        double[] alpha = {1, 1.9, 1.9};
+        System.out.println("original alpha");
+        System.out.println(Vectors.print(alpha));
         double[][] pp = Samplers.randDir(alpha, 100000);
+        // System.out.println(Vectors.print(pp));
         double[] alphaguess = estimateAlpha(pp);
-        System.out.println("guessed alpha");
+        System.out.println("estimated alpha");
         System.out.println(Vectors.print(alphaguess));
 
         System.out.println("guessed mean");
@@ -374,15 +941,61 @@ public class DirichletEstimation {
         meanGenNewton(suffstats, mean, 2.5);
         System.out.println(Vectors.print(mean));
 
-        System.out.println("guessed precision");
+        System.out.println("estimated precision, mean and alpha");
         double[] mp = estimateMeanPrec(pp);
         System.out.println(getPrec(mp));
         System.out.println(Vectors.print(getMean(mp)));
         System.out.println(Vectors.print(getAlpha(mp)));
-        
-        
-        
+
+        int M = 1000;
+        int K = 3;
+        int N = 100;
+
+        int[][] nmk = new int[M][K];
+        int[] nm = new int[M];
+        for (int m = 0; m < nmk.length; m++) {
+            nmk[m] = Samplers.randMultFreqs(Samplers.randDir(alpha), N);
+            nm[m] = N;
+        }
+
+        alpha = guessAlpha(nmk);
+        System.out.println("estimated alpha from counts (moments matching)");
+        System.out.println(Vectors.print(alpha));
+
+        // System.out.println(Vectors.print(nmk));
+        alpha = estimateAlpha(nmk);
+        System.out
+            .println("estimated alpha from counts (fixed point via Dirichlet Eq. 9)");
+        System.out.println(Vectors.print(alpha));
+
+        System.out.println("guess alpha via Polya moment match");
+        alpha = guessAlphaDirect(nmk, nm);
+        alpha = new double[] {0.5, 0.5, 0.5};
+        System.out.println(Vectors.print(alpha));
+
+        int i = estimateAlphaFixedPoint(nmk, nm, alpha);
+        System.out.println(i);
+        System.out
+            .println("estimated alpha from counts (fixed point via Polya Eq. 55)");
+        System.out.println(Vectors.print(alpha));
+
+        double[] a = new double[] {1};
+        int[] nk = new int[K];
+        for (int k = 0; k < nk.length; k++) {
+            for (int m = 0; m < M; m++) {
+                nk[k] += nmk[m][k];
+            }
+        }
+        System.out.println(Vectors.print(nk));
+        i = estimateAlphaScalar(nk, a, K, M * N);
+        System.out.println("estimate scalar alpha value");
+        System.out.println(a[0]);
+
+        System.out
+            .println("estimated alpha from counts via precision (moment matching)");
+        System.out.println(estimateAlphaC(nmk, nm));
+
+        // a = sampleAlphaScalar(nk, K, M);
 
     }
-
 }

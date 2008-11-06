@@ -26,7 +26,7 @@ import static java.lang.Math.log;
 
 /**
  * Gamma represents the Gamma function and its derivatives
- *
+ * 
  * @author heinrich
  */
 
@@ -38,7 +38,7 @@ public class Gamma {
 
     /**
      * truncated Taylor series of log Gamma(x). From lda-c
-     *
+     * 
      * @param x
      * @return
      */
@@ -58,7 +58,7 @@ public class Gamma {
 
     /**
      * gamma function
-     *
+     * 
      * @param x
      * @return
      */
@@ -68,7 +68,7 @@ public class Gamma {
 
     /**
      * faculty of an integer.
-     *
+     * 
      * @param n
      * @return
      */
@@ -82,34 +82,85 @@ public class Gamma {
      * fdelta(a) = prod_k fgamma(a_k) / fgamma( sum_k a_k ) = int_(sum x = 1)
      * prod_k x_k^(a_k-1) dx. See G. Heinrich: Parameter estimation for text
      * analysis (http://www.arbylon.net/publications/text-est.pdf)
-     *
+     * 
      * @param x
      * @return
      */
+    public static double ldelta(double[] x) {
+        double lognum = 1;
+        double den = 0;
+        for (int i = 0; i < x.length; i++) {
+            lognum += lgamma(x[i]);
+            den += x[i];
+        }
+        return Math.exp(lognum - lgamma(den));
+    }
+    
     public static double fdelta(double[] x) {
-        double lognum = 1;
+        return Math.exp(ldelta(x));
+    }
+
+    public static double ldelta(int[] x) {
+        double lognum = 0;
         double den = 0;
         for (int i = 0; i < x.length; i++) {
             lognum += lgamma(x[i]);
             den += x[i];
         }
-        return Math.exp(lognum - lgamma(den));
+        return lognum - lgamma(den);
     }
-
+    
     public static double fdelta(int[] x) {
-        double lognum = 1;
+        return Math.exp(ldelta(x));
+    }
+        
+
+    /**
+     * log Delta function with a symmetric concentration parameter alpha that is
+     * added to every element in the vector.
+     * 
+     * @param x
+     * @param alpha
+     * @return
+     */
+    public static double ldelta(int[] x, double alpha) {
+        double lognum = 0;
         double den = 0;
         for (int i = 0; i < x.length; i++) {
-            lognum += lgamma(x[i]);
+            lognum += lgamma(x[i] + alpha);
             den += x[i];
         }
-        return Math.exp(lognum - lgamma(den));
+        den += alpha * x.length;
+        return lognum - lgamma(den);
     }
-
+    
+    public static double fdelta(int[] x, double alpha) {
+        return Math.exp(ldelta(x, alpha));
+    }
+        
+    
+    /**
+     * Symmetric version of the log Dirichlet delta function
+     * 
+     * @param K
+     * @param x
+     * @return
+     */
+    public static double ldelta(int K, double x) {
+        double delta;
+        delta = K * lgamma(x) - lgamma(K * x);
+        return delta;
+    }
+    
+    
+    public static double fdelta(int K, double x) {
+        return Math.exp(ldelta(K, x));
+    }
+    
 
     /**
      * truncated Taylor series of Psi(x) = d/dx Gamma(x). From lda-c
-     *
+     * 
      * @param x
      * @return
      */
@@ -148,7 +199,7 @@ public class Gamma {
 
     /**
      * truncated Taylor series of d/dx Psi(x) = d^2/dx^2 Gamma(x). From lda-c
-     *
+     * 
      * @param x
      * @return
      */
@@ -172,7 +223,7 @@ public class Gamma {
 
     /**
      * Recursive implementation of the faculty.
-     *
+     * 
      * @param i
      * @return
      */
@@ -181,5 +232,84 @@ public class Gamma {
             return i * fak(i - 1);
         }
         return 1;
+    }
+
+    /**
+     * Pochhammer function
+     * 
+     * @author Gregor Heinrich (after Thomas Minka's fastfit implementation)
+     * @param x
+     * @param n
+     * @return
+     */
+    double pochhammer(double x, int n) {
+        double result;
+        if (n == 0)
+            return 0;
+        if (n <= 20) {
+            int i;
+            double xi = x;
+            /* this assumes x is not too large */
+            result = xi;
+            for (i = n - 1; i > 0; i--) {
+                xi = xi + 1;
+                result *= xi;
+            }
+            result = log(result);
+        } else if (x >= 1.e4 * n) {
+            result = log(x) + (n - 1) * log(x + n / 2);
+        } else
+            result = lgamma(x + n) - lgamma(x);
+        return result;
+    }
+
+    /**
+     * Pochhammer digamma function
+     * 
+     * @author Gregor Heinrich (after Thomas Minka's fastfit implementation)
+     * @param x
+     * @param n
+     * @return
+     */
+    public static double diPochhammer(double x, int n) {
+        double result;
+        if (n == 0)
+            return 0;
+        if (n <= 20) {
+            int i;
+            double xi = x;
+            result = 1 / xi;
+            for (i = n - 1; i > 0; i--) {
+                xi = xi + 1;
+                result += 1 / xi;
+            }
+        } else
+            result = digamma(x + n) - digamma(x);
+        return result;
+    }
+
+    /**
+     * Pochhammer trigamma function.
+     * 
+     * @author Gregor Heinrich (after Thomas Minka's fastfit implementation)
+     * @param x
+     * @param n
+     * @return
+     */
+    public static double triPochhammer(double x, int n) {
+        double result;
+        if (n == 0)
+            return 0;
+        if (n <= 20) {
+            result = -1 / (x * x);
+            n--;
+            while (n > 0) {
+                x = x + 1;
+                result -= 1 / (x * x);
+                n--;
+            }
+            return result;
+        }
+        return trigamma(x + n) - trigamma(x);
     }
 }
