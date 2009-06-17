@@ -35,6 +35,7 @@ import java.util.TreeMap;
  */
 public class MapFactory<X, Y> {
 
+    @SuppressWarnings("unchecked")
     public Map<X, Y> createMap(boolean keyUnique, boolean valueUnique,
         boolean invertible, boolean sorted) {
 

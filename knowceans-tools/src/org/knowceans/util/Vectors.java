@@ -773,6 +773,24 @@ public class Vectors {
             b.append(print(x[x.length - 1]));
         return b.toString();
     }
+    
+    /**
+     * prints a double representation of an array.
+     *
+     * @param x
+     * @return
+     */
+    public static String print(int[][] x, String delim) {
+        if (x == null)
+            return "null";
+        StringBuffer b = new StringBuffer();
+        for (int i = 0; i < x.length - 1; i++) {
+            b.append(print(x[i])).append(delim);
+        }
+        if (x.length > 0)
+            b.append(print(x[x.length - 1]));
+        return b.toString();
+    }
 
     /**
      * @param len

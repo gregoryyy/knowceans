@@ -136,7 +136,7 @@ public class DoubleFormat {
             pad = strlen - s.length();
         }
 
-        String spc = space(pad);
+        String spc = space(Math.max(0, pad));
         if (leftalign) {
             return s + spc;
         } else {
