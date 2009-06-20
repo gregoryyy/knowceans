@@ -155,8 +155,8 @@ public class ArrayIo {
     }
 
     /**
-     * Writes matrix to binary file. If the file name ends with zip, the
-     * output is zipped. Note: The method actually saves float values.
+     * Writes matrix to binary file. If the file name ends with zip, the output
+     * is zipped. Note: The method actually saves float values.
      * 
      * @param filename
      * @param a
@@ -182,6 +182,37 @@ public class ArrayIo {
         }
     }
 
+    // read methods
+
+    /**
+     * generic method that calls the methods according to the type of the
+     * argument Object
+     * 
+     * @param is
+     * @param type
+     * @return
+     * @throws IOException
+     */
+    public static Object read(DataInputStream is, Object type)
+        throws IOException {
+        if (type instanceof double[][][]) {
+            return readDoubleTensor(is);
+        } else if (type instanceof double[][]) {
+            return readDoubleMatrix(is);
+        } else if (type instanceof double[]) {
+            return readDoubleVector(is);
+        } else if (type instanceof float[][]) {
+            return readFloatMatrix(is);
+        } else if (type instanceof float[]) {
+            return readFloatVector(is);
+        } else if (type instanceof int[][]) {
+            return readIntMatrix(is);
+        } else if (type instanceof int[]) {
+            return readIntVector(is);
+        }
+        return null;
+    }
+
     /**
      * Read matrix from file.
      * 
@@ -197,8 +228,6 @@ public class ArrayIo {
         }
         return matrix;
     }
-
-    // read methods
 
     /**
      * Read vector from file.
@@ -295,6 +324,31 @@ public class ArrayIo {
     }
 
     // write methods
+
+    /**
+     * generic write method that calls the respective method of the type of data
+     * 
+     * @param writer
+     * @param data object
+     */
+    public static void write(DataOutputStream os, Object data)
+        throws IOException {
+        if (data instanceof double[][][]) {
+            writeDoubleTensor(os, (double[][][]) data);
+        } else if (data instanceof double[][]) {
+            writeDoubleMatrix(os, (double[][]) data);
+        } else if (data instanceof double[]) {
+            writeDoubleVector(os, (double[]) data);
+        } else if (data instanceof float[][]) {
+            writeFloatMatrix(os, (float[][]) data);
+        } else if (data instanceof float[]) {
+            writeFloatVector(os, (float[]) data);
+        } else if (data instanceof int[][]) {
+            writeIntMatrix(os, (int[][]) data);
+        } else if (data instanceof int[]) {
+            writeIntVector(os, (int[]) data);
+        }
+    }
 
     /**
      * Writes an integer matrix in the format

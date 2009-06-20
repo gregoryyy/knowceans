@@ -34,7 +34,7 @@ import java.util.Vector;
  * TODO: The question remains whether it makes sense to have a formal IntVector,
  * analoguous to IntMatrix that allows performing search and indexing
  * operations, such as views, etc.
- *
+ * 
  * @author heinrich
  */
 public class Vectors {
@@ -46,7 +46,7 @@ public class Vectors {
      * Set the format of the following double print calls to the column width
      * and number of digits. Note that this is a static setting, it can be
      * undone using unsetFormat.
-     *
+     * 
      * @param colwidth
      * @param ndigits
      */
@@ -57,7 +57,7 @@ public class Vectors {
 
     /**
      * Get the format settings for doubles.
-     *
+     * 
      * @return
      */
     public static final int[] getFormat() {
@@ -99,7 +99,7 @@ public class Vectors {
     /**
      * create sequence [start : step : end] of double values. TODO: check
      * precision.
-     *
+     * 
      * @param start double value of start, if integer, use "1.0" notation.
      * @param end double value of end, if integer, use "1.0" notation.
      * @param step double value of step size
@@ -126,7 +126,7 @@ public class Vectors {
 
     /**
      * sum the elements of vec
-     *
+     * 
      * @param vec
      * @return
      */
@@ -141,7 +141,22 @@ public class Vectors {
 
     /**
      * sum the elements of vec
-     *
+     * 
+     * @param vec
+     * @return
+     */
+    public static double sum(float[] vec) {
+        double sum = 0;
+        for (int i = 0; i < vec.length; i++) {
+            sum += vec[i];
+        }
+        return sum;
+
+    }
+
+    /**
+     * sum the elements of vec
+     * 
      * @param vec
      * @return
      */
@@ -155,7 +170,7 @@ public class Vectors {
 
     /**
      * cumulative sum of the elements, starting at element 0.
-     *
+     * 
      * @param vec
      * @return vector containing the cumulative sum of the elements of vec
      */
@@ -168,9 +183,18 @@ public class Vectors {
         return x;
     }
 
+    public static float[] cumsum(float[] vec) {
+        float[] x = new float[vec.length];
+        x[0] = vec[0];
+        for (int i = 1; i < vec.length; i++) {
+            x[i] = vec[i] + x[i - 1];
+        }
+        return x;
+    }
+
     /**
      * maximum value in vec
-     *
+     * 
      * @param vec
      * @return
      */
@@ -185,7 +209,7 @@ public class Vectors {
 
     /**
      * maximum value in vec
-     *
+     * 
      * @param vec
      * @return
      */
@@ -198,9 +222,18 @@ public class Vectors {
         return max;
     }
 
+    public static double max(float[] vec) {
+        float max = vec[0];
+        for (int i = 1; i < vec.length; i++) {
+            if (vec[i] > max)
+                max = vec[i];
+        }
+        return max;
+    }
+
     /**
      * minimum value in vec
-     *
+     * 
      * @param vec
      * @return
      */
@@ -215,7 +248,7 @@ public class Vectors {
 
     /**
      * minimum value in vec
-     *
+     * 
      * @param vec
      * @return
      */
@@ -226,6 +259,59 @@ public class Vectors {
                 min = vec[i];
         }
         return min;
+    }
+
+    public static float min(float[] vec) {
+        float min = vec[0];
+        for (int i = 1; i < vec.length; i++) {
+            if (vec[i] < min)
+                min = vec[i];
+        }
+        return min;
+    }
+
+    /**
+     * rounds matrix and converts to integer
+     * 
+     * @param x
+     * @return
+     */
+    public static int[][] round(double[][] x) {
+        int[][] y = new int[x.length][];
+        for (int i = 0; i < y.length; i++) {
+            y[i] = round(x[i]);
+        }
+        return y;
+    }
+
+    public static int[][] round(float[][] x) {
+        int[][] y = new int[x.length][];
+        for (int i = 0; i < y.length; i++) {
+            y[i] = round(x[i]);
+        }
+        return y;
+    }
+
+    /**
+     * rounds vector and converts to integer
+     * 
+     * @param x
+     * @return
+     */
+    public static int[] round(double[] x) {
+        int[] y = new int[x.length];
+        for (int i = 0; i < y.length; i++) {
+            y[i] = (int) Math.round(x[i]);
+        }
+        return y;
+    }
+
+    public static int[] round(float[] x) {
+        int[] y = new int[x.length];
+        for (int i = 0; i < y.length; i++) {
+            y[i] = Math.round(x[i]);
+        }
+        return y;
     }
 
     /**
@@ -247,7 +333,6 @@ public class Vectors {
      * @return [x {;,} y]
      */
     public static double[][] concat(double[][] x, double[] y, boolean rowwise) {
-
 
         if (rowwise) {
             double[][] a = new double[1][];
@@ -326,7 +411,7 @@ public class Vectors {
 
     /**
      * create matroid with matrix a as element repeated for rows and cols
-     *
+     * 
      * @param a
      * @param rows
      * @param cols
@@ -346,7 +431,7 @@ public class Vectors {
 
     /**
      * create matroid with matrix a as element repeated for rows and cols
-     *
+     * 
      * @param a
      * @param rows
      * @param cols
@@ -366,7 +451,7 @@ public class Vectors {
 
     /**
      * w = [x y z]
-     *
+     * 
      * @param x
      * @param y
      * @return [x y z]
@@ -381,7 +466,7 @@ public class Vectors {
 
     /**
      * Create new vector of larger size and data of the argument.
-     *
+     * 
      * @param vector source array
      * @param moreelements number of elements to add
      * @return larger vector
@@ -394,7 +479,7 @@ public class Vectors {
 
     /**
      * Create new matrix of larger size and data of the argument.
-     *
+     * 
      * @param matrix
      * @param more rows
      * @param more cols
@@ -417,7 +502,7 @@ public class Vectors {
 
     /**
      * Create new vector with data of the argument and removed element.
-     *
+     * 
      * @param vector
      * @param element
      * @return shorter vector
@@ -432,7 +517,7 @@ public class Vectors {
 
     /**
      * Create new matrix with data of the argument and removed rows and columns.
-     *
+     * 
      * @param matrix
      * @param rows ordered vector of rows to remove
      * @param cols ordered vector of cols to remove
@@ -446,7 +531,7 @@ public class Vectors {
 
     /**
      * Create new vector with data of the argument and removed elements.
-     *
+     * 
      * @param vector
      * @param elements ordered elements to remove
      * @return smaller vector
@@ -458,7 +543,7 @@ public class Vectors {
     /**
      * return the complement of the sorted subset of the set 0:length-1 in
      * Matlab notation
-     *
+     * 
      * @param set sorted set of elements < length
      * @param length of superset of set and its returned complement
      * @return
@@ -477,7 +562,6 @@ public class Vectors {
         }
         return complement;
     }
-
 
     /** get the column of the matrix */
     public static int[] getColumn(int[][] matrix, int col) {
@@ -500,7 +584,7 @@ public class Vectors {
     /**
      * Create a matrix that contains the rows and columns of the argument matrix
      * in the order given by rows and cols
-     *
+     * 
      * @param matrix
      * @param rows
      * @param cols
@@ -521,7 +605,7 @@ public class Vectors {
     /**
      * Create vector that contains the elements of the argument in the order as
      * given by keep
-     *
+     * 
      * @param vector
      * @param keep
      * @return
@@ -538,7 +622,7 @@ public class Vectors {
     /**
      * Extract the column from the 2-dim matrix / array (stored row-wise in
      * Java)
-     *
+     * 
      * @param matrix
      * @param col column number to choose (must exist in each row of the matrix)
      * @return
@@ -553,7 +637,7 @@ public class Vectors {
 
     /**
      * Create new vector of larger size and data of the argument.
-     *
+     * 
      * @param vector source array
      * @param moreelements number of elements to add
      * @return larger vector
@@ -566,7 +650,7 @@ public class Vectors {
 
     /**
      * Create new matrix of larger size and data of the argument.
-     *
+     * 
      * @param matrix
      * @param more rows
      * @param more cols
@@ -589,7 +673,7 @@ public class Vectors {
 
     /**
      * Create new vector with data of the argument and removed element.
-     *
+     * 
      * @param vector
      * @param element
      * @return shorter vector
@@ -604,7 +688,7 @@ public class Vectors {
 
     /**
      * Create new matrix with data of the argument and removed rows and columns.
-     *
+     * 
      * @param matrix
      * @param rows ordered vector of rows to remove
      * @param cols ordered vector of cols to remove
@@ -618,7 +702,7 @@ public class Vectors {
 
     /**
      * Create new vector with data of the argument and removed elements.
-     *
+     * 
      * @param vector
      * @param elements ordered elements to remove
      * @return smaller vector
@@ -630,7 +714,7 @@ public class Vectors {
     /**
      * Create a matrix that contains the rows and columns of the argument matrix
      * in the order given by rows and cols
-     *
+     * 
      * @param matrix
      * @param rows
      * @param cols
@@ -650,7 +734,7 @@ public class Vectors {
     /**
      * Create vector that contains the elements of the argument in the order as
      * given by keep
-     *
+     * 
      * @param vector
      * @param keep
      * @return
@@ -666,7 +750,7 @@ public class Vectors {
 
     /**
      * prints a double representation of the vector.
-     *
+     * 
      * @param x
      * @return
      */
@@ -682,25 +766,50 @@ public class Vectors {
         return b.toString();
     }
 
+    public static String print(float[] x) {
+        if (x == null)
+            return "null";
+        StringBuffer b = new StringBuffer();
+        for (int i = 0; i < x.length - 1; i++) {
+            b.append(format(x[i])).append(" ");
+        }
+        if (x.length > 0)
+            b.append(format(x[x.length - 1]));
+        return b.toString();
+    }
+
+    public static String print(Object x) {
+        if (x instanceof Object[]) {
+            return print((Object[]) x);
+        } else if (x instanceof int[]) {
+            return print((int[]) x);
+        } else if (x instanceof double[]) {
+            return print((double[]) x);
+        } else if (x instanceof float[]) {
+            return print((float[]) x);
+        } else
+            return null;
+    }
+
     /**
      * Print the array of objects via their toString() methods.
-     *
+     * 
      * @param x
      * @return
      */
-    public static Object print(Object[] x) {
+    public static String print(Object[] x) {
         return print(x, " ");
     }
 
     /**
      * Print the array of objects via their toString() methods, using the
      * delimiter.
-     *
+     * 
      * @param x
      * @param delim
      * @return
      */
-    public static Object print(Object[] x, String delim) {
+    public static String print(Object[] x, String delim) {
         if (x == null)
             return "null";
         StringBuffer b = new StringBuffer();
@@ -722,7 +831,7 @@ public class Vectors {
 
     /**
      * prints a double representation of an array.
-     *
+     * 
      * @param x
      * @return
      */
@@ -738,9 +847,21 @@ public class Vectors {
         return b.toString();
     }
 
+    public static String print(float[][] x) {
+        if (x == null)
+            return "null";
+        StringBuffer b = new StringBuffer();
+        for (int i = 0; i < x.length - 1; i++) {
+            b.append(print(x[i])).append("\n");
+        }
+        if (x.length > 0)
+            b.append(print(x[x.length - 1]));
+        return b.toString();
+    }
+
     /**
      * prints a double representation of the vector.
-     *
+     * 
      * @param x
      * @return
      */
@@ -758,7 +879,7 @@ public class Vectors {
 
     /**
      * prints a double representation of an array.
-     *
+     * 
      * @param x
      * @return
      */
@@ -773,10 +894,10 @@ public class Vectors {
             b.append(print(x[x.length - 1]));
         return b.toString();
     }
-    
+
     /**
      * prints a double representation of an array.
-     *
+     * 
      * @param x
      * @return
      */
@@ -836,7 +957,7 @@ public class Vectors {
 
     /**
      * cast a double[] to an int[]
-     *
+     * 
      * @param vec
      * @return
      */
@@ -850,7 +971,7 @@ public class Vectors {
 
     /**
      * cast a double[] to an int[]
-     *
+     * 
      * @param vec
      * @return
      */
@@ -864,7 +985,7 @@ public class Vectors {
 
     /**
      * find indices with val
-     *
+     * 
      * @param vec
      * @param val
      * @return vector with 0-based indices.
@@ -886,7 +1007,7 @@ public class Vectors {
     /**
      * returns a copy of the vector elements with the given indices in the
      * original vector.
-     *
+     * 
      * @param indices
      * @return
      */
@@ -901,7 +1022,7 @@ public class Vectors {
     /**
      * returns a copy of the vector elements with the given indices in the
      * original vector.
-     *
+     * 
      * @param cols
      * @return
      */
@@ -930,7 +1051,7 @@ public class Vectors {
     /**
      * set the elements of vec at indices with the respective replacements.
      * TODO: implement views as in the colt library
-     *
+     * 
      * @param vec
      * @param indices
      * @param replacements
@@ -945,7 +1066,7 @@ public class Vectors {
     /**
      * set the elements of vec at indices with the replacement. TODO: implement
      * views as in the colt library
-     *
+     * 
      * @param vec
      * @param indices
      * @param replacement
@@ -959,7 +1080,7 @@ public class Vectors {
 
     /**
      * add a scalar to the vector
-     *
+     * 
      * @param vec
      * @param scalar
      */
@@ -971,7 +1092,7 @@ public class Vectors {
 
     /**
      * add a scalar to the vector. This creates a new double vector.
-     *
+     * 
      * @param vec
      * @param scalar
      */
@@ -985,7 +1106,7 @@ public class Vectors {
 
     /**
      * add a scalar to the matrix
-     *
+     * 
      * @param vec
      * @param scalar
      */
@@ -997,7 +1118,7 @@ public class Vectors {
 
     /**
      * add a scalar to the vector
-     *
+     * 
      * @param vec
      * @param scalar
      */
@@ -1009,7 +1130,7 @@ public class Vectors {
 
     /**
      * a+=b
-     *
+     * 
      * @param a
      * @param b
      */
@@ -1021,7 +1142,7 @@ public class Vectors {
 
     /**
      * a+=b
-     *
+     * 
      * @param a
      * @param b
      */
@@ -1033,7 +1154,7 @@ public class Vectors {
 
     /**
      * a+=b
-     *
+     * 
      * @param a
      * @param b
      */
@@ -1042,22 +1163,20 @@ public class Vectors {
             a[i] += b[i];
         }
     }
-    
 
     public static double dist(double[] a, double[] b) {
         double dist = 0;
         for (int i = 0; i < a.length; i++) {
             double diff = a[i] - b[i];
             dist += diff * diff;
-        } 
-        return dist; 
+        }
+        return dist;
     }
-
 
     /**
      * set the elements of a copy of vec at indices with the respective
      * replacements. TODO: implement views as in the colt library
-     *
+     * 
      * @param vec
      * @param indices
      * @param replacements
@@ -1073,8 +1192,25 @@ public class Vectors {
     }
 
     /**
+     * copies the vector of int or double
+     * 
+     * @param source
+     * @return
+     */
+    public static Object copy(Object source) {
+        if (source instanceof double[]) {
+            return copy((double[]) source);
+        } else if (source instanceof float[]) {
+            return copy((float[]) source);
+        } else if (source instanceof int[]) {
+            return copy((int[]) source);
+        }
+        return null;
+    }
+
+    /**
      * copies a the source to the destination
-     *
+     * 
      * @param alpha
      * @return
      */
@@ -1082,13 +1218,27 @@ public class Vectors {
         if (source == null)
             return null;
         double[] dest = new double[source.length];
-        System.arraycopy(source, 0, dest, 0, source.length);
+        //System.arraycopy(source, 0, dest, 0, source.length);
+        for (int i = 0; i < dest.length; i++) {
+            dest[i] = source[i];
+        }
+        return dest;
+    }
+
+    public static float[] copy(float[] source) {
+        if (source == null)
+            return null;
+        float[] dest = new float[source.length];
+        //System.arraycopy(source, 0, dest, 0, source.length);
+        for (int i = 0; i < dest.length; i++) {
+            dest[i] = source[i];
+        }
         return dest;
     }
 
     /**
      * copies a the source to the destination
-     *
+     * 
      * @param alpha
      * @return
      */
@@ -1102,7 +1252,7 @@ public class Vectors {
 
     /**
      * copies a the source to the destination
-     *
+     * 
      * @param alpha
      * @return
      */
@@ -1118,7 +1268,7 @@ public class Vectors {
 
     /**
      * multiplicates the vector with a scalar. The argument is modified.
-     *
+     * 
      * @param ds
      * @param d
      * @return
@@ -1131,7 +1281,7 @@ public class Vectors {
 
     /**
      * a *= b
-     *
+     * 
      * @param a
      * @param scalar
      */
@@ -1144,7 +1294,7 @@ public class Vectors {
     /**
      * multiplicates the vector with a vector (inner product). The argument is
      * not modified.
-     *
+     * 
      * @param ds
      * @param d
      * @return
@@ -1161,7 +1311,7 @@ public class Vectors {
 
     /**
      * transpose the matrix
-     *
+     * 
      * @param mat
      * @return
      */
@@ -1177,7 +1327,7 @@ public class Vectors {
 
     /**
      * transpose the matrix
-     *
+     * 
      * @param mat
      * @return
      */
@@ -1193,7 +1343,7 @@ public class Vectors {
 
     /**
      * check if argument is nan or infinity
-     *
+     * 
      * @param alpha
      * @return
      */
@@ -1203,7 +1353,7 @@ public class Vectors {
 
     /**
      * check if argument contains nan or infinity
-     *
+     * 
      * @param pp
      * @return
      */
@@ -1218,7 +1368,7 @@ public class Vectors {
 
     /**
      * check if argument contains nan or infinity
-     *
+     * 
      * @param pp
      * @return
      */
