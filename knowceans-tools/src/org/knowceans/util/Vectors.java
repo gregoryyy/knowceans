@@ -1357,7 +1357,7 @@ public class Vectors {
      * @param pp
      * @return
      */
-    private static boolean isDegenerate(double[] ds) {
+    public static boolean isDegenerate(double[] ds) {
         for (int i = 0; i < ds.length; i++) {
             if (isDegenerate(ds[i])) {
                 return true;
