@@ -44,7 +44,7 @@ public class Gamma {
      */
     public static double lgamma(double x) {
         double z;
-        assert x > 0;
+        assert x > 0 : "lgamma(" + x + ")";
         z = 1. / (x * x);
 
         x = x + 6;
@@ -95,7 +95,7 @@ public class Gamma {
         }
         return Math.exp(lognum - lgamma(den));
     }
-    
+
     public static double fdelta(double[] x) {
         return Math.exp(ldelta(x));
     }
@@ -109,11 +109,10 @@ public class Gamma {
         }
         return lognum - lgamma(den);
     }
-    
+
     public static double fdelta(int[] x) {
         return Math.exp(ldelta(x));
     }
-        
 
     /**
      * log Delta function with a symmetric concentration parameter alpha that is
@@ -133,12 +132,11 @@ public class Gamma {
         den += alpha * x.length;
         return lognum - lgamma(den);
     }
-    
+
     public static double fdelta(int[] x, double alpha) {
         return Math.exp(ldelta(x, alpha));
     }
-        
-    
+
     /**
      * Symmetric version of the log Dirichlet delta function
      * 
@@ -151,12 +149,10 @@ public class Gamma {
         delta = K * lgamma(x) - lgamma(K * x);
         return delta;
     }
-    
-    
+
     public static double fdelta(int K, double x) {
         return Math.exp(ldelta(K, x));
     }
-    
 
     /**
      * truncated Taylor series of Psi(x) = d/dx Gamma(x). From lda-c
@@ -166,7 +162,7 @@ public class Gamma {
      */
     public static double digamma(double x) {
         double p;
-        assert x > 0;
+        assert x > 0 : "digamma(" + x + ")";
         x = x + 6;
         p = 1 / (x * x);
         p = (((0.004166666666667 * p - 0.003968253986254) * p + 0.008333333333333)
@@ -206,6 +202,7 @@ public class Gamma {
     public static double trigamma(double x) {
         double p;
         int i;
+        assert x > 0 : "trigamma(" + x + ")";
 
         x = x + 6;
         p = 1 / (x * x);
