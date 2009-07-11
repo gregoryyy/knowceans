@@ -1381,4 +1381,155 @@ public class Vectors {
         return false;
     }
 
+    public static <T> boolean isPositive(T ds) {
+        if (ds instanceof double[][]) {
+            return isPositive((double[][]) ds);
+        } else if (ds instanceof float[][]) {
+            return isPositive((float[][]) ds);
+        } else if (ds instanceof int[][]) {
+            return isPositive((int[][]) ds);
+        } else if (ds instanceof double[]) {
+            return isPositive((double[]) ds);
+        } else if (ds instanceof float[]) {
+            return isPositive((float[]) ds);
+        } else {
+            return isPositive((int[]) ds);
+        }
+    }
+
+    /**
+     * check if argument contains positive
+     * 
+     * @param pp
+     * @return
+     */
+    public static boolean isPositive(double[] ds) {
+        for (int i = 0; i < ds.length; i++) {
+            if (ds[i] > 0) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * check if argument positive
+     * 
+     * @param pp
+     * @return
+     */
+    public static boolean isPositive(double[][] pp) {
+        for (int i = 0; i < pp.length; i++) {
+            if (isPositive(pp[i])) {
+                return true;
+            }
+        }
+        return false;
+    }
+    
+    public static <T> boolean isNegative(T ds) {
+        if (ds instanceof double[][]) {
+            return isNegative((double[][]) ds);
+        } else if (ds instanceof float[][]) {
+            return isNegative((float[][]) ds);
+        } else if (ds instanceof int[][]) {
+            return isNegative((int[][]) ds);
+        } else if (ds instanceof double[]) {
+            return isNegative((double[]) ds);
+        } else if (ds instanceof float[]) {
+            return isNegative((float[]) ds);
+        } else {
+            return isNegative((int[]) ds);
+        }
+    }
+
+    /**
+     * check if argument contains positive
+     * 
+     * @param pp
+     * @return
+     */
+    public static boolean isNegative(double[] ds) {
+        for (int i = 0; i < ds.length; i++) {
+            if (ds[i] < 0) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * check if argument positive
+     * 
+     * @param pp
+     * @return
+     */
+    public static boolean isNegative(double[][] pp) {
+        for (int i = 0; i < pp.length; i++) {
+            if (isNegative(pp[i])) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * check if argument contains positive
+     * 
+     * @param pp
+     * @return
+     */
+    public static boolean isPositive(int[] ds) {
+        for (int i = 0; i < ds.length; i++) {
+            if (ds[i] > 0) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * check if argument positive
+     * 
+     * @param pp
+     * @return
+     */
+    public static boolean isPositive(int[][] pp) {
+        for (int i = 0; i < pp.length; i++) {
+            if (isPositive(pp[i])) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * check if argument contains positive
+     * 
+     * @param pp
+     * @return
+     */
+    public static boolean isNegative(int[] ds) {
+        for (int i = 0; i < ds.length; i++) {
+            if (ds[i] < 0) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * check if argument positive
+     * 
+     * @param pp
+     * @return
+     */
+    public static boolean isNegative(int[][] pp) {
+        for (int i = 0; i < pp.length; i++) {
+            if (isNegative(pp[i])) {
+                return true;
+            }
+        }
+        return false;
+    }
 }

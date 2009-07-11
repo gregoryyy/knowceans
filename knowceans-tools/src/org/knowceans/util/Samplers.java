@@ -293,7 +293,7 @@ public class Samplers {
                 xx = Math.pow(drand48(), cc);
                 yy = xx + Math.pow(drand48(), dd);
                 if (yy <= 1.0) {
-                    assert yy != 0 && xx / yy > 0;
+                    assert yy != 0 && xx / yy > 0 : "rr = " + rr;
                     return -Math.log(drand48()) * xx / yy;
                 }
             }
