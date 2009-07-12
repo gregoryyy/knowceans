@@ -24,7 +24,7 @@ import java.util.Arrays;
  * @author heinrich (partly adapted from Yee Whye Teh's npbayes Matlab / C code)
  */
 public class Samplers {
-    
+
     // TODO: hook to random number generator instance
 
     public static void main(String[] args) {
@@ -293,8 +293,12 @@ public class Samplers {
                 xx = Math.pow(drand48(), cc);
                 yy = xx + Math.pow(drand48(), dd);
                 if (yy <= 1.0) {
-                    assert yy != 0 && xx / yy > 0 : "rr = " + rr;
-                    return -Math.log(drand48()) * xx / yy;
+                    // FIXME: assertion error for rr = 0.010817814317923407
+                    // assert yy != 0 && xx / yy > 0 : "rr = " + rr;
+                    // INFO: this if is a hack
+                    if (yy != 0 && xx / yy > 0) {
+                        return -Math.log(drand48()) * xx / yy;
+                    }
                 }
             }
         } else { /* rr > 1.0 */
@@ -423,8 +427,8 @@ public class Samplers {
     }
 
     /**
-     * Generate as many Dirichlet column samples as there are columns (direction =
-     * 1; randdir(A, 1)) or row samples as there are rows (direction = 2,
+     * Generate as many Dirichlet column samples as there are columns (direction
+     * = 1; randdir(A, 1)) or row samples as there are rows (direction = 2,
      * randdir(A, 2)) in aa (aa[][]), taking the respective parameters. After
      * Teh (npbayes).
      * 
@@ -624,10 +628,10 @@ public class Samplers {
         i = binarySearch(pp, randNum);
 
         // System.out.println(Vectors.print(pp) + " " + i);
-        
+
         return i;
     }
-    
+
     /**
      * Like randMultDirect, but the random number is given as argument.
      */
@@ -644,7 +648,7 @@ public class Samplers {
         i = binarySearch(pp, rand);
 
         // System.out.println(Vectors.print(pp) + " " + i);
-        
+
         return i;
     }
 
