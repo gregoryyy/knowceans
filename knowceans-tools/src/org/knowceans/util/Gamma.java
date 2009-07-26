@@ -31,29 +31,90 @@ import static java.lang.Math.log;
  */
 
 public class Gamma {
-    /**
-     * Euler-Mascheroni constant
-     */
-    public static final double GAMMA = 0.57721566490153286;
+
+    //    /**
+    //     * Euler-Mascheroni constant
+    //     */
+    //    public static final double GAMMA = 0.57721566490153286;
+    //
+    //    /**
+    //     * truncated Taylor series of log Gamma(x). From lda-c
+    //     * 
+    //     * @param x
+    //     * @return
+    //     */
+    //    public static double lgamma(double x) {
+    //        double z;
+    //        assert x > 0 : "lgamma(" + x + ")";
+    //        z = 1. / (x * x);
+    //
+    //        x = x + 6;
+    //        z = (((-0.000595238095238 * z + 0.000793650793651) * z - 0.002777777777778)
+    //            * z + 0.083333333333333)
+    //            / x;
+    //        z = (x - 0.5) * log(x) - x + 0.918938533204673 + z - log(x - 1)
+    //            - log(x - 2) - log(x - 3) - log(x - 4) - log(x - 5) - log(x - 6);
+    //        return z;
+    //    }
 
     /**
-     * truncated Taylor series of log Gamma(x). From lda-c
+     * <a href="http://en.wikipedia.org/wiki/Euler-Mascheroni_constant">Euler-
+     * Mascheroni constant</a>
      * 
-     * @param x
-     * @return
+     * @since 2.0
      */
-    public static double lgamma(double x) {
-        double z;
-        assert x > 0 : "lgamma(" + x + ")";
-        z = 1. / (x * x);
+    public static final double GAMMA = 0.577215664901532860606512090082;
 
-        x = x + 6;
-        z = (((-0.000595238095238 * z + 0.000793650793651) * z - 0.002777777777778)
-            * z + 0.083333333333333)
-            / x;
-        z = (x - 0.5) * log(x) - x + 0.918938533204673 + z - log(x - 1)
-            - log(x - 2) - log(x - 3) - log(x - 4) - log(x - 5) - log(x - 6);
-        return z;
+    /** Lanczos coefficients */
+    private static final double[] lanczos = {0.99999999999999709182,
+        57.156235665862923517, -59.597960355475491248, 14.136097974741747174,
+        -0.49191381609762019978, .33994649984811888699e-4,
+        .46523628927048575665e-4, -.98374475304879564677e-4,
+        .15808870322491248884e-3, -.21026444172410488319e-3,
+        .21743961811521264320e-3, -.16431810653676389022e-3,
+        .84418223983852743293e-4, -.26190838401581408670e-4,
+        .36899182659531622704e-5,};
+
+    /** Avoid repeated computation of log of 2 PI in logGamma */
+    private static final double HALF_LOG_2_PI = 0.5 * Math.log(2.0 * Math.PI);
+
+    /**
+     * Returns the natural logarithm of the gamma function &#915;(x). The
+     * implementation of this method is based on:
+     * <ul>
+     * <li><a href="http://mathworld.wolfram.com/GammaFunction.html"> Gamma
+     * Function</a>, equation (28).</li>
+     * <li><a href="http://mathworld.wolfram.com/LanczosApproximation.html">
+     * Lanczos Approximation</a>, equations (1) through (5).</li>
+     * <li><a href="http://my.fit.edu/~gabdo/gamma.txt">Paul Godfrey, A note on
+     * the computation of the convergent Lanczos complex Gamma approximation
+     * </a></li>
+     * </ul>
+     * 
+     * @param x the value.
+     * @return log(&#915;(x))
+     */
+    // this is from Apache Math
+    public static double lgamma(double x) {
+        double ret;
+
+        if (Double.isNaN(x) || (x <= 0.0)) {
+            ret = Double.NaN;
+        } else {
+            double g = 607.0 / 128.0;
+
+            double sum = 0.0;
+            for (int i = lanczos.length - 1; i > 0; --i) {
+                sum = sum + (lanczos[i] / (x + i));
+            }
+            sum = sum + lanczos[0];
+
+            double tmp = x + g + .5;
+            ret = ((x + .5) * Math.log(tmp)) - tmp + HALF_LOG_2_PI
+                + Math.log(sum / x);
+        }
+
+        return ret;
     }
 
     /**
@@ -72,7 +133,7 @@ public class Gamma {
      * @param n
      * @return
      */
-    public static int faculty(int n) {
+    public static int factorial(int n) {
         return (int) Math.exp(lgamma(n + 1));
     }
 
@@ -154,23 +215,81 @@ public class Gamma {
         return Math.exp(ldelta(K, x));
     }
 
+    //    /**
+    //     * truncated Taylor series of Psi(x) = d/dx Gamma(x). From lda-c
+    //     * 
+    //     * @param x
+    //     * @return
+    //     */
+    //    public static double digamma(double x) {
+    //        double p;
+    //        assert x > 0 : "digamma(" + x + ")";
+    //        x = x + 6;
+    //        p = 1 / (x * x);
+    //        p = (((0.004166666666667 * p - 0.003968253986254) * p + 0.008333333333333)
+    //            * p - 0.083333333333333)
+    //            * p;
+    //        p = p + log(x) - 0.5 / x - 1 / (x - 1) - 1 / (x - 2) - 1 / (x - 3) - 1
+    //            / (x - 4) - 1 / (x - 5) - 1 / (x - 6);
+    //        return p;
+    //    }
+
+    // limits for switching algorithm in digamma
+    /** C limit */
+    private static final double C_LIMIT = 49;
+    /** S limit */
+    private static final double S_LIMIT = 1e-5;
+
     /**
-     * truncated Taylor series of Psi(x) = d/dx Gamma(x). From lda-c
+     * <p>
+     * Computes the digamma function of x.
+     * </p>
+     * <p>
+     * This is an independently written implementation of the algorithm
+     * described in Jose Bernardo, Algorithm AS 103: Psi (Digamma) Function,
+     * Applied Statistics, 1976.
+     * </p>
+     * <p>
+     * Some of the constants have been changed to increase accuracy at the
+     * moderate expense of run-time. The result should be accurate to within
+     * 10^-8 absolute tolerance for x >= 10^-5 and within 10^-8 relative
+     * tolerance for x > 0.
+     * </p>
+     * <p>
+     * Performance for large negative values of x will be quite expensive
+     * (proportional to |x|). Accuracy for negative values of x should be about
+     * 10^-8 absolute for results less than 10^5 and 10^-8 relative for results
+     * larger than that.
+     * </p>
      * 
-     * @param x
-     * @return
+     * @param x the argument
+     * @return digamma(x) to within 10-8 relative or absolute error whichever is
+     *         smaller
+     * @see <a href="http://en.wikipedia.org/wiki/Digamma_function"> Digamma at
+     *      wikipedia </a>
+     * @see <a href="http://www.uv.es/~bernardo/1976AppStatist.pdf"> Bernardo's
+     *      original article </a>
+     * @since 2.0
      */
+    // from Apache Math
     public static double digamma(double x) {
-        double p;
-        assert x > 0 : "digamma(" + x + ")";
-        x = x + 6;
-        p = 1 / (x * x);
-        p = (((0.004166666666667 * p - 0.003968253986254) * p + 0.008333333333333)
-            * p - 0.083333333333333)
-            * p;
-        p = p + log(x) - 0.5 / x - 1 / (x - 1) - 1 / (x - 2) - 1 / (x - 3) - 1
-            / (x - 4) - 1 / (x - 5) - 1 / (x - 6);
-        return p;
+        if (x > 0 && x <= S_LIMIT) {
+            // use method 5 from Bernardo AS103
+            // accurate to O(x)
+            return -GAMMA - 1 / x;
+        }
+
+        if (x >= C_LIMIT) {
+            // use method 4 (accurate to O(1/x^8)
+            double inv = 1 / (x * x);
+            //            1       1        1         1
+            // log(x) -  --- - ------ + ------- - -------
+            //           2 x   12 x^2   120 x^4   252 x^6
+            return Math.log(x) - 0.5 / x - inv
+                * ((1.0 / 12) + inv * (1.0 / 120 - inv / 252));
+        }
+
+        return digamma(x + 1) - 1 / x;
     }
 
     /**
@@ -193,33 +312,66 @@ public class Gamma {
         return x;
     }
 
-    /**
-     * truncated Taylor series of d/dx Psi(x) = d^2/dx^2 Gamma(x). From lda-c
-     * 
-     * @param x
-     * @return
-     */
-    public static double trigamma(double x) {
-        double p;
-        int i;
-        assert x > 0 : "trigamma(" + x + ")";
+    //    /**
+    //     * truncated Taylor series of d/dx Psi(x) = d^2/dx^2 Gamma(x). From lda-c
+    //     * 
+    //     * @param x
+    //     * @return
+    //     */
+    //    public static double trigamma(double x) {
+    //        double p;
+    //        int i;
+    //        assert x > 0 : "trigamma(" + x + ")";
+    //
+    //        x = x + 6;
+    //        p = 1 / (x * x);
+    //        p = (((((0.075757575757576 * p - 0.033333333333333) * p + 0.0238095238095238)
+    //            * p - 0.033333333333333)
+    //            * p + 0.166666666666667)
+    //            * p + 1)
+    //            / x + 0.5 * p;
+    //        for (i = 0; i < 6; i++) {
+    //            x = x - 1;
+    //            p = 1 / (x * x) + p;
+    //        }
+    //        return (p);
+    //    }
 
-        x = x + 6;
-        p = 1 / (x * x);
-        p = (((((0.075757575757576 * p - 0.033333333333333) * p + 0.0238095238095238)
-            * p - 0.033333333333333)
-            * p + 0.166666666666667)
-            * p + 1)
-            / x + 0.5 * p;
-        for (i = 0; i < 6; i++) {
-            x = x - 1;
-            p = 1 / (x * x) + p;
+    /**
+     * <p>
+     * Computes the trigamma function of x. This function is derived by taking
+     * the derivative of the implementation of digamma.
+     * </p>
+     * 
+     * @param x the argument
+     * @return trigamma(x) to within 10-8 relative or absolute error whichever
+     *         is smaller
+     * @see <a href="http://en.wikipedia.org/wiki/Trigamma_function"> Trigamma
+     *      at wikipedia </a>
+     * @see Gamma#digamma(double)
+     * @since 2.0
+     */
+    // from Apache Math
+    public static double trigamma(double x) {
+        if (x > 0 && x <= S_LIMIT) {
+            return 1 / (x * x);
         }
-        return (p);
+
+        if (x >= C_LIMIT) {
+            double inv = 1 / (x * x);
+            //  1    1      1       1       1
+            //  - + ---- + ---- - ----- + -----
+            //  x      2      3       5       7
+            //      2 x    6 x    30 x    42 x
+            return 1 / x + inv / 2 + inv / x
+                * (1.0 / 6 - inv * (1.0 / 30 + inv / 42));
+        }
+
+        return trigamma(x + 1) + 1 / (x * x);
     }
 
     /**
-     * Recursive implementation of the faculty.
+     * Recursive implementation of the factorial.
      * 
      * @param i
      * @return

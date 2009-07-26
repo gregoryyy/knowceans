@@ -224,8 +224,8 @@ public class Densities {
      * @return
      */
     public static double pdfBinomial(int n, int N, double p) {
-        long binom = Gamma.faculty(N)
-            / (Gamma.faculty(N - n) * Gamma.faculty(n));
+        long binom = Gamma.factorial(N)
+            / (Gamma.factorial(N - n) * Gamma.factorial(n));
         double lik = binom * Math.pow(p, N) * Math.pow(1 - p, N - n);
         return lik;
     }
