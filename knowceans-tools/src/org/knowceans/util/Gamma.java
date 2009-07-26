@@ -32,31 +32,6 @@ import static java.lang.Math.log;
 
 public class Gamma {
 
-    //    /**
-    //     * Euler-Mascheroni constant
-    //     */
-    //    public static final double GAMMA = 0.57721566490153286;
-    //
-    //    /**
-    //     * truncated Taylor series of log Gamma(x). From lda-c
-    //     * 
-    //     * @param x
-    //     * @return
-    //     */
-    //    public static double lgamma(double x) {
-    //        double z;
-    //        assert x > 0 : "lgamma(" + x + ")";
-    //        z = 1. / (x * x);
-    //
-    //        x = x + 6;
-    //        z = (((-0.000595238095238 * z + 0.000793650793651) * z - 0.002777777777778)
-    //            * z + 0.083333333333333)
-    //            / x;
-    //        z = (x - 0.5) * log(x) - x + 0.918938533204673 + z - log(x - 1)
-    //            - log(x - 2) - log(x - 3) - log(x - 4) - log(x - 5) - log(x - 6);
-    //        return z;
-    //    }
-
     /**
      * <a href="http://en.wikipedia.org/wiki/Euler-Mascheroni_constant">Euler-
      * Mascheroni constant</a>
@@ -94,7 +69,7 @@ public class Gamma {
      * @param x the value.
      * @return log(&#915;(x))
      */
-    // this is from Apache Math
+    // this is from Apache Commons Math
     public static double lgamma(double x) {
         double ret;
 
@@ -115,6 +90,26 @@ public class Gamma {
         }
 
         return ret;
+    }
+
+    /**
+     * truncated Taylor series of log Gamma(x). From lda-c
+     * 
+     * @param x
+     * @return
+     */
+    public static double lgamma0(double x) {
+        double z;
+        assert x > 0 : "lgamma(" + x + ")";
+        z = 1. / (x * x);
+
+        x = x + 6;
+        z = (((-0.000595238095238 * z + 0.000793650793651) * z - 0.002777777777778)
+            * z + 0.083333333333333)
+            / x;
+        z = (x - 0.5) * log(x) - x + 0.918938533204673 + z - log(x - 1)
+            - log(x - 2) - log(x - 3) - log(x - 4) - log(x - 5) - log(x - 6);
+        return z;
     }
 
     /**
@@ -215,25 +210,6 @@ public class Gamma {
         return Math.exp(ldelta(K, x));
     }
 
-    //    /**
-    //     * truncated Taylor series of Psi(x) = d/dx Gamma(x). From lda-c
-    //     * 
-    //     * @param x
-    //     * @return
-    //     */
-    //    public static double digamma(double x) {
-    //        double p;
-    //        assert x > 0 : "digamma(" + x + ")";
-    //        x = x + 6;
-    //        p = 1 / (x * x);
-    //        p = (((0.004166666666667 * p - 0.003968253986254) * p + 0.008333333333333)
-    //            * p - 0.083333333333333)
-    //            * p;
-    //        p = p + log(x) - 0.5 / x - 1 / (x - 1) - 1 / (x - 2) - 1 / (x - 3) - 1
-    //            / (x - 4) - 1 / (x - 5) - 1 / (x - 6);
-    //        return p;
-    //    }
-
     // limits for switching algorithm in digamma
     /** C limit */
     private static final double C_LIMIT = 49;
@@ -271,8 +247,9 @@ public class Gamma {
      *      original article </a>
      * @since 2.0
      */
-    // from Apache Math
+    // from Apache Commons Math
     public static double digamma(double x) {
+        assert !Double.isNaN(x) : "digamma: x is NaN";
         if (x > 0 && x <= S_LIMIT) {
             // use method 5 from Bernardo AS103
             // accurate to O(x)
@@ -290,6 +267,26 @@ public class Gamma {
         }
 
         return digamma(x + 1) - 1 / x;
+    }
+
+    /**
+     * Nonrecursive version, truncated Taylor series of Psi(x) = d/dx Gamma(x).
+     * From lda-c
+     * 
+     * @param x
+     * @return
+     */
+    public static double digamma0(double x) {
+        double p;
+        assert x > 0 : "digamma(" + x + ")";
+        x = x + 6;
+        p = 1 / (x * x);
+        p = (((0.004166666666667 * p - 0.003968253986254) * p + 0.008333333333333)
+            * p - 0.083333333333333)
+            * p;
+        p = p + log(x) - 0.5 / x - 1 / (x - 1) - 1 / (x - 2) - 1 / (x - 3) - 1
+            / (x - 4) - 1 / (x - 5) - 1 / (x - 6);
+        return p;
     }
 
     /**
@@ -312,31 +309,6 @@ public class Gamma {
         return x;
     }
 
-    //    /**
-    //     * truncated Taylor series of d/dx Psi(x) = d^2/dx^2 Gamma(x). From lda-c
-    //     * 
-    //     * @param x
-    //     * @return
-    //     */
-    //    public static double trigamma(double x) {
-    //        double p;
-    //        int i;
-    //        assert x > 0 : "trigamma(" + x + ")";
-    //
-    //        x = x + 6;
-    //        p = 1 / (x * x);
-    //        p = (((((0.075757575757576 * p - 0.033333333333333) * p + 0.0238095238095238)
-    //            * p - 0.033333333333333)
-    //            * p + 0.166666666666667)
-    //            * p + 1)
-    //            / x + 0.5 * p;
-    //        for (i = 0; i < 6; i++) {
-    //            x = x - 1;
-    //            p = 1 / (x * x) + p;
-    //        }
-    //        return (p);
-    //    }
-
     /**
      * <p>
      * Computes the trigamma function of x. This function is derived by taking
@@ -351,7 +323,7 @@ public class Gamma {
      * @see Gamma#digamma(double)
      * @since 2.0
      */
-    // from Apache Math
+    // from Apache Commons Math
     public static double trigamma(double x) {
         if (x > 0 && x <= S_LIMIT) {
             return 1 / (x * x);
@@ -368,6 +340,32 @@ public class Gamma {
         }
 
         return trigamma(x + 1) + 1 / (x * x);
+    }
+
+    /**
+     * Non-recursive version, truncated Taylor series of d/dx Psi(x) = d^2/dx^2
+     * Gamma(x). From lda-c
+     * 
+     * @param x
+     * @return
+     */
+    public static double trigamma0(double x) {
+        double p;
+        int i;
+        assert x > 0 : "trigamma(" + x + ")";
+
+        x = x + 6;
+        p = 1 / (x * x);
+        p = (((((0.075757575757576 * p - 0.033333333333333) * p + 0.0238095238095238)
+            * p - 0.033333333333333)
+            * p + 0.166666666666667)
+            * p + 1)
+            / x + 0.5 * p;
+        for (i = 0; i < 6; i++) {
+            x = x - 1;
+            p = 1 / (x * x) + p;
+        }
+        return (p);
     }
 
     /**
