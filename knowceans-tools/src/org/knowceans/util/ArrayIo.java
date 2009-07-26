@@ -495,6 +495,7 @@ public class ArrayIo {
                 for (int i = 0; i < fields.length; i++) {
                     row[i] = Double.parseDouble(fields[i]);
                 }
+                a.add(row);
             }
             br.close();
         } catch (NumberFormatException e) {
