@@ -1164,6 +1164,13 @@ public class Vectors {
         }
     }
 
+    /**
+     * euclidean distance between vectors.
+     * 
+     * @param a
+     * @param b
+     * @return
+     */
     public static double dist(double[] a, double[] b) {
         double dist = 0;
         for (int i = 0; i < a.length; i++) {
@@ -1171,6 +1178,19 @@ public class Vectors {
             dist += diff * diff;
         }
         return dist;
+    }
+
+    /**
+     * absolute value of vector
+     * @param a
+     * @return
+     */
+    public static double abs(double[] a) {
+        double mag = 0;
+        for (int i = 0; i < a.length; i++) {
+            mag += a[i] * a[i];
+        }
+        return mag;
     }
 
     /**
@@ -1426,7 +1446,7 @@ public class Vectors {
         }
         return false;
     }
-    
+
     public static <T> boolean isNegative(T ds) {
         if (ds instanceof double[][]) {
             return isNegative((double[][]) ds);
