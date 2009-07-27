@@ -3,6 +3,8 @@
  */
 package org.knowceans.util;
 
+import java.io.Serializable;
+
 /**
  * DataTask represents an algorithm that can run in a thread of a
  * DataThreadPool. The idea is to reuse data structures and save memory. These
@@ -11,7 +13,7 @@ package org.knowceans.util;
  * 
  * @author gregor
  */
-public interface DataTask extends Runnable {
+public interface DataTask extends Runnable, Serializable {
 
     /**
      * @param data assigns worker-specific data arrays to this thread

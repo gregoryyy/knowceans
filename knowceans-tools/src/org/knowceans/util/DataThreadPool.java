@@ -1,5 +1,6 @@
 package org.knowceans.util;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedList;
@@ -15,7 +16,8 @@ import java.util.LinkedList;
  * 
  * @author gregor
  */
-public class DataThreadPool {
+public class DataThreadPool implements Serializable {
+    private static final long serialVersionUID = 8039512463872181728L;
     public int nThreads;
     private int active = 0;
     private boolean stopping = false;
@@ -69,7 +71,7 @@ public class DataThreadPool {
         }
     }
 
-    public void add(ArrayList< ? extends DataTask> tasks) {
+    public void add(Collection< ? extends DataTask> tasks) {
         // add the jobs atomically to prevent active count 
         // to become 0 (fast tasks, long queue) and
         // and thus the queue to exit prematurely
@@ -114,7 +116,8 @@ public class DataThreadPool {
      * 
      * @author gregor
      */
-    private class WorkerThread extends Thread {
+    private class WorkerThread extends Thread implements Serializable {
+        private static final long serialVersionUID = -672285282641278383L;
         int channel;
 
         public WorkerThread(int i) {
