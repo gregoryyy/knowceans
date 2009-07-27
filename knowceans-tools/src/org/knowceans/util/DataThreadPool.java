@@ -69,9 +69,15 @@ public class DataThreadPool {
         }
     }
 
-    public void add(ArrayList<? extends DataTask> tasks) {
-        for (DataTask r : tasks) {
-            add(r);
+    public void add(ArrayList< ? extends DataTask> tasks) {
+        // add the jobs atomically to prevent active count 
+        // to become 0 (fast tasks, long queue) and
+        // and thus the queue to exit prematurely
+        synchronized (queue) {
+            for (DataTask r : tasks) {
+                queue.addLast(r);
+            }
+            queue.notify();
         }
     }
 
@@ -140,6 +146,7 @@ public class DataThreadPool {
                 }
                 synchronized (queue) {
                     active--;
+                    System.out.println("a" + active);
                 }
                 if (completionMonitor != null && active == 0 && queue.isEmpty()) {
                     synchronized (completionMonitor) {
