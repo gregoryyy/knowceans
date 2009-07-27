@@ -24,12 +24,32 @@ public class DataThreadPool {
     private Object[] data;
     private Object completionMonitor;
 
+    /**
+     * create a thread pool of size nThreads which are assigned data (an array
+     * of nThreads objects)
+     * 
+     * @param nThreads
+     * @param data may be null
+     */
     public DataThreadPool(int nThreads, Object[] data) {
         this.nThreads = nThreads;
         queue = new LinkedList<DataTask>();
         threads = new WorkerThread[nThreads];
         this.data = data;
         start();
+    }
+
+    /**
+     * same as other constructor, with an initial
+     * 
+     * @param nThreads
+     * @param data
+     * @param queue
+     */
+    public DataThreadPool(int nThreads, Object[] data,
+        Collection<DataTask> queue) {
+        this(nThreads, data);
+        add(new ArrayList<DataTask>());
     }
 
     /**
@@ -40,12 +60,6 @@ public class DataThreadPool {
             threads[i] = new WorkerThread(i);
             threads[i].start();
         }
-    }
-
-    public DataThreadPool(int nThreads, double[][][] phi,
-        Collection<DataTask> queue) {
-        this(nThreads, phi);
-        this.queue = new LinkedList<DataTask>(queue);
     }
 
     public void add(DataTask task) {
