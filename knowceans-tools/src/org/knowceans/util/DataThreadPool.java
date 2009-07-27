@@ -1,0 +1,138 @@
+package org.knowceans.util;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.LinkedList;
+
+/**
+ * DataThreadPool is a thread queue that keeps data that can be associated with
+ * specific runnables. So only as many data are needed as there are threads, not
+ * runnables (tasks) that implement the DataTask interface. <br/>
+ * To use this, allocate an array of the data required in the workers,
+ * instantiate the pool and add tasks which are executed from an internal queue.
+ * Using the notifyCompletion() method allows the caller to wait for completion
+ * of all tasks in the queue.
+ * 
+ * @author gregor
+ */
+public class DataThreadPool {
+    public int nThreads;
+    private int active = 0;
+    private boolean stopping = false;
+    private final WorkerThread[] threads;
+    private LinkedList<DataTask> queue;
+    private Object[] data;
+    private Object completionMonitor;
+
+    public DataThreadPool(int nThreads, Object[] data) {
+        this.nThreads = nThreads;
+        queue = new LinkedList<DataTask>();
+        threads = new WorkerThread[nThreads];
+        this.data = data;
+        start();
+    }
+
+    /**
+     * start executing the queue
+     */
+    public void start() {
+        for (int i = 0; i < nThreads; i++) {
+            threads[i] = new WorkerThread(i);
+            threads[i].start();
+        }
+    }
+
+    public DataThreadPool(int nThreads, double[][][] phi,
+        Collection<DataTask> queue) {
+        this(nThreads, phi);
+        this.queue = new LinkedList<DataTask>(queue);
+    }
+
+    public void add(DataTask task) {
+        synchronized (queue) {
+            queue.addLast(task);
+            queue.notify();
+        }
+    }
+
+    public void add(ArrayList<DataTask> tasks) {
+        for (DataTask r : tasks) {
+            add(r);
+        }
+    }
+
+    public int getActive() {
+        return active;
+    }
+
+    /**
+     * called this before monitor.wait() to wait for completion of all tasks in
+     * the pool's queue.
+     */
+    public void notifyCompletion(Object monitor) {
+        completionMonitor = monitor;
+    }
+
+    /**
+     * complete the current tasks and stop
+     */
+    public void finish() {
+        this.stopping = true;
+    }
+
+    /**
+     * whether this queue is stopping
+     * 
+     * @return
+     */
+    public boolean isStopping() {
+        return stopping;
+    }
+
+    /**
+     * WorkerThread is a thread that runs data runnables.
+     * 
+     * @author gregor
+     */
+    private class WorkerThread extends Thread {
+        int channel;
+
+        public WorkerThread(int i) {
+            channel = i;
+        }
+
+        public void run() {
+            DataTask task;
+
+            while (!isStopping()) {
+                synchronized (queue) {
+                    while (queue.isEmpty()) {
+                        try {
+                            queue.wait();
+                        } catch (InterruptedException e) {
+                            // ignore
+                        }
+                    }
+                    // get next task
+                    task = queue.removeFirst();
+                    // assign data
+                    task.assignData(data[channel]);
+                    active++;
+                }
+                try {
+                    task.run();
+                } catch (RuntimeException e) {
+                    e.printStackTrace();
+                }
+                synchronized (queue) {
+                    active--;
+                }
+                if (completionMonitor != null && active == 0 && queue.isEmpty()) {
+                    synchronized (completionMonitor) {
+                        completionMonitor.notify();
+                    }
+                }
+            }
+        }
+    }
+}
