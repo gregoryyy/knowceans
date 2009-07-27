@@ -76,8 +76,8 @@ public class DataThreadPool {
         synchronized (queue) {
             for (DataTask r : tasks) {
                 queue.addLast(r);
+                queue.notify();
             }
-            queue.notify();
         }
     }
 
