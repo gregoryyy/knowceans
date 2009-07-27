@@ -1165,13 +1165,13 @@ public class Vectors {
     }
 
     /**
-     * euclidean distance between vectors.
+     * squared euclidean distance between vectors.
      * 
      * @param a
      * @param b
      * @return
      */
-    public static double dist(double[] a, double[] b) {
+    public static double sqdist(double[] a, double[] b) {
         double dist = 0;
         for (int i = 0; i < a.length; i++) {
             double diff = a[i] - b[i];
@@ -1181,11 +1181,12 @@ public class Vectors {
     }
 
     /**
-     * absolute value of vector
+     * squared absolute value of vector
+     * 
      * @param a
      * @return
      */
-    public static double abs(double[] a) {
+    public static double sqabs(double[] a) {
         double mag = 0;
         for (int i = 0; i < a.length; i++) {
             mag += a[i] * a[i];

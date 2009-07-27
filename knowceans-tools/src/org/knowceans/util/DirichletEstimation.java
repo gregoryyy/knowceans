@@ -652,7 +652,7 @@ public class DirichletEstimation {
                 // ML version
                 // alphanew[k] = alpha[k] * summk / summ;
             }
-            if (Vectors.dist(alphanew, alpha) < prec) {
+            if (Vectors.sqdist(alphanew, alpha) < prec) {
                 System.out.println(i);
                 return alphanew;
             }
