@@ -146,7 +146,6 @@ public class DataThreadPool {
                 }
                 synchronized (queue) {
                     active--;
-                    System.out.println("a" + active);
                 }
                 if (completionMonitor != null && active == 0 && queue.isEmpty()) {
                     synchronized (completionMonitor) {
