@@ -69,7 +69,7 @@ public class DataThreadPool {
         }
     }
 
-    public void add(ArrayList<DataTask> tasks) {
+    public void add(ArrayList<? extends DataTask> tasks) {
         for (DataTask r : tasks) {
             add(r);
         }
