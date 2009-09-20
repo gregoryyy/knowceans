@@ -3,11 +3,12 @@
  */
 package org.knowceans.util;
 
+import java.util.Comparator;
+
 import org.knowceans.util.Vectors;
 
 /**
  * IndexQuickSort sorts indices of an array <br>
- * TODO: generalise to comparable items
  * 
  * @author gregor
  * @author original code at
@@ -18,36 +19,93 @@ public class IndexQuickSort {
     public static void main(String[] args) {
         double[] weights = new double[] {0.1, 0.1, 0.001, 0.05, 0.2, 0.3, 0.5,
             0.03, 0.02, 0.1};
-        int[] index = Vectors.range(0, weights.length - 1);
-        quicksort2(weights, index);
+        Double[] weights2 = new Double[] {0.1, 0.1, 0.001, 0.05, 0.2, 0.3, 0.5,
+            0.03, 0.02, 0.1};
+        Comparator<Double> cmp = new Comparator<Double>() {
+            @Override
+            public int compare(Double o1, Double o2) {
+                return Double.compare(o1, o2);
+            }
+        };
+
+        for (int i = 0; i < weights.length; i++) {
+            System.out.println(i + "\t" + weights[i]);
+        }
+        System.out.println("sorted");
+        int[] index = sort(weights);
         for (int i = 0; i < index.length; i++) {
-            System.out.println(i + "\t" + weights[i] + "\t" + index[i]);
+            System.out.println(i + "\t" + weights[index[i]] + "\t" + index[i]);
+        }
+        System.out.println("reversed");
+        reverse(index);
+        for (int i = 0; i < index.length; i++) {
+            System.out.println(i + "\t" + weights[index[i]] + "\t" + index[i]);
+        }
+
+        System.out.println("now with objects");
+        for (int i = 0; i < weights.length; i++) {
+            System.out.println(i + "\t" + weights[i]);
+        }
+        System.out.println("sorted");
+        index = sort(weights2, cmp);
+        for (int i = 0; i < index.length; i++) {
+            System.out.println(i + "\t" + weights2[index[i]] + "\t" + index[i]);
+        }
+        System.out.println("reversed");
+        reverse(index);
+        for (int i = 0; i < index.length; i++) {
+            System.out.println(i + "\t" + weights2[index[i]] + "\t" + index[i]);
         }
     }
 
     /**
-     * just sort indices
+     * sort indices
+     * 
+     * @param fixedArray values to be sorted
+     * @param index range of indices into fixedArray
+     */
+    public static void sort(double[] fixedArray, int[] index) {
+        sort(fixedArray, index, 0, index.length - 1);
+    }
+
+    /**
+     * sort indices
+     * 
+     * @param fixedArray values to be sorted
+     * @return index range of indices into fixedArray
+     */
+    public static int[] sort(double[] fixedArray) {
+        int[] index = Vectors.range(0, fixedArray.length - 1);
+        sort(fixedArray, index, 0, index.length - 1);
+        return index;
+    }
+
+    /**
+     * reverse ordering
      * 
      * @param main
      * @param index
      */
-    public static void quicksort2(double[] main, int[] index) {
-        idxqsort(main, index, 0, index.length - 1);
+    public static void reverse(int[] index) {
+        int N = index.length;
+        for (int i = 0; i < (N / 2); i++) {
+            swap(index, i, N - 1 - i);
+        }
     }
 
     ///////////////////
 
     // quicksort a[left] to a[right]
-    public static void idxqsort(double[] a, int[] index, int left, int right) {
+    public static void sort(double[] a, int[] index, int left, int right) {
         if (right <= left)
             return;
-        int i = idxpartition(a, index, left, right);
-        idxqsort(a, index, left, i - 1);
-        idxqsort(a, index, i + 1, right);
+        int i = part(a, index, left, right);
+        sort(a, index, left, i - 1);
+        sort(a, index, i + 1, right);
     }
 
     // partition a[left] to a[right], assumes left < right
-    private static int idxpartition(double[] a, int[] index, int left, int right) {
+    private static int part(double[] a, int[] index, int left, int right) {
         int i = left - 1;
         int j = right;
         while (true) {
@@ -78,4 +136,54 @@ public class IndexQuickSort {
         index[j] = b;
     }
 
+    //////////////
+    
+    /**
+     * sort indices
+     * 
+     * @param fixedArray values to be sorted
+     * @param index range of indices into fixedArray
+     */
+    public static <T> void sort(T[] fixedArray, Comparator<T> cmp, int[] index) {
+        sort(fixedArray, cmp, index, 0, index.length - 1);
+    }
+
+    /**
+     * sort indices
+     * 
+     * @param fixedArray values to be sorted
+     * @return index range of indices into fixedArray
+     */
+    public static <T> int[] sort(T[] fixedArray, Comparator<T> cmp) {
+        int[] index = Vectors.range(0, fixedArray.length - 1);
+        sort(fixedArray, cmp, index, 0, index.length - 1);
+        return index;
+    }
+
+    public static <T> void sort(T[] a, Comparator<T> cmp, int[] index,
+        int left, int right) {
+        if (right <= left)
+            return;
+        int i = part(a, cmp, index, left, right);
+        sort(a, cmp, index, left, i - 1);
+        sort(a, cmp, index, i + 1, right);
+    }
+
+    private static <T> int part(T[] a, Comparator<T> cmp, int[] index,
+        int left, int right) {
+        int i = left - 1;
+        int j = right;
+        while (true) {
+            while (cmp.compare(a[index[++i]], a[index[right]]) == -1)
+                ;
+            while (cmp.compare(a[index[right]], a[index[--j]]) == -1)
+                if (j == left)
+                    break;
+            if (i >= j)
+                break;
+            swap(index, i, j);
+        }
+        swap(index, i, right);
+        return i;
+    }    
 }
