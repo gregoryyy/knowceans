@@ -97,6 +97,16 @@ public class IndexQuickSort {
     public static int[] inverse(int[] index) {
         return sort(index);
     }
+    
+    /**
+     * inverse of the index, i.e., the ordered index of the argument
+     * 
+     * @param index
+     * @param invindex the inverse mapping of index
+     */
+    public static void inverse(int[] index, int[] invindex) {
+        sort(index, invindex);
+    }
 
     /**
      * reverse ordering
