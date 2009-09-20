@@ -8,7 +8,10 @@ import java.util.Comparator;
 import org.knowceans.util.Vectors;
 
 /**
- * IndexQuickSort sorts indices of an array <br>
+ * IndexQuickSort sorts indices of an array without changing its values. There
+ * are additional functions to reverse the order and to get the inverse of the
+ * mapping from the array to the sorted index. Types supported include primitive
+ * double and int arrays as well as objects and associated Comparators.
  * 
  * @author gregor
  * @author original code at
@@ -40,6 +43,12 @@ public class IndexQuickSort {
         reverse(index);
         for (int i = 0; i < index.length; i++) {
             System.out.println(i + "\t" + weights[index[i]] + "\t" + index[i]);
+        }
+        System.out.println("inverse");
+        int[] index2 = inverse(index);
+        for (int i = 0; i < index2.length; i++) {
+            System.out.println(i + "\t" + weights[index2[index[i]]] + "\t"
+                + index2[i]);
         }
 
         System.out.println("now with objects");
@@ -78,6 +87,15 @@ public class IndexQuickSort {
         int[] index = Vectors.range(0, fixedArray.length - 1);
         sort(fixedArray, index, 0, index.length - 1);
         return index;
+    }
+
+    /**
+     * inverse of the index, i.e., the ordered index of the argument
+     * 
+     * @param index
+     */
+    public static int[] inverse(int[] index) {
+        return sort(index);
     }
 
     /**
@@ -137,7 +155,65 @@ public class IndexQuickSort {
     }
 
     //////////////
-    
+
+    /**
+     * sort indices
+     * 
+     * @param fixedArray values to be sorted
+     * @param index range of indices into fixedArray
+     */
+    public static void sort(int[] fixedArray, int[] index) {
+        sort(fixedArray, index, 0, index.length - 1);
+    }
+
+    /**
+     * sort indices
+     * 
+     * @param fixedArray values to be sorted
+     * @return index range of indices into fixedArray
+     */
+    public static int[] sort(int[] fixedArray) {
+        int[] index = Vectors.range(0, fixedArray.length - 1);
+        sort(fixedArray, index, 0, index.length - 1);
+        return index;
+    }
+
+    // quicksort a[left] to a[right]
+    public static void sort(int[] a, int[] index, int left, int right) {
+        if (right <= left)
+            return;
+        int i = part(a, index, left, right);
+        sort(a, index, left, i - 1);
+        sort(a, index, i + 1, right);
+    }
+
+    // partition a[left] to a[right], assumes left < right
+    private static int part(int[] a, int[] index, int left, int right) {
+        int i = left - 1;
+        int j = right;
+        while (true) {
+            while (a[index[++i]] < a[index[right]])
+                // find item on left to swap
+                // a[right] acts as sentinel
+                ;
+            while (a[index[right]] < a[index[--j]])
+                // find item on right to swap
+                if (j == left)
+                    // don't go out-of-bounds
+                    break;
+            if (i >= j)
+                // check if pointers cross
+                break;
+            // swap two elements into place
+            swap(index, i, j);
+        }
+        // swap with partition element
+        swap(index, i, right);
+        return i;
+    }
+
+    //////////////
+
     /**
      * sort indices
      * 
@@ -185,5 +261,5 @@ public class IndexQuickSort {
         }
         swap(index, i, right);
         return i;
-    }    
+    }
 }
