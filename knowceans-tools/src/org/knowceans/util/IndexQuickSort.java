@@ -97,7 +97,7 @@ public class IndexQuickSort {
     public static int[] inverse(int[] index) {
         return sort(index);
     }
-    
+
     /**
      * inverse of the index, i.e., the ordered index of the argument
      * 
@@ -158,7 +158,7 @@ public class IndexQuickSort {
     }
 
     // swap indices i and j
-    private static void swap(int[] index, int i, int j) {
+    public static void swap(int[] index, int i, int j) {
         int b = index[i];
         index[i] = index[j];
         index[j] = b;
