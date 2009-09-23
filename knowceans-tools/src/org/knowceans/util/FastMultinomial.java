@@ -153,25 +153,21 @@ public class FastMultinomial {
 
     /**
      * reorder the index of a sorted array after element kinc had been
-     * incremented and kdec decremented. This is a minimal form of quicksort.
+     * incremented and kdec decremented (referring to the indices in idx). This
+     * is a minimal form of quicksort.
      * 
      * @param x weights array
      * @param idx indices from x to idx
-     * @param invidx indices from idx to x
      * @param kinc element just incremented
      * @param kdec element just decremented
      */
-    void reorder(double[] x, int[] idx, int[] invidx, int kinc, int kdec) {
+    public static void reorder(double[] x, int[] idx, int kinc, int kdec) {
 
-        // x[idx[kinc]] now > prev?
-        kinc = invidx[kinc];
         while (kinc > 0 && x[idx[kinc]] > x[idx[kinc - 1]]) {
             IndexQuickSort.swap(idx, kinc, kinc - 1);
             kinc--;
         }
 
-        // x[idx[kdec]] now < next?
-        kdec = invidx[kdec];
         while (kdec < x.length - 1 && x[idx[kdec]] < x[idx[kdec + 1]]) {
             IndexQuickSort.swap(idx, kdec, kdec + 1);
             kdec++;
