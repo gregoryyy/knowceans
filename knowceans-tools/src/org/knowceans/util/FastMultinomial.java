@@ -21,7 +21,9 @@ import java.util.Random;
  * rows of abc should be calculated using sumcube(abc[i]), not including the
  * root operation. Finally, samples can be taken from the distribution, updating
  * the state of the sampler in all three parts, abc, the norm and the sort
- * index.
+ * index. There are two sampling methods, one that returns the sample as an
+ * index of the sorting index array (useful to maintain the sampling order using
+ * reorder()) and one that returns the actual sample index in abc.
  * <p>
  * This class is a proof of concept that does not save much computing time
  * because it does pre-compute the weights beforehand.
@@ -51,6 +53,7 @@ public class FastMultinomial {
         int[] samples = new int[nsamp];
         Random rand = new CokusRandom();
         for (int i = 0; i < nsamp; i++) {
+            samples[i] = idx[sampleIdx(ww, wwnorm, idx, rand)];
             samples[i] = sample(ww, wwnorm, idx, rand);
         }
 
@@ -69,9 +72,28 @@ public class FastMultinomial {
      * @param abcnorm cube norms of factors [I]
      * @param idx descending order of weight factors
      * @param rand random sampler
-     * @return
+     * @return a sample as index of abc
      */
     public static int sample(double[][] abc, double[] abcnorm, int[] idx,
+        Random rand) {
+        return idx[sampleIdx(abc, abcnorm, idx, rand)];
+    }
+
+    /**
+     * Fast sampling from a distribution with weights in factors abc, each
+     * element of which is a vector of the size of the sampling space K.
+     * Further, the cube norm of each of the factors is given in abcnorm
+     * (without the inverse exponential operation), as well as the indexes of
+     * the values of abc ordered decending (by one of the factors).
+     * 
+     * @param abc weight factors of multinomial masses [I x K]
+     * @param abcnorm cube norms of factors [I]
+     * @param idx descending order of weight factors
+     * @param rand random sampler
+     * @return a sample as index of idx, use sample() to get the original index
+     *         of abc
+     */
+    public static int sampleIdx(double[][] abc, double[] abcnorm, int[] idx,
         Random rand) {
         int I = abc.length;
         int K = abc[0].length;
@@ -121,14 +143,14 @@ public class FastMultinomial {
             } else {
                 if (k == 0 || u * Zk > p[k - 1]) {
                     // current topic ? 
-                    return ksorted;
+                    return k;
                 } else {
                     // previous topic (via s_lk) ?
                     // scale and shift u
                     u = (u * Zkprev - p[k - 1]) * Zk / (Zkprev - Zk);
                     for (int kprev = 0; kprev < k; kprev++) {
                         if (p[kprev] >= u) {
-                            return idx[kprev];
+                            return kprev;
                         }
                     } // for each previous topic
                 } // if current topic
@@ -158,8 +180,8 @@ public class FastMultinomial {
      * 
      * @param x weights array
      * @param idx indices from x to idx
-     * @param kinc element just incremented
-     * @param kdec element just decremented
+     * @param kinc element in idx just incremented
+     * @param kdec element in idx just decremented
      */
     public static void reorder(double[] x, int[] idx, int kinc, int kdec) {
 
