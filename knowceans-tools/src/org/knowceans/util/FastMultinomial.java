@@ -25,12 +25,13 @@ import java.util.Random;
  * index of the sorting index array (useful to maintain the sampling order using
  * reorder()) and one that returns the actual sample index in abc.
  * <p>
- * This class is a proof of concept that does not save much computing time
- * because it does pre-compute the weights beforehand.
+ * The static functions are proof of concept that does not save much computing
+ * time because they don't pre-compute the weights beforehand. Actual speed is
+ * gained by subclassing and calculating the weights in getWeights.
  * 
  * @author gregor
  */
-public class FastMultinomial {
+public abstract class FastMultinomial {
 
     public static void main(String[] args) {
         int nsamp = 100000;
@@ -40,9 +41,23 @@ public class FastMultinomial {
         double[] c = Vectors.ones(a.length, 2.);
         double[][] ww = new double[][] {a, b, c};
 
+        int[] samples = staticMain(nsamp, ww);
+
+        // check empirical distribution
+        Histogram.hist(System.out, samples, 10);
+    }
+
+    /**
+     * static operation of the sampler
+     * 
+     * @param nsamp
+     * @param ww
+     * @return
+     */
+    private static int[] staticMain(int nsamp, double[][] ww) {
         // order weights
-        int[] idx = Vectors.range(0, a.length - 1);
-        indexsort(a, idx);
+        int[] idx = Vectors.range(0, ww[0].length - 1);
+        indexsort(ww[0], idx);
         // set up norms
         double[] wwnorm = new double[ww.length];
         for (int i = 0; i < wwnorm.length; i++) {
@@ -56,10 +71,174 @@ public class FastMultinomial {
             samples[i] = idx[sampleIdx(ww, wwnorm, idx, rand)];
             samples[i] = sample(ww, wwnorm, idx, rand);
         }
+        return samples;
 
-        // check empirical distribution
-        Histogram.hist(System.out, samples, 10);
     }
+
+    ////////////// instance members and functions /////////////
+
+    /**
+     * number of dimensions
+     */
+    private int K;
+
+    /**
+     * number of factors
+     */
+    private int I;
+
+    /**
+     * power of the norm of abc
+     */
+    private double[] abcnorm;
+
+    /**
+     * rng
+     */
+    private Random rand;
+
+    /**
+     * sorting index into abc to the norm
+     */
+    private int[] idx;
+
+    /**
+     * set up a fast multinomial using a subclass implementation for the
+     * 
+     * @param I number of factor distributions
+     * @param K number of topics
+     * @param abcnorm cube norms of factors [I]
+     * @param idx descending order of weight factors
+     * @param rand random sampler
+     */
+    public FastMultinomial(int I, int K, Random rand) {
+        this.rand = rand;
+        this.I = I;
+        this.K = K;
+    }
+
+    /**
+     * Fast sampling from a distribution with weights in factors abc, each
+     * element of which is a vector of the size of the sampling space K.
+     * Further, the cube norm of each of the factors is given in abcnorm
+     * (without the inverse exponential operation), as well as the indexes of
+     * the values of abc ordered decending (by one of the factors).
+     * 
+     * @param I number of factor distributions
+     * @param K number of topics
+     * @param abcnorm cube norms of factors [I]
+     * @param idx descending order of weight factors
+     * @param rand random sampler
+     * @return a sample as index of idx, use sample() to get the original index
+     *         of abc
+     */
+    public int sampleIdx() {
+        int ksorted;
+        double Zkprev;
+        double Zk = Double.POSITIVE_INFINITY;
+        double[] p = new double[K];
+
+        // get norms that are decremented
+        // by local elements:
+        // norm(a_l:K-1) starting with (a_0:K-1)
+        double[] abcl2k = Vectors.copy(abcnorm);
+
+        double u = rand.nextDouble();
+        for (int k = 0; k < K; k++) {
+
+            // p[k] = p[k-1] + prod_i abc_ik
+            p[k] = k == 0 ? 0 : p[k - 1];
+            ksorted = idx[k];
+
+            double[] abc = getWeights(ksorted);
+            double abck = abc[0];
+            for (int i = 1; i < I; i++) {
+                abck *= abc[i];
+            }
+            p[k] += abck;
+
+            // first reduce the norm by the current 
+            // element: norm(a_i,l+1:K) = (-a_i,l^3 + sum_l:K a_i^3)^-3
+
+            // store this in case it was the previous topic
+            Zkprev = Zk;
+            // Zk = p[k] + prod_i norm(a_i,l+1:K)
+            Zk = p[k] + reducenorm(abcl2k, abc);
+
+            if (u > p[k] / Zk) {
+                continue;
+            } else {
+                if (k == 0 || u * Zk > p[k - 1]) {
+                    // current topic ? 
+                    return k;
+                } else {
+                    // previous topic (via s_lk) ?
+                    // scale and shift u
+                    u = (u * Zkprev - p[k - 1]) * Zk / (Zkprev - Zk);
+                    for (int kprev = 0; kprev < k; kprev++) {
+                        if (p[kprev] >= u) {
+                            return kprev;
+                        }
+                    } // for each previous topic
+                } // if current topic
+            } // if p too low
+        } // for k
+        // should never reach this...
+        return -1;
+    }
+
+    /**
+     * This function is supposed to do two things: remove the current element
+     * abc from the exponentiated norm and calculate the norm of the remaining
+     * elements by the root. This function is implemented using the cube root
+     * and should be subclassed for other norms.
+     * 
+     * @param abcl2kExpnorm [in/out] exponentiated norms from l to K - 1 in each
+     *        row
+     * @param abcl1 [in] weights to be reduced = abc[][l-1]
+     * @return
+     */
+    public double reducenorm(double[] abcl2kExpnorm, double[] abcl1) {
+        double abcl2knorm = 1;
+        for (int i = 0; i < I; i++) {
+            abcl2kExpnorm[i] -= cube(abcl1[i]);
+            if (abcl2kExpnorm[i] < 0) {
+                abcl2kExpnorm[i] = 0;
+            }
+            abcl2knorm *= abcl2kExpnorm[i];
+        }
+        return cuberoot(abcl2knorm);
+    }
+
+    /**
+     * Calculate exponentiated norm sum of x for the weights arr. This
+     * implementation uses cube norm. Typically, this function is called for
+     * each factor once before fast sampling can start. It requires that weights
+     * for all k are calculated initially, whereas for the fast sampler this is
+     * not necessary.
+     * 
+     * @param abci factor
+     * @return norm (exp)
+     */
+    public double initnorm(double[] abci) {
+        double sum = 0;
+        for (int k = 0; k < abci.length; k++) {
+            sum += cube(abci[k]);
+        }
+        return sum;
+    }
+
+    /**
+     * Get the weight for dimension k for each factor. This is subclassed and
+     * contains the actual weights calculations whose number should be reduced
+     * by the sorted sampling.
+     * 
+     * @param k
+     * @return
+     */
+    public abstract double[] getWeights(int k);
+
+    /////////// static functions ///////////
 
     /**
      * Fast sampling from a distribution with weights in factors abc, each
