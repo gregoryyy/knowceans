@@ -37,10 +37,10 @@ public abstract class FastMultinomial {
     public static int[] histK;
 
     public static void main(String[] args) {
-        int nsamp = 10000;
+        int nsamp = 1000000;
         //        double[] a = new double[] {0.4, 0.1, 0.001, 0.01, 0.02, 0.003, 0.15,
         //            0.003, 0.2, 0.1};
-        double[] a = Samplers.randDir(5, 10);
+        double[] a = Samplers.randDir(.05, 20);
         double[] b = Vectors.ones(a.length, 3.);
         double[] c = Vectors.ones(a.length, 2.);
         double[][] ww = new double[][] {a, b, c};
@@ -594,7 +594,6 @@ public abstract class FastMultinomial {
         int K = weights[0].length;
         int korig;
         double Zlprev, Zl = Double.POSITIVE_INFINITY;
-        double[] p = new double[K];
 
         // get norms that are decremented
         // by local elements:
@@ -606,11 +605,12 @@ public abstract class FastMultinomial {
 
         double Zldiff = 0;
         Zlprev = Double.POSITIVE_INFINITY;
-        double slk = 0;
+        double sll = 0;
         double slkcum = 0;
-        double pkcum = 0;
+        double[] plcum = new double[K];
         double uscaled;
 
+        // u is kept normalised to 1
         double u = rand.nextDouble();
         // local scaled version
         // for all partitions s_l^k
@@ -622,14 +622,13 @@ public abstract class FastMultinomial {
             // get the original topic for this partition                    
             korig = idx[l];
 
-            double pk = weights[0][korig];
+            double pl = weights[0][korig];
             for (int i = 1; i < I; i++) {
-                pk *= weights[i][korig];
+                pl *= weights[i][korig];
             }
             // get the known weights so far
             // pcumk = pcumk + prod_i abc_ik
-            pkcum += pk;
-            p[l] = pk;
+            plcum[l] += (l == 0) ? pl : plcum[l - 1] + pl;
 
             // add the estimate of the unknown weights
             double remainNorm = 1;
@@ -643,32 +642,29 @@ public abstract class FastMultinomial {
             }
             Zlprev = Zl;
             // Zl = (sum_k=1:l pk) + prod_i norm(a_i,l+1:K)
-            Zl = pkcum + cuberoot(remainNorm);
+            Zl = plcum[l] + cuberoot(remainNorm);
 
             // get current partition
             // s_l^l = p_l / Z_l
-            slk = p[l] / Zl;
-            slkcum += slk;
+            sll = pl / Zl;
 
-            // check if it is this partition already
-            if (u <= slk) {
-                // if sample in current s_l^k
+            // if current = s_l^l
+            if (u <= sll) {
                 return l;
             } else {
+                // s_l^k = p_k ( 1/Z_l - 1/Z_lprev )
                 Zldiff = 1 / Zl - 1 / Zlprev;
+                // scale u to save multiplications
                 uscaled = u / Zldiff;
                 for (int k = 0; k < l; k++) {
-                    cb++;
-                    // get current partition
-                    // TODO: this could be pre-calculated using shifted/scaled u
-                    // s_l^k = p_k ( 1/Z_l - 1/Z_lprev )
-                    slk = p[k] * Zldiff;
-                    slkcum += slk;
-                    if (u <= slkcum) {
-                        // if sample in current s_l^k
+                    // cumulated partitions s_l^k
+                    if (uscaled <= plcum[k]) {
+                        // if sample = current s_l^k
                         return k;
                     }
                 } // for k < l
+                // remove s_l^k from u; plcum cumulates p_k for k < l
+                slkcum = (l > 0) ? plcum[l - 1] * Zldiff + sll : sll;
             } // if s_l^l
         } // for l
         // should never reach this...
