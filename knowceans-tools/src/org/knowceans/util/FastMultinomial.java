@@ -33,13 +33,20 @@ import java.util.Random;
  */
 public abstract class FastMultinomial {
 
+    public static int[] histLK;
+    public static int[] histK;
+
     public static void main(String[] args) {
-        int nsamp = 100000;
-        double[] a = new double[] {0.4, 0.1, 0.001, 0.01, 0.02, 0.003, 0.15,
-            0.003, 0.2, 0.1};
+        int nsamp = 10000;
+        //        double[] a = new double[] {0.4, 0.1, 0.001, 0.01, 0.02, 0.003, 0.15,
+        //            0.003, 0.2, 0.1};
+        double[] a = Samplers.randDir(5, 10);
         double[] b = Vectors.ones(a.length, 3.);
         double[] c = Vectors.ones(a.length, 2.);
         double[][] ww = new double[][] {a, b, c};
+
+        histLK = new int[a.length];
+        histK = new int[a.length];
 
         int[][] samples = staticMain(nsamp, ww);
 
@@ -51,6 +58,28 @@ public abstract class FastMultinomial {
             System.out.println(i);
             Histogram.hist(System.out, samples[i], 10);
         }
+        long mine = StopWatch.read("mine");
+        long theirs = StopWatch.read("theirs");
+        long baseline = StopWatch.read("baseline");
+        long baseline2 = StopWatch.read("baseline2");
+
+        System.out.println("mine: " + StopWatch.format(mine));
+        System.out.println("theirs: " + StopWatch.format(theirs));
+        System.out.println("baseline: " + StopWatch.format(baseline));
+        System.out.println("baseline2: " + StopWatch.format(baseline2));
+        System.out.println(String.format("mine vs. theirs: %2.1f%% more time",
+            (mine - theirs) / (double) mine * 100));
+        System.out.println(String.format(
+            "theirs vs. baseline: %2.1f%% more time", (theirs - baseline)
+                / (double) baseline * 100));
+        System.out.println(String.format(
+            "mine vs. baseline: %2.1f%% more time", (mine - baseline)
+                / (double) baseline * 100));
+        System.out.println("occurrences of l-k and k");
+        //        System.out.println(Vectors.print(histLK));
+        //        System.out.println(Vectors.print(histK));
+        System.out.println("l=k: " + cc + " vs " + ca + ", l!=k: " + cd
+            + " vs " + cb);
 
     }
 
@@ -74,14 +103,32 @@ public abstract class FastMultinomial {
         }
 
         // now sample
-        int[][] samples = new int[2][nsamp];
+        int[][] samples = new int[4][nsamp];
         Random rand = new CokusRandom();
+        StopWatch.start("mine");
         for (int i = 0; i < nsamp; i++) {
-            //            sampleIdx2(ww, wwnorm, idx[0], rand);
-            //            sampleIdx(ww, wwnorm, idx[0], rand);
-            samples[0][i] = idx[0][sampleIdx2(ww, wwnorm, idx[0], rand)];
+            samples[0][i] = idx[0][sampleIdx3(ww, wwnorm, idx[0], rand)];
+        }
+        StopWatch.stop("mine");
+        rand = new CokusRandom();
+        StopWatch.start("theirs");
+        for (int i = 0; i < nsamp; i++) {
             samples[1][i] = idx[0][sampleIdx(ww, wwnorm, idx[0], rand)];
         }
+        StopWatch.stop("theirs");
+        rand = new CokusRandom();
+        StopWatch.start("baseline");
+        for (int i = 0; i < nsamp; i++) {
+            samples[2][i] = sample0(ww, rand);
+        }
+        StopWatch.stop("baseline");
+        rand = new CokusRandom();
+        StopWatch.start("baseline2");
+        for (int i = 0; i < nsamp; i++) {
+            samples[3][i] = sample00(ww, rand);
+        }
+        StopWatch.stop("baseline2");
+
         return samples;
 
     }
@@ -112,6 +159,10 @@ public abstract class FastMultinomial {
      * sorting index into abc to the norm
      */
     private static int[][] idx;
+    private static int ca;
+    private static int cb;
+    private static int cc;
+    private static int cd;
 
     /**
      * set up a fast multinomial using a subclass implementation for the
@@ -281,90 +332,64 @@ public abstract class FastMultinomial {
     }
 
     /**
-     * Fast sampling from a distribution with weights in factors abc, each
+     * Standard sampling from a distribution with weights in factors abc, each
      * element of which is a vector of the size of the sampling space K.
-     * Further, the cube norm of each of the factors is given in pownorm
-     * (without the inverse exponential operation), as well as the indexes of
-     * the values of abc ordered decending (by one of the factors).
      * 
      * @param weights weight factors of multinomial masses [I x K]
-     * @param pownorm cube norms of factors [I]
-     * @param idx descending order of weight factors
      * @param rand random sampler
-     * @return a sample as index of idx, use sample() to get the original index
-     *         of abc
+     * @return a sample as index of weights
      */
-    public static int sampleIdx2(double[][] weights, double[] abcnorm,
-        int[] idx, Random rand) {
+    public static int sample0(double[][] weights, Random rand) {
         int I = weights.length;
         int K = weights[0].length;
-        int korig;
-        double Zlprev, Zl = Double.POSITIVE_INFINITY;
-        double[] p = new double[K];
-
-        // get norms that are decremented
-        // by local elements:
-        // norm(a_l:K-1) starting with (a_0:K-1)
-        double[] abcl2k = new double[I];
-        for (int i = 0; i < I; i++) {
-            abcl2k[i] = abcnorm[i];
-        }
-
-        double Zldiff = 0;
-        Zlprev = Double.POSITIVE_INFINITY;
-        double slk = 0;
-        double slkcum = 0;
-        double pkcum = 0, pk = 0;
+        double[] pcum = new double[K];
 
         double u = rand.nextDouble();
         // for all partitions s_l^k
-        for (int l = 0; l < K; l++) {
-            // for all partitions s_l^k with k < l
-            for (int k = l; k >= 0; k--) {
-                if (k == l) {
-                    // get the original topic for this partition                    
-                    korig = idx[k];
-                    p[k] = weights[0][korig];
-                    for (int i = 1; i < I; i++) {
-                        p[k] *= weights[i][korig];
-                    }
-                    // get the known weights so far
-                    // pcumk = pcumk + prod_i abc_ik
-                    pkcum += p[k];
+        for (int k = 0; k < K; k++) {
+            double pk = weights[0][k];
+            for (int i = 1; i < I; i++) {
+                pk *= weights[i][k];
+            }
+            // get the known weights so far
+            // pcumk = pcumk + prod_i abc_ik
+            pcum[k] = (k == 0) ? pk : pcum[k - 1] + pk;
+        }
+        // perform binary search
+        int k = Samplers.binarySearch(pcum, u * pcum[K - 1]);
+        return k;
+    }
 
-                    // add the estimate of the unknown weights
-                    double abcl2knorm = 1;
-                    for (int i = 0; i < I; i++) {
-                        abcl2k[i] -= cube(weights[i][korig]);
-                        if (abcl2k[i] < 0) {
-                            abcl2k[i] = 0;
-                        }
-                        abcl2knorm *= abcl2k[i];
-                    }
-                    Zlprev = Zl;
-                    // Zl = (sum_k=1:l pk) + prod_i norm(a_i,l+1:K)
-                    Zl = pkcum + cuberoot(abcl2knorm);
+    /**
+     * Standard sampling from a distribution with weights in factors abc, each
+     * element of which is a vector of the size of the sampling space K.
+     * 
+     * @param weights weight factors of multinomial masses [I x K]
+     * @param rand random sampler
+     * @return a sample as index of weights
+     */
+    public static int sample00(double[][] weights, Random rand) {
+        int I = weights.length;
+        int K = weights[0].length;
+        double[] pcum = new double[K];
 
-                    // get current partition
-                    // s_l^l = p_l / Z_l
-                    slk = p[k] / Zl;
-                } else {
-                    // get current partition
-                    // s_l^k = p_k ( 1/Z_l - 1/Z_lprev )
-                    slk = p[k] * Zldiff;
-                }
-                // total length of partitions so far
-                slkcum += slk;
-                if (u <= slkcum) {
-                    // if sample in current s_l^k
-                    return k;
-                }
-                if (l == k) {
-                    Zldiff = 1 / Zl - 1 / Zlprev;
-                }
-            } // for k
-        } // for l
-        // should never reach this...
+        // for all partitions s_l^k
+        for (int k = 0; k < K; k++) {
+            double pk = weights[0][k];
+            for (int i = 1; i < I; i++) {
+                pk *= weights[i][k];
+            }
+            // get the known weights so far
+            // pcumk = pcumk + prod_i abc_ik
+            pcum[k] = (k == 0) ? pk : pcum[k - 1] + pk;
+        }
+        // perform linear search
+        double u = rand.nextDouble() * pcum[K - 1];
+        for (int k = 0; k < K; k++) {
+            if (u < pcum[k]) {
+                return k;
+            }
+        }
         return -1;
     }
 
@@ -389,61 +414,263 @@ public abstract class FastMultinomial {
         int korig;
         double Zlprev;
         double Zl = Double.POSITIVE_INFINITY;
-        double[] p = new double[K];
+        double[] pcum = new double[K];
 
         // get norms that are decremented
         // by local elements:
         // norm(a_l:K-1) starting with (a_0:K-1)
-        double[] abcl2k = new double[I];
+        double[] remainNorms = new double[I];
         for (int i = 0; i < I; i++) {
-            abcl2k[i] = abcnorm[i];
+            remainNorms[i] = abcnorm[i];
         }
 
         double u = rand.nextDouble();
         for (int l = 0; l < K; l++) {
 
-            // p[k] = p[k-1] + prod_i abc_ik
-            p[l] = l == 0 ? 0 : p[l - 1];
             korig = idx[l];
-            double abck = weights[0][korig];
-            for (int i = 1; i < I; i++) {
-                abck *= weights[i][korig];
-            }
-            p[l] += abck;
 
-            // first reduce the norm by the current 
-            // element: norm(a_i,l+1:K) = (-a_i,l^3 + sum_l:K a_i^3)^-3
-            double abcl2knorm = 1;
+            // p[k] = p[k-1] + prod_i abc_ik
+            pcum[l] = l == 0 ? 0 : pcum[l - 1];
+
+            double pk = weights[0][korig];
+            for (int i = 1; i < I; i++) {
+                pk *= weights[i][korig];
+            }
+            pcum[l] += pk;
+
+            double remainNorm = 1;
             for (int i = 0; i < I; i++) {
-                abcl2k[i] -= cube(weights[i][korig]);
-                if (abcl2k[i] < 0) {
-                    abcl2k[i] = 0;
+                // weight korig now known -> remove it
+                remainNorms[i] -= cube(weights[i][korig]);
+                if (remainNorms[i] < 0) {
+                    remainNorms[i] = 0;
                 }
-                abcl2knorm *= abcl2k[i];
+                remainNorm *= remainNorms[i];
             }
 
             // store this in case it was the previous topic
             Zlprev = Zl;
             // Zk = p[k] + prod_i norm(a_i,l+1:K)
-            Zl = p[l] + cuberoot(abcl2knorm);
-            if (u > p[l] / Zl) {
+            Zl = pcum[l] + cuberoot(remainNorm);
+            cc++;
+            if (u > pcum[l] / Zl) {
                 continue;
             } else {
-                if (l == 0 || u * Zl > p[l - 1]) {
+                if (l == 0 || u * Zl > pcum[l - 1]) {
                     // current topic ? 
                     return l;
                 } else {
                     // previous topic (via s_lk) ?
                     // scale and shift u
-                    u = (p[l - 1] - u * Zlprev) * Zl / (Zl - Zlprev);
+                    u = (pcum[l - 1] - u * Zlprev) * Zl / (Zl - Zlprev);
+                    cd++;
                     for (int k = 0; k < l; k++) {
-                        if (p[k] >= u) {
+                        if (pcum[k] >= u) {
                             return k;
                         }
                     } // for each previous topic
                 } // if current topic
             } // if p too low
         } // for k
+        // should never reach this...
+        return -1;
+    }
+
+    /**
+     * Fast sampling from a distribution with weights in factors abc, each
+     * element of which is a vector of the size of the sampling space K.
+     * Further, the cube norm of each of the factors is given in pownorm
+     * (without the inverse exponential operation), as well as the indexes of
+     * the values of abc ordered decending (by one of the factors).
+     * 
+     * @param weights weight factors of multinomial masses [I x K]
+     * @param pownorm cube norms of factors [I]
+     * @param idx descending order of weight factors
+     * @param rand random sampler
+     * @return a sample as index of idx, use sample() to get the original index
+     *         of abc
+     */
+    public static int sampleIdx2(double[][] weights, double[] abcnorm,
+        int[] idx, Random rand) {
+        int I = weights.length;
+        int K = weights[0].length;
+        int korig;
+        double Zlprev, Zl = Double.POSITIVE_INFINITY;
+        double[] p = new double[K];
+
+        // get norms that are decremented
+        // by local elements:
+        // norm(a_l:K-1) starting with (a_0:K-1)
+        double[] remainNorms = new double[I];
+        for (int i = 0; i < I; i++) {
+            remainNorms[i] = abcnorm[i];
+        }
+
+        double Zldiff = 0;
+        Zlprev = Double.POSITIVE_INFINITY;
+        double slk = 0;
+        double slkcum = 0;
+        double pkcum = 0;
+
+        double u = rand.nextDouble();
+        // for all partitions s_l^k
+        for (int l = 0; l < K; l++) {
+            // for all partitions s_l^k with k < l
+            for (int k = l; k >= 0; k--) {
+                if (k == l) {
+                    // get the original topic for this partition                    
+                    korig = idx[l];
+
+                    double pk = weights[0][korig];
+                    for (int i = 1; i < I; i++) {
+                        pk *= weights[i][korig];
+                    }
+                    // get the known weights so far
+                    // pcumk = pcumk + prod_i abc_ik
+
+                    pkcum += pk;
+                    p[k] = pk;
+
+                    // add the estimate of the unknown weights
+                    double remainNorm = 1;
+                    for (int i = 0; i < I; i++) {
+                        // weight korig now known -> remove it
+                        remainNorms[i] -= cube(weights[i][korig]);
+                        if (remainNorms[i] < 0) {
+                            remainNorms[i] = 0;
+                        }
+                        remainNorm *= remainNorms[i];
+                    }
+                    Zlprev = Zl;
+                    // Zl = (sum_k=1:l pk) + prod_i norm(a_i,l+1:K)
+                    Zl = pkcum + cuberoot(remainNorm);
+
+                    // get current partition
+                    // s_l^l = p_l / Z_l
+                    slk = p[k] / Zl;
+                    ca++;
+                } else {
+                    cb++;
+                    // get current partition
+                    // TODO: this could be pre-calculated using shifted/scaled u
+                    // s_l^k = p_k ( 1/Z_l - 1/Z_lprev )
+                    slk = p[k] * Zldiff;
+                }
+                // total length of partitions so far
+                slkcum += slk;
+                if (u <= slkcum) {
+                    //System.out.println(l-k);
+                    //histLK[l - k]++;
+                    //histK[k]++;
+                    // if sample in current s_l^k
+                    return k;
+                }
+                if (l == k) {
+                    Zldiff = 1 / Zl - 1 / Zlprev;
+                }
+            } // for k
+        } // for l
+        // should never reach this...
+        return -1;
+    }
+
+    /**
+     * Fast sampling from a distribution with weights in factors abc, each
+     * element of which is a vector of the size of the sampling space K.
+     * Further, the cube norm of each of the factors is given in pownorm
+     * (without the inverse exponential operation), as well as the indexes of
+     * the values of abc ordered decending (by one of the factors).
+     * 
+     * @param weights weight factors of multinomial masses [I x K]
+     * @param pownorm cube norms of factors [I]
+     * @param idx descending order of weight factors
+     * @param rand random sampler
+     * @return a sample as index of idx, use sample() to get the original index
+     *         of abc
+     */
+    public static int sampleIdx3(double[][] weights, double[] abcnorm,
+        int[] idx, Random rand) {
+        int I = weights.length;
+        int K = weights[0].length;
+        int korig;
+        double Zlprev, Zl = Double.POSITIVE_INFINITY;
+        double[] p = new double[K];
+
+        // get norms that are decremented
+        // by local elements:
+        // norm(a_l:K-1) starting with (a_0:K-1)
+        double[] remainNorms = new double[I];
+        for (int i = 0; i < I; i++) {
+            remainNorms[i] = abcnorm[i];
+        }
+
+        double Zldiff = 0;
+        Zlprev = Double.POSITIVE_INFINITY;
+        double slk = 0;
+        double slkcum = 0;
+        double pkcum = 0;
+        double uscaled;
+
+        double u = rand.nextDouble();
+        // local scaled version
+        // for all partitions s_l^k
+        for (int l = 0; l < K; l++) {
+            // get rid of old partitions in u
+            u -= slkcum;
+            slkcum = 0;
+            // for partitions s_l^l
+            // get the original topic for this partition                    
+            korig = idx[l];
+
+            double pk = weights[0][korig];
+            for (int i = 1; i < I; i++) {
+                pk *= weights[i][korig];
+            }
+            // get the known weights so far
+            // pcumk = pcumk + prod_i abc_ik
+            pkcum += pk;
+            p[l] = pk;
+
+            // add the estimate of the unknown weights
+            double remainNorm = 1;
+            for (int i = 0; i < I; i++) {
+                // weight korig now known -> remove it
+                remainNorms[i] -= cube(weights[i][korig]);
+                if (remainNorms[i] < 0) {
+                    remainNorms[i] = 0;
+                }
+                remainNorm *= remainNorms[i];
+            }
+            Zlprev = Zl;
+            // Zl = (sum_k=1:l pk) + prod_i norm(a_i,l+1:K)
+            Zl = pkcum + cuberoot(remainNorm);
+
+            // get current partition
+            // s_l^l = p_l / Z_l
+            slk = p[l] / Zl;
+            slkcum += slk;
+
+            // check if it is this partition already
+            if (u <= slk) {
+                // if sample in current s_l^k
+                return l;
+            } else {
+                Zldiff = 1 / Zl - 1 / Zlprev;
+                uscaled = u / Zldiff;
+                for (int k = 0; k < l; k++) {
+                    cb++;
+                    // get current partition
+                    // TODO: this could be pre-calculated using shifted/scaled u
+                    // s_l^k = p_k ( 1/Z_l - 1/Z_lprev )
+                    slk = p[k] * Zldiff;
+                    slkcum += slk;
+                    if (u <= slkcum) {
+                        // if sample in current s_l^k
+                        return k;
+                    }
+                } // for k < l
+            } // if s_l^l
+        } // for l
         // should never reach this...
         return -1;
     }
