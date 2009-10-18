@@ -140,6 +140,20 @@ public class Vectors {
     }
 
     /**
+     * product of the values in vec
+     * 
+     * @param vec
+     * @return
+     */
+    public static double product(double[] vec) {
+        double prod = 1;
+        for (int i = 0; i < vec.length; i++) {
+            prod *= vec[i];
+        }
+        return prod;
+    }
+
+    /**
      * sum the elements of vec
      * 
      * @param vec
