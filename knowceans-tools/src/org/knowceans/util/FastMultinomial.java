@@ -31,22 +31,17 @@ import java.util.Random;
  * 
  * @author gregor
  */
+@SuppressWarnings("hiding") 
 public abstract class FastMultinomial {
 
-    public static int[] histLK;
-    public static int[] histK;
-
     public static void main(String[] args) {
-        int nsamp = 1000000;
+        int nsamp = 100000;
         //        double[] a = new double[] {0.4, 0.1, 0.001, 0.01, 0.02, 0.003, 0.15,
         //            0.003, 0.2, 0.1};
-        double[] a = Samplers.randDir(.05, 20);
+        double[] a = Samplers.randDir(0.001, 1000);
         double[] b = Vectors.ones(a.length, 3.);
         double[] c = Vectors.ones(a.length, 2.);
         double[][] ww = new double[][] {a, b, c};
-
-        histLK = new int[a.length];
-        histK = new int[a.length];
 
         int[][] samples = staticMain(nsamp, ww);
 
@@ -58,29 +53,14 @@ public abstract class FastMultinomial {
             System.out.println(i);
             Histogram.hist(System.out, samples[i], 10);
         }
-        long mine = StopWatch.read("mine");
-        long theirs = StopWatch.read("theirs");
+        long fast = StopWatch.read("fast");
         long baseline = StopWatch.read("baseline");
-        long baseline2 = StopWatch.read("baseline2");
 
-        System.out.println("mine: " + StopWatch.format(mine));
-        System.out.println("theirs: " + StopWatch.format(theirs));
+        System.out.println("fast: " + StopWatch.format(fast));
         System.out.println("baseline: " + StopWatch.format(baseline));
-        System.out.println("baseline2: " + StopWatch.format(baseline2));
-        System.out.println(String.format("mine vs. theirs: %2.1f%% more time",
-            (mine - theirs) / (double) mine * 100));
         System.out.println(String.format(
-            "theirs vs. baseline: %2.1f%% more time", (theirs - baseline)
+            "fast vs. baseline: %2.1f%% more time", (fast - baseline)
                 / (double) baseline * 100));
-        System.out.println(String.format(
-            "mine vs. baseline: %2.1f%% more time", (mine - baseline)
-                / (double) baseline * 100));
-        System.out.println("occurrences of l-k and k");
-        //        System.out.println(Vectors.print(histLK));
-        //        System.out.println(Vectors.print(histK));
-        System.out.println("l=k: " + cc + " vs " + ca + ", l!=k: " + cd
-            + " vs " + cb);
-
     }
 
     /**
@@ -103,32 +83,20 @@ public abstract class FastMultinomial {
         }
 
         // now sample
-        int[][] samples = new int[4][nsamp];
+        int[][] samples = new int[2][nsamp];
+
         Random rand = new CokusRandom();
-        StopWatch.start("mine");
+        StopWatch.start("fast");
         for (int i = 0; i < nsamp; i++) {
-            samples[0][i] = idx[0][sampleIdx3(ww, wwnorm, idx[0], rand)];
+            samples[0][i] = idx[0][sampleIdx(ww, wwnorm, idx[0], rand)];
         }
-        StopWatch.stop("mine");
-        rand = new CokusRandom();
-        StopWatch.start("theirs");
-        for (int i = 0; i < nsamp; i++) {
-            samples[1][i] = idx[0][sampleIdx(ww, wwnorm, idx[0], rand)];
-        }
-        StopWatch.stop("theirs");
+        StopWatch.stop("fast");
         rand = new CokusRandom();
         StopWatch.start("baseline");
         for (int i = 0; i < nsamp; i++) {
-            samples[2][i] = sample0(ww, rand);
+            samples[1][i] = sample0(ww, rand);
         }
         StopWatch.stop("baseline");
-        rand = new CokusRandom();
-        StopWatch.start("baseline2");
-        for (int i = 0; i < nsamp; i++) {
-            samples[3][i] = sample00(ww, rand);
-        }
-        StopWatch.stop("baseline2");
-
         return samples;
 
     }
@@ -159,10 +127,6 @@ public abstract class FastMultinomial {
      * sorting index into abc to the norm
      */
     private static int[][] idx;
-    private static int ca;
-    private static int cb;
-    private static int cc;
-    private static int cd;
 
     /**
      * set up a fast multinomial using a subclass implementation for the
@@ -195,62 +159,33 @@ public abstract class FastMultinomial {
      *         of abc
      */
     public int sampleIdx() {
+        double[] weights = new double[I];
         int korig;
         double Zlprev;
         double Zl = Double.POSITIVE_INFINITY;
-        double[] p = new double[K];
-        double[] weights = new double[I];
-
-        // get norms that are decremented
-        // by local elements:
-        // norm(a_l:K-1) starting with (a_0:K-1)
-        double[] abcl2k = Vectors.copy(pownorm);
-
+        double[] pcum = new double[K];
+        // see static version for implementation info
+        double[] remainNorms = Vectors.copy(pownorm);
         double u = rand.nextDouble();
-        // for all partitions s_l^k
-        for (int l = 0; l < K; l++) {
-
-            // p[k] = p[k-1] + prod_i abc_ik
-            p[l] = l == 0 ? 0 : p[l - 1];
-            // get the original topic for this partition
+        for (int l = 0, lprev = -1; l < K; l++, lprev++) {
+            pcum[l] = l == 0 ? 0 : pcum[lprev];
             korig = idx[0][l];
-
             getWeights(korig, weights);
-            double abck = weights[0];
-            for (int i = 1; i < I; i++) {
-                abck *= weights[i];
-            }
-            p[l] += abck;
-
-            // first reduce the norm by the current 
-            // element: norm(a_i,l+1:K) = (-a_i,l^3 + sum_l:K a_i^3)^-3
-
-            // store this in case it was the previous topic
+            double pl = weights[0];
+            for (int i = 1; i < I; i++)
+                pl *= weights[i];
+            pcum[l] += pl;
             Zlprev = Zl;
-            // Zk = p[k] + prod_i norm(a_i,l+1:K)
-            Zl = p[l] + reducenorm(abcl2k, weights);
-
-            if (u > p[l] / Zl) {
-                continue;
-            } else {
-                if (l == 0 || u * Zl > p[l - 1]) {
-                    // partition s_k^k ? 
-                    //return idx[l];
-                    return korig;
-                } else {
-                    // partition s_l^k of previous norm.
-                    // scale and shift u
-                    u = (p[l - 1] - u * Zlprev) * Zl / (Zl - Zlprev);
-                    // previous topic (via s_l^k) ?
-                    for (int k = 0; k < l; k++) {
-                        if (p[k] >= u) {
-                            return idx[0][k];
-                        }
-                    } // for each previous topic
-                } // if current topic
-            } // if p too low
-        } // for k
-        // should never reach this...
+            Zl = pcum[l] + reducenorm(remainNorms, weights);
+            if (u <= pcum[l] / Zl)
+                if (l != 0 || u <= pcum[lprev] / Zl) {
+                    u = (u * Zlprev - pcum[lprev]) * Zl / (Zlprev - Zl);
+                    for (int k = 0; k < l; k++)
+                        if (u <= pcum[k])
+                            return k;
+                } else
+                    return l;
+        }
         return -1;
     }
 
@@ -427,17 +362,20 @@ public abstract class FastMultinomial {
         double u = rand.nextDouble();
         for (int l = 0; l < K; l++) {
 
+            //// begin identical w/sampleIdx3 ////
+
+            // orig. topic for this partition                    
             korig = idx[l];
 
-            // p[k] = p[k-1] + prod_i abc_ik
-            pcum[l] = l == 0 ? 0 : pcum[l - 1];
-
-            double pk = weights[0][korig];
+            double pl = weights[0][korig];
             for (int i = 1; i < I; i++) {
-                pk *= weights[i][korig];
+                pl *= weights[i][korig];
             }
-            pcum[l] += pk;
+            // get the known weights so far
+            // pcumk = pcumk + prod_i abc_ik
+            pcum[l] += (l == 0) ? pl : pcum[l - 1] + pl;
 
+            // add the estimate of the unknown weights
             double remainNorm = 1;
             for (int i = 0; i < I; i++) {
                 // weight korig now known -> remove it
@@ -448,28 +386,37 @@ public abstract class FastMultinomial {
                 remainNorm *= remainNorms[i];
             }
 
-            // store this in case it was the previous topic
+            // store Zl to calculate Zl diff
             Zlprev = Zl;
-            // Zk = p[k] + prod_i norm(a_i,l+1:K)
+            // Zl = (sum_k=1:l pk) + prod_i norm(a_i,l+1:K)
             Zl = pcum[l] + cuberoot(remainNorm);
-            cc++;
-            if (u > pcum[l] / Zl) {
-                continue;
-            } else {
-                if (l == 0 || u * Zl > pcum[l - 1]) {
-                    // current topic ? 
+
+            //// end identical w/sampleIdx3 ////
+
+            // if below s_l^l = p_l / Z_l
+            if (u <= pcum[l] / Zl) {
+                if (l == 0) {
+                    // s_0^0
                     return l;
-                } else {
-                    // previous topic (via s_lk) ?
-                    // scale and shift u
-                    u = (pcum[l - 1] - u * Zlprev) * Zl / (Zl - Zlprev);
-                    cd++;
+                }
+                int lprev = l - 1;
+                // if it's an s_l^k below the "main segment" s_l^l
+                // NOTE: s_l^l between pcum[lprev]/Zl and pcum[l]/Zl,
+                // s_l^k are between pcum[lprev]/Zlprev and pcum[lprev]/Zl
+                if (u <= pcum[lprev] / Zl) {
+                    // remove all segments up to s_lprev^lprev
+                    // and scale with s_l^k / p_k = (1/Zl - 1/Zlprev)
+                    u = (u * Zlprev - pcum[lprev]) * Zl / (Zlprev - Zl);
+                    // for each s_l^k
                     for (int k = 0; k < l; k++) {
-                        if (pcum[k] >= u) {
+                        if (u <= pcum[k]) {
                             return k;
                         }
-                    } // for each previous topic
-                } // if current topic
+                    } // for each s_l^k
+                } else {
+                    // it's "main segment" s_l^l
+                    return l;
+                }
             } // if p too low
         } // for k
         // should never reach this...
@@ -548,9 +495,7 @@ public abstract class FastMultinomial {
                     // get current partition
                     // s_l^l = p_l / Z_l
                     slk = p[k] / Zl;
-                    ca++;
                 } else {
-                    cb++;
                     // get current partition
                     // TODO: this could be pre-calculated using shifted/scaled u
                     // s_l^k = p_k ( 1/Z_l - 1/Z_lprev )
@@ -569,103 +514,6 @@ public abstract class FastMultinomial {
                     Zldiff = 1 / Zl - 1 / Zlprev;
                 }
             } // for k
-        } // for l
-        // should never reach this...
-        return -1;
-    }
-
-    /**
-     * Fast sampling from a distribution with weights in factors abc, each
-     * element of which is a vector of the size of the sampling space K.
-     * Further, the cube norm of each of the factors is given in pownorm
-     * (without the inverse exponential operation), as well as the indexes of
-     * the values of abc ordered decending (by one of the factors).
-     * 
-     * @param weights weight factors of multinomial masses [I x K]
-     * @param pownorm cube norms of factors [I]
-     * @param idx descending order of weight factors
-     * @param rand random sampler
-     * @return a sample as index of idx, use sample() to get the original index
-     *         of abc
-     */
-    public static int sampleIdx3(double[][] weights, double[] abcnorm,
-        int[] idx, Random rand) {
-        int I = weights.length;
-        int K = weights[0].length;
-        int korig;
-        double Zlprev, Zl = Double.POSITIVE_INFINITY;
-
-        // get norms that are decremented
-        // by local elements:
-        // norm(a_l:K-1) starting with (a_0:K-1)
-        double[] remainNorms = new double[I];
-        for (int i = 0; i < I; i++) {
-            remainNorms[i] = abcnorm[i];
-        }
-
-        double Zldiff = 0;
-        Zlprev = Double.POSITIVE_INFINITY;
-        double sll = 0;
-        double slkcum = 0;
-        double[] plcum = new double[K];
-        double uscaled;
-
-        // u is kept normalised to 1
-        double u = rand.nextDouble();
-        // local scaled version
-        // for all partitions s_l^k
-        for (int l = 0; l < K; l++) {
-            // get rid of old partitions in u
-            u -= slkcum;
-            slkcum = 0;
-            // for partitions s_l^l
-            // get the original topic for this partition                    
-            korig = idx[l];
-
-            double pl = weights[0][korig];
-            for (int i = 1; i < I; i++) {
-                pl *= weights[i][korig];
-            }
-            // get the known weights so far
-            // pcumk = pcumk + prod_i abc_ik
-            plcum[l] += (l == 0) ? pl : plcum[l - 1] + pl;
-
-            // add the estimate of the unknown weights
-            double remainNorm = 1;
-            for (int i = 0; i < I; i++) {
-                // weight korig now known -> remove it
-                remainNorms[i] -= cube(weights[i][korig]);
-                if (remainNorms[i] < 0) {
-                    remainNorms[i] = 0;
-                }
-                remainNorm *= remainNorms[i];
-            }
-            Zlprev = Zl;
-            // Zl = (sum_k=1:l pk) + prod_i norm(a_i,l+1:K)
-            Zl = plcum[l] + cuberoot(remainNorm);
-
-            // get current partition
-            // s_l^l = p_l / Z_l
-            sll = pl / Zl;
-
-            // if current = s_l^l
-            if (u <= sll) {
-                return l;
-            } else {
-                // s_l^k = p_k ( 1/Z_l - 1/Z_lprev )
-                Zldiff = 1 / Zl - 1 / Zlprev;
-                // scale u to save multiplications
-                uscaled = u / Zldiff;
-                for (int k = 0; k < l; k++) {
-                    // cumulated partitions s_l^k
-                    if (uscaled <= plcum[k]) {
-                        // if sample = current s_l^k
-                        return k;
-                    }
-                } // for k < l
-                // remove s_l^k from u; plcum cumulates p_k for k < l
-                slkcum = (l > 0) ? plcum[l - 1] * Zldiff + sll : sll;
-            } // if s_l^l
         } // for l
         // should never reach this...
         return -1;
