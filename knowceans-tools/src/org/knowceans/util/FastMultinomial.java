@@ -31,7 +31,7 @@ import java.util.Random;
  * 
  * @author gregor
  */
-@SuppressWarnings("hiding") 
+@SuppressWarnings("hiding")
 public abstract class FastMultinomial {
 
     public static void main(String[] args) {
@@ -178,7 +178,7 @@ public abstract class FastMultinomial {
             Zlprev = Zl;
             Zl = pcum[l] + reducenorm(remainNorms, weights);
             if (u <= pcum[l] / Zl)
-                if (l != 0 || u <= pcum[lprev] / Zl) {
+                if (l > 0 && u <= pcum[lprev] / Zl) {
                     u = (u * Zlprev - pcum[lprev]) * Zl / (Zlprev - Zl);
                     for (int k = 0; k < l; k++)
                         if (u <= pcum[k])
@@ -362,10 +362,9 @@ public abstract class FastMultinomial {
         double u = rand.nextDouble();
         for (int l = 0; l < K; l++) {
 
-            //// begin identical w/sampleIdx3 ////
-
             // orig. topic for this partition                    
             korig = idx[l];
+            int lprev = l - 1;
 
             double pl = weights[0][korig];
             for (int i = 1; i < I; i++) {
@@ -373,7 +372,7 @@ public abstract class FastMultinomial {
             }
             // get the known weights so far
             // pcumk = pcumk + prod_i abc_ik
-            pcum[l] += (l == 0) ? pl : pcum[l - 1] + pl;
+            pcum[l] += (l == 0) ? pl : pcum[lprev] + pl;
 
             // add the estimate of the unknown weights
             double remainNorm = 1;
@@ -391,15 +390,12 @@ public abstract class FastMultinomial {
             // Zl = (sum_k=1:l pk) + prod_i norm(a_i,l+1:K)
             Zl = pcum[l] + cuberoot(remainNorm);
 
-            //// end identical w/sampleIdx3 ////
-
             // if below s_l^l = p_l / Z_l
             if (u <= pcum[l] / Zl) {
                 if (l == 0) {
                     // s_0^0
                     return l;
                 }
-                int lprev = l - 1;
                 // if it's an s_l^k below the "main segment" s_l^l
                 // NOTE: s_l^l between pcum[lprev]/Zl and pcum[l]/Zl,
                 // s_l^k are between pcum[lprev]/Zlprev and pcum[lprev]/Zl
