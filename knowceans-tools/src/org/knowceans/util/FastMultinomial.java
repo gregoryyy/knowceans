@@ -38,9 +38,11 @@ public abstract class FastMultinomial {
         int nsamp = 100000;
         //        double[] a = new double[] {0.4, 0.1, 0.001, 0.01, 0.02, 0.003, 0.15,
         //            0.003, 0.2, 0.1};
-        double[] a = Samplers.randDir(0.001, 1000);
-        double[] b = Vectors.ones(a.length, 3.);
-        double[] c = Vectors.ones(a.length, 2.);
+        int K = 100;
+        Cokus.seed((int) System.currentTimeMillis());
+        double[] a = Samplers.randDir(0.001, K);
+        double[] b = Samplers.randDir(1, K);
+        double[] c = Samplers.randDir(1, K);
         double[][] ww = new double[][] {a, b, c};
 
         int[][] samples = staticMain(nsamp, ww);
@@ -61,6 +63,13 @@ public abstract class FastMultinomial {
         System.out.println(String.format(
             "fast vs. baseline: %2.1f%% more time", (fast - baseline)
                 / (double) baseline * 100));
+
+        double dist = 0;
+        for (int i = 0; i < samples[0].length; i++) {
+            dist += samples[0][i] * Math.log(samples[0][i] / (samples[1][i] + 1e-12));
+        }
+        System.out.println(String.format("KL divergence = %2.5f", dist / nsamp));
+
     }
 
     /**
@@ -418,6 +427,7 @@ public abstract class FastMultinomial {
             } // if p too low
         } // for k
         // should never reach this...
+        System.out.println("ERROR: sample -1");
         return -1;
     }
 
