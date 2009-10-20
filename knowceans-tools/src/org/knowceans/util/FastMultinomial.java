@@ -347,7 +347,7 @@ public abstract class FastMultinomial {
         int I = weights.length;
         int K = weights[0].length;
         int korig;
-        double Zlprev;
+        double Zlprev, pcumprev;
         double Zl = Double.POSITIVE_INFINITY;
         double[] pcum = new double[K];
 
@@ -364,15 +364,21 @@ public abstract class FastMultinomial {
 
             // orig. topic for this partition                    
             korig = idx[l];
-            int lprev = l - 1;
+            //int lprev = l - 1;
 
             double pl = weights[0][korig];
             for (int i = 1; i < I; i++) {
                 pl *= weights[i][korig];
             }
-            // get the known weights so far
+            // cumulate the known weights so far
             // pcumk = pcumk + prod_i abc_ik
-            pcum[l] += (l == 0) ? pl : pcum[lprev] + pl;
+            if (l == 0) {
+                pcumprev = 0;
+                pcum[l] = pl;
+            } else {
+                pcumprev = pcum[l - 1];
+                pcum[l] = pcumprev + pl;
+            }
 
             // add the estimate of the unknown weights
             double remainNorm = 1;
@@ -390,19 +396,15 @@ public abstract class FastMultinomial {
             // Zl = (sum_k=1:l pk) + prod_i norm(a_i,l+1:K)
             Zl = pcum[l] + cuberoot(remainNorm);
 
-            // if below s_l^l = p_l / Z_l
+            // if below s_l^l = p_l / Z_l (if s_l^k, k <= l)
             if (u <= pcum[l] / Zl) {
-                if (l == 0) {
-                    // s_0^0
-                    return l;
-                }
-                // if it's an s_l^k below the "main segment" s_l^l
+                // if it's an s_l^k below the "main segment" s_l^l (if k < l)
                 // NOTE: s_l^l between pcum[lprev]/Zl and pcum[l]/Zl,
                 // s_l^k are between pcum[lprev]/Zlprev and pcum[lprev]/Zl
-                if (u <= pcum[lprev] / Zl) {
+                if (l > 0 && u <= pcumprev / Zl) {
                     // remove all segments up to s_lprev^lprev
                     // and scale with s_l^k / p_k = (1/Zl - 1/Zlprev)
-                    u = (u * Zlprev - pcum[lprev]) * Zl / (Zlprev - Zl);
+                    u = (u * Zlprev - pcumprev) * Zl / (Zlprev - Zl);
                     // for each s_l^k
                     for (int k = 0; k < l; k++) {
                         if (u <= pcum[k]) {
