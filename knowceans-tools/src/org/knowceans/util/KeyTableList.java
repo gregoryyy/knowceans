@@ -167,7 +167,7 @@ public class KeyTableList extends TableList {
      * 
      * @param field
      */
-    void setAsKey(String field) {
+    public void setAsKey(String field) {
         HashMultiMap<Object, Fields> indexmap = new HashMultiMap<Object, Fields>();
         keymaps.add(indexmap);
         keyfields.add(field);

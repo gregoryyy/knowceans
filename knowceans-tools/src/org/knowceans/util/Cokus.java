@@ -216,7 +216,7 @@ public class Cokus {
     }
 
     public static double randDouble() {
-        return (((long) rand()) & 0xffffffffl)
+        return (rand() & 0xffffffffl)
             / (double) 0x100000000l;
 
     }
@@ -231,7 +231,7 @@ public class Cokus {
         seed(4357);
         for (int i = 0; i < 50; i++) {
             int a = rand();
-            System.out.println((long) a & 0xFFFFFFFFl);
+            System.out.println(a & 0xFFFFFFFFl);
         }
     }
 }

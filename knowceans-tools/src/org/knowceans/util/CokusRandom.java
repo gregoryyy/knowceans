@@ -184,7 +184,7 @@ public class CokusRandom extends Random {
      * @return
      */
     public long nextUnsignedInt() {
-        return (long) next() & 0xFFFFFFFFl;
+        return next() & 0xFFFFFFFFl;
     }
 
     /**
@@ -193,8 +193,7 @@ public class CokusRandom extends Random {
      * @return
      */
     public double randDouble() {
-        return (((long) next()) & 0xffffffffl) / (double) 0x100000000l;
-
+        return (next() & 0xffffffffl) / (double) 0x100000000l;
     }
 
     /**
@@ -262,5 +261,72 @@ public class CokusRandom extends Random {
         s1 ^= (s1 << 15) & 0xEFC60000l;
 
         return (int) (s1 ^ (s1 >> 18));
+    }
+
+    // reimplementation of the random interface
+    @Override
+    public double nextDouble() {
+        return randDouble();
+    }
+
+    @Override
+    public boolean nextBoolean() {
+        return randDouble() >= 0.5;
+    }
+
+    @Override
+    public float nextFloat() {
+        return (float) randDouble();
+    }
+
+    protected boolean haveNextNextGaussian = false;
+
+    protected double nextNextGaussian;
+
+    public double lastRand;
+
+    @Override
+    public synchronized double nextGaussian() {
+        if (haveNextNextGaussian) {
+            haveNextNextGaussian = false;
+            return nextNextGaussian;
+        } else {
+            double v1, v2, s;
+            do {
+                v1 = 2 * randDouble() - 1;
+                v2 = 2 * randDouble() - 1;
+                s = v1 * v1 + v2 * v2;
+            } while (s >= 1 || s == 0);
+            double multiplier = Math.sqrt(-2 * Math.log(s) / s);
+            nextNextGaussian = v2 * multiplier;
+            haveNextNextGaussian = true;
+            return v1 * multiplier;
+        }
+    }
+
+    @Override
+    public int nextInt() {
+        return next() - 0x80000000;
+    }
+
+    public long nextUnsignedLong() {
+        return ((long) (next()) << 32) + next();
+    }
+
+    @Override
+    public long nextLong() {
+        return nextUnsignedLong() - 0x8000000000000000l;
+        //TODO Auto-generated method stub
+    }
+
+    // TODO: implement
+    @Override
+    public void nextBytes(byte[] bytes) {
+        super.nextBytes(bytes);
+    }
+    
+    @Override
+    public int nextInt(int n) {
+        return (int) (n * randDouble());
     }
 }

@@ -41,8 +41,8 @@ public abstract class FastMultinomial {
         int K = 100;
         Cokus.seed((int) System.currentTimeMillis());
         double[] a = Samplers.randDir(0.001, K);
-        double[] b = Samplers.randDir(1, K);
-        double[] c = Samplers.randDir(1, K);
+        double[] b = Samplers.randDir(3, K);
+        double[] c = Samplers.randDir(3, K);
         double[][] ww = new double[][] {a, b, c};
 
         int[][] samples = staticMain(nsamp, ww);
