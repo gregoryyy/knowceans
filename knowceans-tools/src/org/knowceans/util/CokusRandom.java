@@ -313,18 +313,29 @@ public class CokusRandom extends Random {
         return ((long) (next()) << 32) + next();
     }
 
+    // TODO: check long type bounds
     @Override
     public long nextLong() {
         return nextUnsignedLong() - 0x8000000000000000l;
-        //TODO Auto-generated method stub
     }
 
-    // TODO: implement
     @Override
     public void nextBytes(byte[] bytes) {
-        super.nextBytes(bytes);
+        int numRequested = bytes.length;
+
+        int numGot = 0, rnd = 0;
+
+        while (true) {
+            for (int i = 0; i < numRequested; i++) {
+                if (numGot == numRequested)
+                    return;
+                rnd = (i == 0 ? next() : rnd >> 8);
+                bytes[numGot++] = (byte) rnd;
+            }
+        }
     }
-    
+
+    // TODO: check int type bounds
     @Override
     public int nextInt(int n) {
         return (int) (n * randDouble());
