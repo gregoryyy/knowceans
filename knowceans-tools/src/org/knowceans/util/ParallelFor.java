@@ -16,7 +16,7 @@ import java.util.concurrent.Executors;
  * 
  * @author gregor
  */
-abstract class ParallelFor {
+public abstract class ParallelFor {
 
     /**
      * Worker is one pooled thread

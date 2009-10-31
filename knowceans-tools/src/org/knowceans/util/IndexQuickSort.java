@@ -25,7 +25,7 @@ public class IndexQuickSort {
         Double[] weights2 = new Double[] {0.1, 0.1, 0.001, 0.05, 0.2, 0.3, 0.5,
             0.03, 0.02, 0.1};
         Comparator<Double> cmp = new Comparator<Double>() {
-            @Override
+            // @Override
             public int compare(Double o1, Double o2) {
                 return Double.compare(o1, o2);
             }

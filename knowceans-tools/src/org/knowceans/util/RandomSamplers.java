@@ -432,17 +432,20 @@ public class RandomSamplers {
 
         // distribute remaining items to first of (random-index) partitions
         int[] modItems = randPerm(parts);
-        modItems = Arrays.copyOf(modItems, nModItems);
+        //modItems = Arrays.copyOf(modItems, nModItems);
+        System.arraycopy(modItems, 0, nModItems, 0, nModItems);
         Arrays.sort(modItems);
 
         for (int i = 0; i < parts; i++) {
             if (Arrays.binarySearch(modItems, i) >= 0) {
-                partitions[i] = Arrays.copyOfRange(items, index, index
-                    + partSize + 1);
+                // partitions[i] = Arrays.copyOfRange(items, index, index
+                //    + partSize + 1);
+                System.arraycopy(items, index, partitions[i], 0, partSize + 1);
                 index++;
             } else {
-                partitions[i] = Arrays.copyOfRange(items, index, index
-                    + partSize);
+                // partitions[i] = Arrays.copyOfRange(items, index, index
+                //    + partSize);
+                System.arraycopy(items, index, partitions[i], 0, partSize);
             }
             index += partSize;
         }
@@ -502,8 +505,8 @@ public class RandomSamplers {
     }
 
     /**
-     * Generate as many Dirichlet column samples as there are columns (direction =
-     * 1; randdir(A, 1)) or row samples as there are rows (direction = 2,
+     * Generate as many Dirichlet column samples as there are columns (direction
+     * = 1; randdir(A, 1)) or row samples as there are rows (direction = 2,
      * randdir(A, 2)) in aa (aa[][]), taking the respective parameters. After
      * Teh (npbayes).
      * 
