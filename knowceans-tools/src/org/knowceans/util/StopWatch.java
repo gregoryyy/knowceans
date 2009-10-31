@@ -146,7 +146,6 @@ public class StopWatch {
         if (w.absStop == 0) {
             w.absStart = now;
             return 0;
-            
         } else {
             w.relPaused += now - w.absStop;
             return now - w.absStart - w.relPaused;

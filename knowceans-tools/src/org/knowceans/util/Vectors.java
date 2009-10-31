@@ -1063,6 +1063,20 @@ public class Vectors {
     }
 
     /**
+     * @param weights
+     * @param i
+     * @param j
+     * @return
+     */
+    public static double[] sub(double[] vec, int start, int length) {
+        double[] x = new double[length];
+        for (int i = 0; i < length; i++) {
+            x[i] = vec[start + i];
+        }
+        return x;
+    }
+
+    /**
      * set the elements of vec at indices with the respective replacements.
      * TODO: implement views as in the colt library
      * 

@@ -470,8 +470,7 @@ public class ArrayIo {
         return b.substring(0, length);
     }
 
-    static NumberFormat nf = new DecimalFormat("0.00000", DecimalFormatSymbols
-        .getInstance(Locale.ENGLISH));
+    static NumberFormat nf = new DecimalFormat("0.00000");
 
     /**
      * @param d

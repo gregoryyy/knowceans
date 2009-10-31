@@ -155,7 +155,6 @@ public class CokusRandom extends Random {
      * @param bits (max 32)
      */
     protected int next(int bits) {
-        // int a = super.next(bits);
         int a = next();
         return a >>> (32 - bits);
     }
