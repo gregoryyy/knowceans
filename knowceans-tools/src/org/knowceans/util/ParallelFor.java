@@ -5,6 +5,7 @@ package org.knowceans.util;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 /**
  * ParallelFor implements what in OpenMP is called a parallel for loop, i.e., a
@@ -12,7 +13,9 @@ import java.util.concurrent.Executors;
  * the end. Implementors simply subclass and implement the process() method and
  * make sure the loop() method is not called while a loop of one instance is
  * running. Execution can be stopped using stop(), which completes the
- * iterations currently running.
+ * iterations currently running. After the last usage of the class, it should be
+ * shut down properly using static function shutdown() or the hard way using
+ * System.exit();
  * 
  * @author gregor
  */
@@ -49,7 +52,7 @@ public abstract class ParallelFor {
     /**
      * pool of threads spread over processors
      */
-    protected ExecutorService threadpool;
+    protected static ExecutorService threadpool;
 
     /**
      * current iteration (synchronized access)
@@ -80,7 +83,9 @@ public abstract class ParallelFor {
      * instantiate a parallel for implementation
      */
     public ParallelFor() {
-        threadpool = Executors.newFixedThreadPool(nthreads);
+        if (threadpool == null) {
+            threadpool = Executors.newFixedThreadPool(nthreads);
+        }
         worker = new Worker();
     }
 
@@ -127,6 +132,19 @@ public abstract class ParallelFor {
      */
     public void stop() {
         isStopping = true;
+    }
+
+    /**
+     * shut down the thread pool after final usage
+     */
+    public static void shutdown() {
+        // immediately terminate threadpool
+        try {
+            threadpool.shutdown();
+            threadpool.awaitTermination(0, TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
     }
 
 }
