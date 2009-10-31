@@ -26,6 +26,12 @@ public abstract class ParallelFor {
      */
     private class Worker implements Runnable {
 
+        int id;
+
+        public Worker(int threadid) {
+            this.id = threadid;
+        }
+
         public void run() {
             while (!isStopping) {
                 int i = 0;
@@ -35,7 +41,7 @@ public abstract class ParallelFor {
                 if (i >= niter) {
                     break;
                 }
-                process(i);
+                process(i, id);
             }
             synchronized (ParallelFor.this) {
                 ParallelFor.this.activeWorkers--;
@@ -52,7 +58,7 @@ public abstract class ParallelFor {
     /**
      * pool of threads spread over processors
      */
-    protected static ExecutorService threadpool;
+    protected ExecutorService threadpool;
 
     /**
      * current iteration (synchronized access)
@@ -60,9 +66,11 @@ public abstract class ParallelFor {
     protected int iter = 0;
 
     /**
-     * worker thread
+     * worker threads
      */
-    protected final Worker worker;
+    // this also works with a single worker instead of one instance per thread. 
+    //protected final Worker worker;
+    protected final Worker[] workers;
 
     /**
      * stop flag
@@ -86,7 +94,11 @@ public abstract class ParallelFor {
         if (threadpool == null) {
             threadpool = Executors.newFixedThreadPool(nthreads);
         }
-        worker = new Worker();
+        //worker = new Worker();
+        workers = new Worker[nthreads];
+        for (int i = 0; i < nthreads; i++) {
+            workers[i] = new Worker(i);
+        }
     }
 
     /**
@@ -102,7 +114,7 @@ public abstract class ParallelFor {
 
         // start worker threads
         for (int i = 0; i < nthreads; i++) {
-            threadpool.execute(worker);
+            threadpool.execute(workers[i]);
             synchronized (this) {
                 activeWorkers++;
             }
@@ -121,11 +133,22 @@ public abstract class ParallelFor {
     }
 
     /**
+     * loops once, then shuts down
+     * 
+     * @param N
+     */
+    public void loopOnce(int N) {
+        loop(N);
+        shutdown();
+    }
+
+    /**
      * payload for the for loop
      * 
-     * @param idx
+     * @param iteration in the for loop
+     * @param thread on the machine
      */
-    abstract public void process(int idx);
+    abstract public void process(int iteration, int thread);
 
     /**
      * stop loop execution
@@ -137,7 +160,7 @@ public abstract class ParallelFor {
     /**
      * shut down the thread pool after final usage
      */
-    public static void shutdown() {
+    public void shutdown() {
         // immediately terminate threadpool
         try {
             threadpool.shutdown();
@@ -145,6 +168,28 @@ public abstract class ParallelFor {
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
+    }
+
+    public static void main(String[] args) {
+        int niter = 10;
+        ParallelFor x = new ParallelFor() {
+            public void process(int y, int id) {
+                for (int i = 0; i < 5; i++) {
+                    try {
+                        Thread.sleep((int) (Math.random() * 1000));
+                    } catch (InterruptedException e) {
+                    }
+                    System.out
+                        .println("iteration " + y + " on processor " + id);
+
+                }
+
+            }
+        };
+        x.loop(niter);
+        System.out.println("first join");
+        x.loopOnce(niter);
+        System.out.println("second join and finish");
     }
 
 }
