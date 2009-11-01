@@ -53,7 +53,7 @@ public abstract class ParallelFor {
     /**
      * number of threads = number of processors / cores
      */
-    protected static int nthreads = Runtime.getRuntime().availableProcessors();
+    protected int nthreads;
 
     /**
      * pool of threads spread over processors
@@ -88,9 +88,17 @@ public abstract class ParallelFor {
     protected int activeWorkers = 0;
 
     /**
-     * instantiate a parallel for implementation
+     * instantiate with as many threads as there are processors
      */
     public ParallelFor() {
+        this(Runtime.getRuntime().availableProcessors());
+    }
+
+    /**
+     * instantiate a parallel for implementation
+     */
+    public ParallelFor(int nthreads) {
+        this.nthreads = nthreads;
         if (threadpool == null) {
             threadpool = Executors.newFixedThreadPool(nthreads);
         }
