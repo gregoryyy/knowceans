@@ -272,4 +272,50 @@ public class IndexQuickSort {
         swap(index, i, right);
         return i;
     }
+
+    //////////////
+
+    /**
+     * re-sort index of x after x[inc] has increased in value
+     * 
+     * @param x
+     * @param sort2k
+     * @param invidx
+     * @param inc
+     */
+    public static void resortinc(int[] x, int[] idx, int[] invidx, int inc) {
+        int tmp;
+        inc = invidx[inc];
+        while (inc > 0 && x[idx[inc]] > x[idx[inc - 1]]) {
+            tmp = idx[inc];
+            idx[inc] = idx[inc - 1];
+            idx[inc - 1] = tmp;
+            tmp = invidx[idx[inc]];
+            invidx[idx[inc]] = invidx[idx[inc - 1]];
+            invidx[idx[inc - 1]] = tmp;
+            inc--;
+        }
+    }
+
+    /**
+     * re-sort index of x after x[dec] has reduced in value
+     * 
+     * @param x
+     * @param sort2k
+     * @param invidx
+     * @param dec
+     */
+    public static void resortdec(int[] x, int[] idx, int[] invidx, int dec) {
+        int tmp;
+        dec = invidx[dec];
+        while (dec < x.length - 1 && x[idx[dec]] < x[idx[dec + 1]]) {
+            tmp = idx[dec];
+            idx[dec] = idx[dec + 1];
+            idx[dec + 1] = tmp;
+            tmp = invidx[idx[dec]];
+            invidx[idx[dec]] = invidx[idx[dec + 1]];
+            invidx[idx[dec + 1]] = tmp;
+            dec++;
+        }
+    }
 }

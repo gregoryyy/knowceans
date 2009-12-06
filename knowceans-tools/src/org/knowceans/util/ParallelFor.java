@@ -14,7 +14,7 @@ import java.util.concurrent.TimeUnit;
  * make sure the loop() method is not called while a loop of one instance is
  * running. Execution can be stopped using stop(), which completes the
  * iterations currently running. After the last usage of the class, it should be
- * shut down properly using static function shutdown() or the hard way using
+ * shut down properly using function shutdown() or the hard way using
  * System.exit();
  * 
  * @author gregor
@@ -132,7 +132,7 @@ public abstract class ParallelFor {
         while (activeWorkers > 0) {
             synchronized (this) {
                 try {
-                    wait();
+                    wait(1000);
                 } catch (InterruptedException ex) {
                     ex.printStackTrace();
                 }

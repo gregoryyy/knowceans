@@ -67,17 +67,17 @@ public class CokusRandom extends Random {
     /**
      * state vector
      */
-    static long[] state = new long[N + 1];
+    long[] state;
 
     /**
      * next random value is computed from here (java: index into state[])
      */
-    static int next;
+    int next;
 
     /**
      * can *next++ this many times before reloading
      */
-    static int left = -1;
+    int left = -1;
 
     public static void main(String[] args) {
 
@@ -105,6 +105,8 @@ public class CokusRandom extends Random {
      * @param i
      */
     public CokusRandom(long i) {
+        // why not executed here?
+        state = new long[N + 1];
         setSeed(i);
     }
 
@@ -198,9 +200,13 @@ public class CokusRandom extends Random {
     /**
      * Note: only lower half of seed is used.
      */
-    public synchronized void setSeed(long seed) {
+    public void setSeed(long seed) {
         // super.setSeed(seed);
         long x = (seed | 1) & 0xFFFFFFFFl;
+        // why doesn't this work in the constructor?
+        if (state == null) {
+            state = new long[N + 1];
+        }
         // long s = state;
         long[] s = state;
         int si = 0;
