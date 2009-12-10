@@ -29,7 +29,7 @@ import java.util.List;
  * dimensions. For array arguments, reflection and Object arguments are chosen
  * as an alternative to overloading. Hopefully, this class will be obsolete in
  * Java 1.6...
- *
+ * 
  * @author gregor heinrich
  */
 public class ArrayUtils {
@@ -71,6 +71,13 @@ public class ArrayUtils {
         o[0][0][1] *= 5;
         System.out.println(Vectors.print(o[0]));
         System.out.println(Vectors.print(p[0]));
+        
+        double[][][] q = new double[1][1][2];
+        copy(q, o);
+        o[0][0][1] *= 5;
+        System.out.println(Vectors.print(o[0]));
+        System.out.println(Vectors.print(q[0]));
+
     }
 
     public static final Class[][] types = {
@@ -91,7 +98,7 @@ public class ArrayUtils {
      * determined by the component type, resulting in null return value if the
      * array was not initialised as an Wrapper[] where wrapper is one of the
      * primitive wrapper object types excluding Void.
-     *
+     * 
      * @param objects object array with elements of primitive wrapper classes
      *        excluding Void.
      * @return an array of the relevant primitive type or null if size = 0 and
@@ -120,7 +127,7 @@ public class ArrayUtils {
     /**
      * Get an array of the wrapper type corresponding to the primitive element
      * type of the argument.
-     *
+     * 
      * @param array array of a primitive type
      * @return array of the object type corresponding to the primitive type or
      *         null if invalid element type or no array in argument.
@@ -155,7 +162,7 @@ public class ArrayUtils {
     /**
      * Convert an array of primitive-type elements into a list of its
      * wrapper-type elements.
-     *
+     * 
      * @param array
      * @return the array or null if invalid
      */
@@ -173,7 +180,7 @@ public class ArrayUtils {
      * list does not consist of wrapper-type elements or if it has zero length,
      * null is returned (in the second case because the element type cannot be
      * determined).
-     *
+     * 
      * @param objects
      * @return array of primitive types or null if invalid.
      */
@@ -202,7 +209,7 @@ public class ArrayUtils {
      * the type of array to be copied: The array can be of object or primitive
      * element type and can have any number of dimensions (a[], a[][], a[][][]
      * etc.). For primitive element types, this is a deep copy.
-     *
+     * 
      * @param array
      * @return the copied array or null if the argument was not an array type.
      */
@@ -230,5 +237,39 @@ public class ArrayUtils {
             return newArray;
         }
         return null;
+    }
+
+    /**
+     * Create a copy of the argument array in the pointer provided, which is
+     * assumed to be of the same dimensions than array. There are almost no
+     * restrictions on the type of array to be copied: The arrays can be of
+     * object or primitive element type and can have any number of dimensions
+     * (a[], a[][], a[][][] etc.). For primitive element types, this is a deep
+     * copy.
+     * 
+     * @param array whose content is copied
+     * @param target array whose content is overwritten (same size as array).
+     */
+    public static void copy(Object target, Object array) {
+        Class< ? extends Object> c = array.getClass();
+        if (c.isArray()) {
+            int len = Array.getLength(array);
+            c = array.getClass().getComponentType();
+            // handle zero-length arrays
+            if (len == 0) {
+                return;
+            }
+            // check if this is a nested array
+            c = Array.get(array, 0).getClass().getComponentType();
+            if (c != null) {
+                for (int i = 0; i < len; i++) {
+                    copy(Array.get(target, i), Array.get(array, i));
+                }
+            } else {
+                for (int i = 0; i < len; i++) {
+                    Array.set(target, i, Array.get(array, i));
+                }
+            }
+        }
     }
 }
