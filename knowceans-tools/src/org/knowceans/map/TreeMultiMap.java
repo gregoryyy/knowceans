@@ -25,6 +25,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 
+import sun.reflect.generics.reflectiveObjects.NotImplementedException;
+
 /**
  * Implementation of the IMultiMap interface backed by a TreeMap. Maps a key to
  * a Set of values and orders by the key's Comparator.
@@ -32,7 +34,7 @@ import java.util.TreeMap;
  * In relational terms, this class implements a m:n relation, but without
  * reverse lookup.
  * <p>
- *
+ * 
  * @author heinrich
  */
 public class TreeMultiMap<X, Y> extends TreeMap<X, Set<Y>> implements
@@ -132,8 +134,7 @@ public class TreeMultiMap<X, Y> extends TreeMap<X, Set<Y>> implements
      * @see org.knowceans.map.IMultiMap#getInverse(java.lang.Object)
      */
     public Set<X> getInverse(Y value) {
-        // TODO Auto-generated method stub
-        return null;
+        throw new NotImplementedException();
     }
 
 }

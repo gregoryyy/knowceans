@@ -55,12 +55,12 @@ import java.util.regex.Pattern;
  * <p>
  * This version allows the definition of variables that can be expanded at
  * readtime:
- *
+ * 
  * <pre>
  * @{x1} in values will be expanded according to the respective property
  * @x1=val. The user MUST avoid circular references.
  * </pre>
- *
+ * 
  * @author heinrich
  */
 public class Conf extends Properties {
@@ -79,10 +79,11 @@ public class Conf extends Properties {
     protected static String propFile = propFiles[0] + basePaths[0];
     protected static String basePath = ".";
     Pattern varPattern;
+    private static String overridePropFile;
 
     /**
      * get the instance of the singleton object
-     *
+     * 
      * @return
      */
     public static Conf get() {
@@ -96,7 +97,7 @@ public class Conf extends Properties {
     /**
      * Allows to check if a configuration has been loaded from a file already
      * (to reduce dynamic loading overhead).
-     *
+     * 
      * @return
      */
     public static boolean exists() {
@@ -108,7 +109,7 @@ public class Conf extends Properties {
 
     /**
      * Instantiate the configuration, e.g., in the main class.
-     *
+     * 
      * @param file
      * @return false if as the result of this call the configuration could NOT
      *         be loaded (can be used to find a conf file), false otherwise (if
@@ -128,7 +129,7 @@ public class Conf extends Properties {
 
     /**
      * get the named property from the singleton object
-     *
+     * 
      * @return the value or null
      */
     public static String get(String key) {
@@ -141,7 +142,7 @@ public class Conf extends Properties {
 
     /**
      * Get the property and replace the braced values with the array given.
-     *
+     * 
      * @param key
      * @param braces
      * @return
@@ -154,7 +155,7 @@ public class Conf extends Properties {
 
     /**
      * get a numeric value.
-     *
+     * 
      * @param key
      * @return
      */
@@ -169,7 +170,7 @@ public class Conf extends Properties {
 
     /**
      * get a numeric value.
-     *
+     * 
      * @param key
      * @return
      */
@@ -180,7 +181,7 @@ public class Conf extends Properties {
 
     /**
      * Get an integer value.
-     *
+     * 
      * @param key
      * @return
      */
@@ -191,7 +192,7 @@ public class Conf extends Properties {
     /**
      * Get a double array from the file, where the vales are separated by comma,
      * semicolon or space.
-     *
+     * 
      * @param key
      * @return
      */
@@ -211,7 +212,7 @@ public class Conf extends Properties {
     /**
      * Get an integer array from the file, where the vales are separated by
      * comma, semicolon or space.
-     *
+     * 
      * @param key
      * @return
      */
@@ -231,7 +232,7 @@ public class Conf extends Properties {
     /**
      * get a boolean value: true and 1 are allowed for true, anything else for
      * false
-     *
+     * 
      * @param key
      * @return
      */
@@ -246,7 +247,7 @@ public class Conf extends Properties {
      * Get an instance of the class that corresponds to the property name and
      * has a default constructor. If no default constructor exists, use
      * getClass() instantiate in the client code.
-     *
+     * 
      * @param clazz
      * @return an instance of the class
      * @throws Exception
@@ -259,7 +260,7 @@ public class Conf extends Properties {
     /**
      * Get class with the name specified by the property, using the default
      * class loader.
-     *
+     * 
      * @param clazz
      * @return
      * @throws ClassNotFoundException
@@ -297,6 +298,11 @@ public class Conf extends Properties {
     }
 
     private void lookupPropFile() {
+        // manually controlled file
+        if (overridePropFile != null) {
+            propFile = overridePropFile;
+            return;
+        }
         // property controlled file
         // System.out.println(System.getProperty("user.dir"));
         String temp = System.getProperty("knowceans.properties.file");
@@ -327,7 +333,7 @@ public class Conf extends Properties {
      * Resolves all variables of the argument string using the respective
      * properties. The method works recursively, so dependent variables are
      * resolved.
-     *
+     * 
      * @param p
      * @return
      */
@@ -373,6 +379,28 @@ public class Conf extends Properties {
      */
     public static void setPropFile(String string) {
         propFile = string;
+    }
+
+    /**
+     * get the overridden properties file. Set to null to return to normal
+     * lookup behaviour.
+     * 
+     * @return
+     */
+    public static String getOverridePropFile() {
+        return overridePropFile;
+    }
+
+    /**
+     * override the default properties file locations. If this property is set,
+     * no search for other files is performed. Calling this method unloads
+     * existing properties.
+     * 
+     * @param string
+     */
+    public static void overridePropFile(String string) {
+        overridePropFile = string;
+        instance = null;
     }
 
     public static void main(String[] args) {
