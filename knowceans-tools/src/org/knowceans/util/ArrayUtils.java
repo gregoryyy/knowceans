@@ -71,7 +71,7 @@ public class ArrayUtils {
         o[0][0][1] *= 5;
         System.out.println(Vectors.print(o[0]));
         System.out.println(Vectors.print(p[0]));
-        
+
         double[][][] q = new double[1][1][2];
         copy(q, o);
         o[0][0][1] *= 5;
@@ -246,6 +246,8 @@ public class ArrayUtils {
      * object or primitive element type and can have any number of dimensions
      * (a[], a[][], a[][][] etc.). For primitive element types, this is a deep
      * copy.
+     * <p>
+     * Note: This method is rather slow. Use System.arraycopy for scalability.
      * 
      * @param array whose content is copied
      * @param target array whose content is overwritten (same size as array).

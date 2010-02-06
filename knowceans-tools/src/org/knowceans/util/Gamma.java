@@ -143,7 +143,7 @@ public class Gamma {
      * @return
      */
     public static double ldelta(double[] x) {
-        double lognum = 1;
+        double lognum = 0;
         double den = 0;
         for (int i = 0; i < x.length; i++) {
             lognum += lgamma(x[i]);
