@@ -382,7 +382,7 @@ public class CokusDistributionSampler extends CokusSampler implements
      * @param set
      * @return
      */
-    private final int[] randPerm(int[] set) {
+    public final int[] randPerm(int[] set) {
         // works a bit like sampling without replacement or a factorial.
         for (int i = set.length - 1; i > 0; i--) {
             int k = (int) (randDouble() * (i + 1));

@@ -376,6 +376,25 @@ public class Samplers {
     }
 
     /**
+     * Random permutation of existing set of integers.
+     * 
+     * @param set
+     * @return
+     */
+    public final int[] randPerm(int[] set) {
+        // works a bit like sampling without replacement or a factorial.
+        for (int i = set.length - 1; i > 0; i--) {
+            int k = (int) (Cokus.randDouble() * (i + 1));
+            if (k != i) {
+                int buf = set[i];
+                set[i] = set[k];
+                set[k] = buf;
+            }
+        }
+        return set;
+    }
+
+    /**
      * symmetric Dirichlet sample.
      * 
      * @param aa

@@ -205,6 +205,25 @@ public class ArrayUtils {
     }
 
     /**
+     * Convert an list of objects into an array of primitive types. This extends
+     * the functionality of the List.toArray() method to primitive types. If the
+     * list does not consist of wrapper-type elements or if it has zero length,
+     * null is returned (in the second case because the element type cannot be
+     * determined).
+     * 
+     * @param objects
+     * @param sample object (instantiate primitive array[0] if objects.size = 0)
+     * @return array of primitive types or null if invalid.
+     */
+    public static Object asPrimitiveArray(List< ? extends Object> objects,
+        Class< ? > type) {
+        if (objects.size() == 0) {
+            return Array.newInstance(type, 0);
+        }
+        return asPrimitiveArray(objects);
+    }
+
+    /**
      * Create a copy of the argument array. There are almost no restrictions on
      * the type of array to be copied: The array can be of object or primitive
      * element type and can have any number of dimensions (a[], a[][], a[][][]

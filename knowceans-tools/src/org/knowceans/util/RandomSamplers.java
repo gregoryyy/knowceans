@@ -385,7 +385,7 @@ public class RandomSamplers {
      * @param set
      * @return
      */
-    private int[] randPerm(int[] set) {
+    public int[] randPerm(int[] set) {
         // works a bit like sampling without replacement or a factorial.
         for (int i = set.length - 1; i > 0; i--) {
             int k = (int) (drand() * (i + 1));
