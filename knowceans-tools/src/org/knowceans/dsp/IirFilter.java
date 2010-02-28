@@ -5,6 +5,8 @@ package org.knowceans.dsp;
 
 import java.util.Arrays;
 
+import org.knowceans.util.Vectors;
+
 /**
  * IirFilter implements a simple IIR filter using a cascade of biquad filters
  * (second-order sections).
@@ -42,24 +44,29 @@ public class IirFilter {
      * @param inframe
      * @param outframe
      */
-    public void nextFrame(double[] inframe, double[] outframe) {
+    public void nextFrame(double[] inframe, double[] outframe, double gain) {
+        Vectors.setFormat(10, 5);
         for (int i = 0; i < outframe.length; i++) {
             outframe[i] = inframe[i];
             for (int k = 0; k < stage_num; k++) {
-                v[k][0] = outframe[i] - a[k][1] * v[k][0] - a[k][1] * v[k][2];
+                v[k][0] = outframe[i] - a[k][1] * v[k][1] - a[k][2] * v[k][2];
                 outframe[i] = b[k][0] * v[k][0] + b[k][1] * v[k][1] + b[k][2]
                     * v[k][2];
+                System.out.println(i + " " + k + " " + v[k][0] + " "
+                    + (-a[k][1] * v[k][1] - a[k][2] * v[k][2]));
                 v[k][2] = v[k][1];
                 v[k][1] = v[k][0];
             }
+            outframe[i] *= gain;
         }
     }
 
     public static void main(String[] args) {
 
-        double[][] aa = { {-1.867051864128537, 0.875313511144923},
-            {-1.921144065558925, 0.946622554622648}};
+        double[][] aa = { {1, -1.867051864128537, 0.875313511144923},
+            {1, -1.921144065558925, 0.946622554622648}};
         double[][] bb = { {1.0, 2.0, 1.0}, {1.0, 2.0, 1.0}};
+        double gain = 1.241996358804925e-05;
 
         int N = 1000;
         int i;
@@ -71,7 +78,7 @@ public class IirFilter {
         }
 
         System.out.println("original");
-        //rprintf(x, N);
+        //FirFilter.rprintf(x, N);
 
         // assemble filter
         IirFilter filter = new IirFilter(1, 2, 10);
@@ -84,7 +91,7 @@ public class IirFilter {
         // process signal
         for (i = 0; i < N; i += filter.samples_num) {
             System.arraycopy(x, i, inframe, 0, filter.samples_num);
-            filter.nextFrame(inframe, outframe);
+            filter.nextFrame(inframe, outframe, gain);
             System.arraycopy(outframe, 0, y, i, filter.samples_num);
         }
 
