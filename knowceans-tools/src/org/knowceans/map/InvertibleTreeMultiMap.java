@@ -83,7 +83,7 @@ public class InvertibleTreeMultiMap<X, Y> extends TreeMultiMap<X, Y>
     /**
      * @param c
      */
-    public InvertibleTreeMultiMap(Comparator<? super X> c) {
+    public InvertibleTreeMultiMap(Comparator< ? super X> c) {
         super(c);
         inverse = new HashMultiMap<Y, X>();
     }
@@ -105,7 +105,7 @@ public class InvertibleTreeMultiMap<X, Y> extends TreeMultiMap<X, Y>
         super(m);
         this.inverse = inverse;
     }
-    
+
     @Override
     public void clear() {
         super.clear();
@@ -206,6 +206,11 @@ public class InvertibleTreeMultiMap<X, Y> extends TreeMultiMap<X, Y>
         return inverse.get(value);
     }
 
+    /**
+     * returns the hash map of the inverse (not that this is not a tree map).
+     * 
+     * @return
+     */
     public IMultiMap<Y, X> getInverse() {
         return inverse;
     }

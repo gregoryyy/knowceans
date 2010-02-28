@@ -128,13 +128,13 @@ public class TreeMultiMap<X, Y> extends TreeMap<X, Set<Y>> implements
         }
     }
 
-    /*
-     * (non-Javadoc)
-     *
-     * @see org.knowceans.map.IMultiMap#getInverse(java.lang.Object)
-     */
-    public Set<X> getInverse(Y value) {
-        throw new NotImplementedException();
-    }
+//    /*
+//     * (non-Javadoc)
+//     *
+//     * @see org.knowceans.map.IMultiMap#getInverse(java.lang.Object)
+//     */
+//    public Set<X> getInverse(Y value) {
+//        throw new NotImplementedException();
+//    }
 
 }

@@ -218,7 +218,8 @@ public class ArrayUtils {
     public static Object asPrimitiveArray(List< ? extends Object> objects,
         Class< ? > type) {
         if (objects.size() == 0) {
-            return Array.newInstance(type, 0);
+            Object x = Array.newInstance(type, 0);
+            return x;
         }
         return asPrimitiveArray(objects);
     }
