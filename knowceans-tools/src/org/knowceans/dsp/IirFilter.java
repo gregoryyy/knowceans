@@ -49,11 +49,9 @@ public class IirFilter {
         for (int i = 0; i < outframe.length; i++) {
             outframe[i] = inframe[i];
             for (int k = 0; k < stage_num; k++) {
-                v[k][0] = outframe[i] - a[k][1] * v[k][1] - a[k][2] * v[k][2];
+                v[k][0] = outframe[i] - a[k][0] * v[k][1] - a[k][1] * v[k][2];
                 outframe[i] = b[k][0] * v[k][0] + b[k][1] * v[k][1] + b[k][2]
                     * v[k][2];
-                System.out.println(i + " " + k + " " + v[k][0] + " "
-                    + (-a[k][1] * v[k][1] - a[k][2] * v[k][2]));
                 v[k][2] = v[k][1];
                 v[k][1] = v[k][0];
             }
@@ -63,12 +61,13 @@ public class IirFilter {
 
     public static void main(String[] args) {
 
-        double[][] aa = { {1, -1.867051864128537, 0.875313511144923},
-            {1, -1.921144065558925, 0.946622554622648}};
+        // a0 omitted: always 1
+        double[][] aa = { {-1.867051864128537, 0.875313511144923},
+            {-1.921144065558925, 0.946622554622648}};
         double[][] bb = { {1.0, 2.0, 1.0}, {1.0, 2.0, 1.0}};
         double gain = 1.241996358804925e-05;
 
-        int N = 1000;
+        int N = 100;
         int i;
         double[] x = new double[N];
         double[] y = new double[N];
@@ -77,8 +76,8 @@ public class IirFilter {
             x[i] = Math.sin(Math.PI * i / 20) + Math.sin(Math.PI * i / 12);
         }
 
-        System.out.println("original");
-        //FirFilter.rprintf(x, N);
+        System.out.println("*** original ***");
+        FirFilter.rprintf(x, N);
 
         // assemble filter
         IirFilter filter = new IirFilter(1, 2, 10);
@@ -95,7 +94,7 @@ public class IirFilter {
             System.arraycopy(outframe, 0, y, i, filter.samples_num);
         }
 
-        System.out.println("filtered");
+        System.out.println("*** filtered ***");
         FirFilter.rprintf(y, N);
     }
 }
