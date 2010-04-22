@@ -1,11 +1,9 @@
 /*
  * Created on Feb 28, 2010
  */
-package org.knowceans.dsp;
+package org.knowceans.sandbox;
 
 import java.util.Arrays;
-
-import org.knowceans.util.Vectors;
 
 /**
  * IirFilter implements a simple IIR filter using a cascade of biquad filters
@@ -21,22 +19,20 @@ public class IirFilter {
     }
 
     public void init(int channels, int stages, int framesize) {
-        channel_num = channels;
-        stage_num = stages;
-        samples_num = framesize;
-        status_flag = 0;
-        for (int i = 0; i < stage_num; i++) {
+        nchannel = channels;
+        nstage = stages;
+        nframe = framesize;
+        for (int i = 0; i < nstage; i++) {
             Arrays.fill(v[i], 0);
         }
     }
 
-    int channel_num;
-    int stage_num;
+    int nchannel;
+    int nstage;
+    int nframe;
     double[][] a;
     double[][] b;
     double[][] v;
-    int samples_num;
-    int status_flag;
 
     /**
      * perform processing for one frame
@@ -45,16 +41,21 @@ public class IirFilter {
      * @param outframe
      */
     public void nextFrame(double[] inframe, double[] outframe, double gain) {
-        Vectors.setFormat(10, 5);
+        // for each sample
         for (int i = 0; i < outframe.length; i++) {
             outframe[i] = inframe[i];
-            for (int k = 0; k < stage_num; k++) {
+            // for each stage
+            for (int k = 0; k < nstage; k++) {
+                // update state using input and denominator coefficients
                 v[k][0] = outframe[i] - a[k][0] * v[k][1] - a[k][1] * v[k][2];
+                // update output using numerator coefficients and state
                 outframe[i] = b[k][0] * v[k][0] + b[k][1] * v[k][1] + b[k][2]
                     * v[k][2];
+                // progress in time
                 v[k][2] = v[k][1];
                 v[k][1] = v[k][0];
             }
+            // global gain (may be factored into b[0])
             outframe[i] *= gain;
         }
     }
@@ -84,14 +85,14 @@ public class IirFilter {
         filter.a = aa;
         filter.b = bb;
 
-        double[] inframe = new double[filter.samples_num];
-        double[] outframe = new double[filter.samples_num];
+        double[] inframe = new double[filter.nframe];
+        double[] outframe = new double[filter.nframe];
 
         // process signal
-        for (i = 0; i < N; i += filter.samples_num) {
-            System.arraycopy(x, i, inframe, 0, filter.samples_num);
+        for (i = 0; i < N; i += filter.nframe) {
+            System.arraycopy(x, i, inframe, 0, filter.nframe);
             filter.nextFrame(inframe, outframe, gain);
-            System.arraycopy(outframe, 0, y, i, filter.samples_num);
+            System.arraycopy(outframe, 0, y, i, filter.nframe);
         }
 
         System.out.println("*** filtered ***");

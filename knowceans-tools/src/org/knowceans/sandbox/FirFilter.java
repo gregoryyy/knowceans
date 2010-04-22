@@ -1,4 +1,6 @@
-package org.knowceans.dsp;
+package org.knowceans.sandbox;
+
+import org.knowceans.util.Vectors;
 
 /**
  * FirFilter implements a simple FIR filter, exploiting the symmetries of the
@@ -525,38 +527,54 @@ public class FirFilter {
     }
 
     public static void main(String[] args) {
-        int nz = 8, i;
-        double x[] = {1, 2, 3, 4, 5, 6, 7, 8};
-        double y[] = {8.5f, 7.5f, 6.5f, 5.5f, 4.5f, 3.5f, 2.5f, 1.5f};
-        double hz[] = {0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-        double h2z[] = {0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-        double[] tempz = new double[2 * nz];
-        double[] xy = new double[2 * nz];
-        double[] wz = new double[2 * nz / 2];
-        double[] wz2 = new double[nz / 2];
-
+        int N = 32;
+        int nz = N / 2;
+        int i;
+        double[] x1 = new double[N];
+        double[] x2 = new double[N];
+        double[] xz = new double[2 * N];
+        double[] tempz = new double[2 * N];
+        double[] wz = new double[N];
+        //double[] hz = aa;
+        double[] hz = Vectors.zeros(32);
+        hz[0] = 1.;
+        hz[2] = 1.;
+        // create test signal
+        for (i = 0; i < N; i++) {
+            x1[i] = 0 - i;//Math.sin(Math.PI * i / 20) + Math.sin(Math.PI * i / 12);
+            x2[i] = i;
+        }
+        
         // create FFT coefficients
-        ffw(wz, nz);
+        ffw(wz, N);
 
-        // transform IRs
+        // transform IR
         fft(hz, wz, nz);
-        fft(h2z, wz, nz);
-
-        // real-valued version not yet...        
-        //        rprintf(x, nz);
-        //        ffw(wz2, nz / 2);
-        //        System.out.println("real fft");
-        //        fftr(x, wz2, nz);
-        //        cprintf(x, nz / 2);
 
         // interleave signals
-        for (i = 0; i < nz; i++) {
-            xy[2 * i] = x[i];
-            xy[2 * i + 1] = y[i];
+        for (i = 0; i < N; i++) {
+            xz[2 * i] = x1[i];
+            xz[2 * i + 1] = x2[i];
         }
-        dualFir(wz, xy, tempz, xy, hz, h2z, nz);
+        System.out.println("*** original ***");
+        FirFilter.cprintf(xz, N);
+
+        dualFir(wz, xz, tempz, xz, hz, hz, nz);
         System.out.println("filtered xy\n");
-        cprintf(xy, nz);
+        cprintf(xz, nz);
         System.out.println();
     }
+
+    // example filter coeffs, fc = 0.05 lowpass
+    static final double aa[] = {0.000952938986217, 0.001555347216713,
+        0.002976368327833, 0.005135668181840, 0.008185514616811,
+        0.012232925387171, 0.017313508506229, 0.023369751798990,
+        0.030237910518926, 0.037646833816889, 0.045230583547699,
+        0.052554733546986, 0.059154102941475, 0.064577737117313,
+        0.068435556577005, 0.070440518911905, 0.070440518911905,
+        0.068435556577005, 0.064577737117313, 0.059154102941475,
+        0.052554733546986, 0.045230583547699, 0.037646833816889,
+        0.030237910518926, 0.023369751798990, 0.017313508506229,
+        0.012232925387171, 0.008185514616811, 0.005135668181840,
+        0.002976368327833, 0.001555347216713, 0.000952938986217};
 }
