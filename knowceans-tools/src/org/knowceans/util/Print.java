@@ -4,7 +4,9 @@ import java.io.PrintStream;
 import java.util.List;
 
 /**
- * convenience class to print information
+ * convenience class to print information. Can also be used to construct
+ * strings, then the internal PrintWriter writes to a StringBuilder that can be
+ * output as a String object or to stdout (string() method).
  * 
  * @author gregor
  * 
@@ -12,11 +14,54 @@ import java.util.List;
 public class Print {
 
 	private static PrintStream sout = System.out;
+	private static StringBuilder sb = null;
 
+	/**
+	 * sets the output stream for the printer
+	 * 
+	 * @param s
+	 *            null to disable
+	 */
 	public static void setOutput(PrintStream s) {
 		sout = s;
 	}
 
+	/**
+	 * reset output to write to a string buffer
+	 * 
+	 * @param sb
+	 */
+	public static void setString(StringBuilder sb) {
+		sout = new PrintStream(new StringOutputStream(sb));
+	}
+
+	/**
+	 * set output to stdout
+	 */
+	public static void setToStdout() {
+		sout = System.out;
+	}
+
+	/**
+	 * set output to stderr
+	 */
+	public static void setToStderr() {
+		sout = System.err;
+	}
+
+	/**
+	 * setup the Print object for a new string output
+	 */
+	public static void newString() {
+		sb = new StringBuilder();
+		setString(sb);
+	}
+
+	/**
+	 * get current output stream
+	 * 
+	 * @return
+	 */
 	public static PrintStream getOutput() {
 		return sout;
 	}
@@ -28,6 +73,8 @@ public class Print {
 	 * @param b
 	 */
 	public static void strings(Object a, Object... b) {
+		if (sout == null)
+			return;
 		StringBuffer sb = new StringBuffer(a.toString());
 		for (Object s : b) {
 			sb.append(' ');
@@ -42,7 +89,9 @@ public class Print {
 	 * @param a
 	 * @param b
 	 */
-	public static void stringsep(String sep, Object... b) {
+	public static void stringSep(String sep, Object... b) {
+		if (sout == null)
+			return;
 		StringBuffer sb = new StringBuffer();
 		for (Object s : b) {
 			sb.append(sep);
@@ -58,6 +107,8 @@ public class Print {
 	 * @param b
 	 */
 	public static void arrays(Object a, Object... b) {
+		if (sout == null)
+			return;
 		StringBuffer sb = new StringBuffer();
 		printarray(sb, a);
 		for (Object s : b) {
@@ -73,7 +124,9 @@ public class Print {
 	 * @param a
 	 * @param b
 	 */
-	public static void arrayssep(String sep, Object... b) {
+	public static void arraysSep(String sep, Object... b) {
+		if (sout == null)
+			return;
 		StringBuffer sb = new StringBuffer();
 		for (Object s : b) {
 			sb.append(sep);
@@ -83,12 +136,14 @@ public class Print {
 	}
 
 	/**
-	 * checks whether there are arrays in the objects
+	 * formats each array element to format.
 	 * 
 	 * @param a
 	 * @param b
 	 */
 	public static void arraysf(String format, Object... b) {
+		if (sout == null)
+			return;
 		StringBuffer sb = new StringBuffer();
 		for (Object s : b) {
 			sb.append(' ');
@@ -116,6 +171,8 @@ public class Print {
 	 * prints the stack element of the current code location
 	 */
 	public static void whereami() {
+		if (sout == null)
+			return;
 		List<StackTraceElement> here = Which.fullstack();
 		strings(here.get(here.size() - 1));
 	}
@@ -150,4 +207,30 @@ public class Print {
 		}
 	}
 
+	/**
+	 * get the last string that has been written to (if any)
+	 * 
+	 * @return
+	 */
+	public static String getString() {
+		return sb.toString();
+	}
+
+	/**
+	 * get the last string that has been written to (if any)
+	 * 
+	 * @return
+	 */
+	public static void string() {
+		System.out.println(getString());
+	}
+
+	public static void main(String[] args) {
+		Print.newString();
+		double[] a = new double[] { 0.1, 0.2, 0.7 };
+		Print.arrays("test string", Samplers.randMult(a, 100));
+		Print.setToStdout();
+		Print.string();
+		Print.newString();
+	}
 }

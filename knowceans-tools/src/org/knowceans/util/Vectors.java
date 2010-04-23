@@ -876,7 +876,7 @@ public class Vectors {
 			b.append(String.format(format, Array.get(x, i))).append(delim);
 		}
 		if (len > 0)
-			b.append(Array.get(x, len - 1));
+			b.append(String.format(format, Array.get(x, len - 1)));
 		return b.toString();
 	}
 
