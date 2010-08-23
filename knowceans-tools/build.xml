@@ -39,6 +39,7 @@
 				<include name=".classpath" />
 				<include name=".project" />
 				<include name="license.txt" />
+				<include name="corpus-example/*" />
 				<include name="build.xml" />
 				<include name="readme.txt" />
 			</fileset>
