@@ -13,11 +13,11 @@ import java.util.List;
 public class Primes {
 
     public static void main(String[] args) {
-        List<Integer> a = primes(1000000);
-        System.out.println(a);
-        int b = a.get(a.size() - 1);
-        System.out.println(factors(b));
-        System.out.println(factors(b - 1));
+        int[] a = primes(1000000);
+        System.out.println(Vectors.print(a));
+        int b = a[a.length - 1];
+        System.out.println(Vectors.print(factors(b)));
+        System.out.println(Vectors.print(factors(b - 1)));
     }
 
     /**
@@ -26,7 +26,7 @@ public class Primes {
      * @param N
      * @return
      */
-    public static List<Integer> primes(int n) {
+    public static int[] primes(int n) {
         BitSet sieve = new BitSet((n + 2) >> 1);
         for (int i = 3; i * i <= n; i += 2) {
             if (sieve.get((i - 3) / 2))
@@ -41,7 +41,7 @@ public class Primes {
             if (!sieve.get((i - 3) / 2))
                 primes.add(i);
 
-        return primes;
+        return (int[]) ArrayUtils.asPrimitiveArray(primes);
     }
 
     /**
@@ -50,7 +50,7 @@ public class Primes {
      * @param n
      * @return
      */
-    public static List<Integer> factors(int n) {
+    public static int[] factors(int n) {
         List<Integer> factors = new ArrayList<Integer>();
         for (int i = 2; i <= n; i++) {
             while (n % i == 0) {
@@ -58,7 +58,7 @@ public class Primes {
                 n /= i;
             }
         }
-        return factors;
+        return (int[]) ArrayUtils.asPrimitiveArray(factors);
     }
 
 }
