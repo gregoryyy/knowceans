@@ -28,18 +28,27 @@ public class Samplers {
     // TODO: hook to random number generator instance
 
     public static void main(String[] args) {
-        double x = 0.4;
-        double y = 0.8;
-        double[] probs = {0.5, 0.5};
-        double[][] means = { {x, 1 - x}, {y, 1 - y}};
-        double[] precisions = {15, 15};
-        double[][] xx = new double[200000][];
-        int[] comps = new int[xx.length];
-        xx = randDmm(xx.length, probs, means, precisions, comps);
-        double[] result = Vectors.chooseColumn(xx, 0);
-        Histogram.hist(System.out, result, 100);
-        Histogram.hist(System.out, comps, 10);
+        // double x = 0.4;
+        // double y = 0.8;
+        // double[] probs = {0.5, 0.5};
+        // double[][] means = { {x, 1 - x}, {y, 1 - y}};
+        // double[] precisions = {15, 15};
+        // double[][] xx = new double[200000][];
+        // int[] comps = new int[xx.length];
+        // xx = randDmm(xx.length, probs, means, precisions, comps);
+        // double[] result = Vectors.chooseColumn(xx, 0);
+        // Histogram.hist(System.out, result, 100);
+        // Histogram.hist(System.out, comps, 10);
 
+        double a = 0.4;
+        double k = 0;
+        int I = 100;
+        for (int i = 0; i < I; i++) {
+            int m = randAntoniak(a, 14);
+            k += m;
+            System.out.println(m);
+        }
+        System.out.println(k / I);
     }
 
     protected static boolean haveNextNextGaussian = false;
@@ -83,9 +92,12 @@ public class Samplers {
     /**
      * GMM sampling
      * 
-     * @param probs mixture responsibilities
-     * @param mean mean vector
-     * @param sigma stddev vector
+     * @param probs
+     *            mixture responsibilities
+     * @param mean
+     *            mean vector
+     * @param sigma
+     *            stddev vector
      * @return
      */
     public static double randGmm(double[] probs, double[] mean, double[] sigma) {
@@ -95,47 +107,59 @@ public class Samplers {
     /**
      * GMM sampling
      * 
-     * @param probs mixture responsibilities
-     * @param mean mean vector
-     * @param sigma stddev vector
-     * @param component [out] componentn[0] is filled with the sampled component
-     *        index
+     * @param probs
+     *            mixture responsibilities
+     * @param mean
+     *            mean vector
+     * @param sigma
+     *            stddev vector
+     * @param component
+     *            [out] componentn[0] is filled with the sampled component index
      * @return
      */
     public static double randGmm(double[] probs, double[] mean, double[] sigma,
-        int[] component) {
+            int[] component) {
         return randGmm(1, probs, mean, sigma, null)[0];
     }
 
     /**
      * GMM sampling
      * 
-     * @param n number of samples to take (this saves the calculation of the
-     *        cumulative probabilities for successive trials)
-     * @param probs mixture responsibilities
-     * @param mean mean vector
-     * @param sigma stddev vector
+     * @param n
+     *            number of samples to take (this saves the calculation of the
+     *            cumulative probabilities for successive trials)
+     * @param probs
+     *            mixture responsibilities
+     * @param mean
+     *            mean vector
+     * @param sigma
+     *            stddev vector
      * @return
      */
     public static double[] randGmm(int n, double[] probs, double[] mean,
-        double[] sigma) {
+            double[] sigma) {
         return randGmm(n, probs, mean, sigma, null);
     }
 
     /**
      * GMM sampling
      * 
-     * @param n number of samples to take (this saves the calculation of the
-     *        cumulative probabilities for successive trials)
-     * @param probs mixture responsibilities
-     * @param mean mean vector
-     * @param sigma stddev vector
-     * @param components [out] n-vector is filled with the sampled component
-     *        indices (ignored if null)
+     * @param n
+     *            number of samples to take (this saves the calculation of the
+     *            cumulative probabilities for successive trials)
+     * @param probs
+     *            mixture responsibilities
+     * @param mean
+     *            mean vector
+     * @param sigma
+     *            stddev vector
+     * @param components
+     *            [out] n-vector is filled with the sampled component indices
+     *            (ignored if null)
      * @return
      */
     public static double[] randGmm(int n, double[] probs, double[] mean,
-        double[] sigma, int[] components) {
+            double[] sigma, int[] components) {
         double[] x = new double[n];
         int k = probs.length;
         // init random number generator
@@ -168,57 +192,71 @@ public class Samplers {
     /**
      * DMM sampling
      * 
-     * @param probs mixture responsibilities
-     * @param mean mean vector of vectors
-     * @param precision precision vector
+     * @param probs
+     *            mixture responsibilities
+     * @param mean
+     *            mean vector of vectors
+     * @param precision
+     *            precision vector
      * @return
      */
     public static double[] randDmm(double[] probs, double[][] mean,
-        double[] precision) {
+            double[] precision) {
         return randDmm(1, probs, mean, precision, null)[0];
     }
 
     /**
      * DMM sampling
      * 
-     * @param probs mixture responsibilities
-     * @param mean mean vector of vectors
-     * @param precision precision vector
-     * @param component [out] sampled component of the mixture (or ignored if
-     *        null)
+     * @param probs
+     *            mixture responsibilities
+     * @param mean
+     *            mean vector of vectors
+     * @param precision
+     *            precision vector
+     * @param component
+     *            [out] sampled component of the mixture (or ignored if null)
      * @return
      */
     public static double[] randDmm(double[] probs, double[][] mean,
-        double[] precision, int[] component) {
+            double[] precision, int[] component) {
         return randDmm(1, probs, mean, precision, component)[0];
     }
 
     /**
      * DMM sampling
      * 
-     * @param probs mixture responsibilities
-     * @param means mean vector of vectors
-     * @param precisions precision vector
+     * @param probs
+     *            mixture responsibilities
+     * @param means
+     *            mean vector of vectors
+     * @param precisions
+     *            precision vector
      * @return
      */
     public static double[][] randDmm(int n, double[] probs, double[][] means,
-        double[] precisions) {
+            double[] precisions) {
         return randDmm(n, probs, means, precisions, null);
     }
 
     /**
      * DMM sampling
      * 
-     * @param n number of trials
-     * @param probs mixture responsibilities
-     * @param means mean vector of vectors
-     * @param precisions precision vector
-     * @param components n-vector is filled with the sampled component indices
-     *        (ignored if null)
+     * @param n
+     *            number of trials
+     * @param probs
+     *            mixture responsibilities
+     * @param means
+     *            mean vector of vectors
+     * @param precisions
+     *            precision vector
+     * @param components
+     *            n-vector is filled with the sampled component indices (ignored
+     *            if null)
      * @return
      */
     public static double[][] randDmm(int n, double[] probs, double[][] means,
-        double[] precisions, int[] components) {
+            double[] precisions, int[] components) {
         double[][] x = new double[n][];
         // init random number generator
 
@@ -250,7 +288,7 @@ public class Samplers {
      */
     public static double randBeta(double aa, double bb) {
 
-        double[] p = randDir(new double[] {aa, bb});
+        double[] p = randDir(new double[] { aa, bb });
         return p[0];
     }
 
@@ -272,7 +310,8 @@ public class Samplers {
      * self-contained gamma generator. Multiply result with scale parameter (or
      * divide by rate parameter). After Teh (npbayes).
      * 
-     * @param rr shape parameter
+     * @param rr
+     *            shape parameter
      * @return
      */
     public static double randGamma(double rr) {
@@ -315,7 +354,7 @@ public class Samplers {
                     zz = 64.0 * ww * ww * ww * vv * vv;
                     assert zz > 0 && bb != 0 && xx / bb > 0;
                     if ((zz <= (1.0 - 2.0 * yy * yy / xx))
-                        || (Math.log(zz) <= 2.0 * (bb * Math.log(xx / bb) - yy))) {
+                            || (Math.log(zz) <= 2.0 * (bb * Math.log(xx / bb) - yy))) {
                         return xx;
                     }
                 }
@@ -433,8 +472,10 @@ public class Samplers {
      * randdir(aa) generates one Dirichlet sample vector according to the
      * parameters alpha.
      * 
-     * @param mean (mean_i = alpha_i / sum_j alpha_j)
-     * @param precision (precision = alpha_i / mean_i)
+     * @param mean
+     *            (mean_i = alpha_i / sum_j alpha_j)
+     * @param precision
+     *            (precision = alpha_i / mean_i)
      * @return
      */
     public static double[] randDir(double[] mean, double precision) {
@@ -452,7 +493,8 @@ public class Samplers {
      * Teh (npbayes).
      * 
      * @param aa
-     * @param direction -- 2 is more efficient (row-major Java matrix structure)
+     * @param direction
+     *            -- 2 is more efficient (row-major Java matrix structure)
      * @return
      */
     public static double[][] randDir(double[][] aa, int direction) {
@@ -592,7 +634,7 @@ public class Samplers {
         // }
         // }
         System.out.println("linear search: " + (t1 - t0) + " binary search: "
-            + (t3 - t2));
+                + (t3 - t2));
     }
 
     /**
@@ -722,7 +764,8 @@ public class Samplers {
     /**
      * draw a Bernoulli sample.
      * 
-     * @param p success probability
+     * @param p
+     *            success probability
      * @return 1 if sucessful, 0 otherwise
      */
     public static int randBernoulli(double p) {
@@ -743,17 +786,25 @@ public class Samplers {
      * numdata, numclass are row vectors, one element per group. After Teh
      * (npbayes).
      * 
-     * @param alpha alpha
-     * @param numgroup number of components ??
-     * @param numdata number of data items per class
-     * @param numtable number of per DP
-     * @param alphaa hyperparameter (gamma shape)
-     * @param alphab hyperparameter (gamma scale)
-     * @param numiter number of iterations
+     * @param alpha
+     *            alpha
+     * @param numgroup
+     *            number of components ??
+     * @param numdata
+     *            number of data items per class
+     * @param numtable
+     *            number of per DP
+     * @param alphaa
+     *            hyperparameter (gamma shape)
+     * @param alphab
+     *            hyperparameter (gamma scale)
+     * @param numiter
+     *            number of iterations
      * @return
      */
     public static double randConParam(double alpha, int numgroup,
-        int[] numdata, int[] numtable, double alphaa, double alphab, int numiter) {
+            int[] numdata, int[] numtable, double alphaa, double alphab,
+            int numiter) {
         int iter, jj, nd, zz;
         double aa, bb, eta;
 
@@ -790,7 +841,7 @@ public class Samplers {
      * @return
      */
     public static double randConParam(double alpha, int numdata, int numtopic,
-        double alphaa, double alphab, int numiter) {
+            double alphaa, double alphab, int numiter) {
         int iter, jj, nd, zz;
         double aa, bb, eta;
 
@@ -806,7 +857,7 @@ public class Samplers {
 
             // e+w (13)
             double pi = 1 / (numdata * (alphab - Math.log(eta))
-                / (alphaa + numtopic - 1) + 1);
+                    / (alphaa + numtopic - 1) + 1);
             // choose between the two gamma components
             zz = (drand48() > pi) ? 1 : 0;
 
@@ -821,7 +872,7 @@ public class Samplers {
     }
 
     public static CrpData randCrp(double alpha, int numdata) {
-        return randCrp(new double[] {alpha}, numdata);
+        return randCrp(new double[] { alpha }, numdata);
     }
 
     /**
@@ -866,7 +917,7 @@ public class Samplers {
                 // has the multinomial weights (Vector better)
                 // add one component weight (1)
                 weights = Vectors.concat(Vectors.subVector(weights, 0,
-                    crp.numclass - 1), new double[] {1}, alpha);
+                    crp.numclass - 1), new double[] { 1 }, alpha);
                 crp.numclass = crp.cc[ii];
             } else {
                 weights[crp.cc[ii]]++;
@@ -970,14 +1021,16 @@ public class Samplers {
     /**
      * create a random string of length alphanumeric characters.
      * 
-     * @param length of output
-     * @param alphabet alphabet to be used or null
+     * @param length
+     *            of output
+     * @param alphabet
+     *            alphabet to be used or null
      * @return
      */
     public static String randString(int length, byte[] alphabet) {
         if (alphabet == null)
             alphabet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890"
-                .getBytes();
+                    .getBytes();
         byte[] pass = new byte[length];
 
         for (int k = 0; k < length; k++) {
@@ -1048,7 +1101,7 @@ public class Samplers {
                 for (int xx = 0; xx < len; xx++) {
                     // allss{mm} = [allss{mm-1}*(mm-1) 0] + ...
                     allss[mm][xx] += (xx < len - 1) ? allss[mm - 1][xx] * mm
-                        : 0;
+                            : 0;
                     // [0 allss{mm-1}];
                     allss[mm][xx] += (xx == 0) ? 0 : allss[mm - 1][xx - 1];
                 }
@@ -1059,9 +1112,40 @@ public class Samplers {
             maxnn = nn;
         }
         lmss = logmaxss[nn - 1];
-        //
         return allss[nn - 1];
+    }
 
+    /**
+     * sample number of components m that a DP(alpha, G0) has after n samples.
+     * This was first published by Antoniak (1974). TODO: another check, as
+     * direct simulation of CRP tables produces higher results
+     * 
+     * @param alpha
+     * @param n
+     * @return
+     */
+    public static int randAntoniak(double alpha, int n) {
+        double[] p = stirling(n);
+        double aa = 1;
+        for (int m = 0; m < p.length; m++) {
+            p[m] *= aa;
+            aa *= alpha;
+        }
+        // alternatively using direct simulation of CRP
+        // int R = 20;
+        // double ainv = 1 / (alpha);
+        // double nt = 0;
+        // double[] p = new double[n];
+        // for (int r = 0; r < R; r++) {
+        // for (int m = 0; m < n; m++) {
+        // for (int t = 0; t < n; t++, nt += ainv) {
+        // p[m] += randBernoulli(1 / (nt + 1));
+        // }
+        // }
+        // }
+        // Vectors.mult(p, 1. / R);
+        System.out.println(Vectors.print(p));
+        return randMultDirect(p) + 1;
     }
 
     /**

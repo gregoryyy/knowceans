@@ -58,7 +58,7 @@ public class DirichletEstimation {
 		if (newton) {
 			alphaNewton(pp.length, suffstats, alpha);
 		} else {
-			Print.strings("alphaiterations =", alphaFixedPoint(suffstats, alpha));
+			alphaFixedPoint(suffstats, alpha);
 		}
 		return alpha;
 	}
@@ -608,6 +608,56 @@ public class DirichletEstimation {
 				summ += digamma(K * alpha + nm[m]);
 				for (k = 0; k < K; k++) {
 					summk += digamma(alpha + nmk[m][k]);
+				}
+			}
+			summ -= M * digamma(K * alpha);
+			summk -= M * K * digamma(alpha);
+			alpha = (a - 1 + alpha * summk) / (b + K * summ);
+			// System.out.println(alpha);
+			// System.out.println(Math.abs(alpha - alpha0));
+			if (Math.abs(alpha - alpha0) < prec) {
+				System.out.println(i);
+				return alpha;
+			}
+			alpha0 = alpha;
+		}
+		return alpha;
+	}
+
+	/**
+	 * fixpoint iteration on alpha using counts as input and estimating by Polya
+	 * distribution directly. Eq. 55 in Minka (2003). This version uses a subset
+	 * of rows in nmk, indexed by mrows.
+	 * 
+	 * @param nmk
+	 *            count data (documents in rows, topic associations in cols)
+	 * @param nm
+	 *            total counts across rows
+	 * @param mrows
+	 *            set of rows to be used for estimation
+	 * @param alpha
+	 * @param alpha
+	 */
+	public static double estimateAlphaMapSub(int[][] nmk, int[] nm,
+			int[] mrows, double alpha, double a, double b) {
+		int i, m, k, iter = 200;
+		double summk, summ;
+		int M = mrows.length;
+		int K = nmk[0].length;
+		double alpha0 = 0;
+		double prec = 1e-5;
+
+		// alpha = ( a - 1 + alpha * [sum_m sum_k digamma(alpha + mnk) -
+		// digamma(alpha)] ) /
+		// ( b + K * [sum_m digamma(K * alpha + nm) - digamma(K * alpha)] )
+
+		for (i = 0; i < iter; i++) {
+			summk = 0;
+			summ = 0;
+			for (m = 0; m < M; m++) {
+				summ += digamma(K * alpha + nm[mrows[m]]);
+				for (k = 0; k < K; k++) {
+					summk += digamma(alpha + nmk[mrows[m]][k]);
 				}
 			}
 			summ -= M * digamma(K * alpha);

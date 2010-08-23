@@ -347,6 +347,18 @@ public class Vectors {
 	/**
 	 * @param x
 	 * @param y
+	 * @return [x y]
+	 */
+	public static int[] concat(int[] x, int[] y) {
+		int[] z = new int[x.length + y.length];
+		System.arraycopy(x, 0, z, 0, x.length);
+		System.arraycopy(y, 0, z, x.length, y.length);
+		return z;
+	}
+
+	/**
+	 * @param x
+	 * @param y
 	 * @param rowwise
 	 *            ? [x; y] : [x, y]
 	 * @return [x {;,} y]
@@ -770,6 +782,25 @@ public class Vectors {
 	}
 
 	/**
+	 * Create a matrix that contains the rows of the argument matrix in the
+	 * order given by rows. This method does not copy the rows.
+	 * 
+	 * @param matrix
+	 * @param rows
+	 * @return
+	 */
+	public static int[][] chooseElements(int[][] matrix, int[] rows) {
+
+		int[][] matrix2 = new int[rows.length][];
+
+		for (int i = 0; i < rows.length; i++) {
+			matrix2[i] = matrix[rows[i]];
+		}
+
+		return matrix2;
+	}
+
+	/**
 	 * Create vector that contains the elements of the argument in the order as
 	 * given by keep
 	 * 
@@ -1115,6 +1146,20 @@ public class Vectors {
 	 */
 	public static double[] sub(double[] vec, int start, int length) {
 		double[] x = new double[length];
+		for (int i = 0; i < length; i++) {
+			x[i] = vec[start + i];
+		}
+		return x;
+	}
+
+	/**
+	 * @param weights
+	 * @param i
+	 * @param j
+	 * @return
+	 */
+	public static int[] sub(int[] vec, int start, int length) {
+		int[] x = new int[length];
 		for (int i = 0; i < length; i++) {
 			x[i] = vec[start + i];
 		}

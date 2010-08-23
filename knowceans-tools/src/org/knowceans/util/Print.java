@@ -1,6 +1,7 @@
 package org.knowceans.util;
 
 import java.io.PrintStream;
+import java.lang.reflect.Array;
 import java.util.List;
 
 /**
@@ -161,7 +162,35 @@ public class Print {
 	 */
 	private static void printarray(StringBuffer sb, Object s, String format) {
 		if (ArrayUtils.isArray(s)) {
-			sb.append(Vectors.printf((double[]) s, format, ", "));
+			// nested arrays?
+			Object z = Array.get(s, 0);
+			if (ArrayUtils.isArray(z)) {
+				for (int i = 0; i < Array.getLength(s); i++) {
+					printarray(sb, Array.get(s, i), format);
+					// sb.append("; ");
+					sb.append(";\n ");
+				}
+			} else {
+				sb.append(Vectors.printf(s, format, ", "));
+			}
+		} else {
+			sb.append(s);
+		}
+	}
+
+	private static void printarray(StringBuffer sb, Object s) {
+		if (ArrayUtils.isArray(s)) {
+			// nested arrays?
+			Object z = Array.get(s, 0);
+			if (ArrayUtils.isArray(z)) {
+				for (int i = 0; i < Array.getLength(s); i++) {
+					printarray(sb, Array.get(s, i));
+					// sb.append("; ");
+					sb.append(";\n ");
+				}
+			} else {
+				sb.append(Vectors.print(s));
+			}
 		} else {
 			sb.append(s);
 		}
@@ -197,14 +226,6 @@ public class Print {
 		List<StackTraceElement> here = Which.fullstack();
 		StackTraceElement hereami = here.get(here.size() - 1);
 		return hereami.getClassName() + "." + hereami.getMethodName();
-	}
-
-	private static void printarray(StringBuffer sb, Object s) {
-		if (ArrayUtils.isArray(s)) {
-			sb.append(Vectors.print(s));
-		} else {
-			sb.append(s);
-		}
 	}
 
 	/**

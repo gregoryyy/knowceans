@@ -53,6 +53,8 @@ public class Gamma {
 	/** Avoid repeated computation of log of 2 PI in logGamma */
 	private static final double HALF_LOG_2_PI = 0.5 * Math.log(2.0 * Math.PI);
 
+	private static final double GAMMA_MINX = 1.e-12;
+
 	/**
 	 * Returns the natural logarithm of the gamma function &#915;(x). The
 	 * implementation of this method is based on:
@@ -65,6 +67,8 @@ public class Gamma {
 	 * the computation of the convergent Lanczos complex Gamma approximation
 	 * </a></li>
 	 * </ul>
+	 * gregh: this implementation sets 0 argument to a very small double (1e-15)
+	 * in order to cope with degenerate Dirichlet distributions
 	 * 
 	 * @param x
 	 *            the value.
@@ -74,22 +78,24 @@ public class Gamma {
 	public static double lgamma(double x) {
 		double ret;
 
-		if (Double.isNaN(x) || (x <= 0.0)) {
-			ret = Double.NaN;
-		} else {
-			double g = 607.0 / 128.0;
-
-			double sum = 0.0;
-			for (int i = lanczos.length - 1; i > 0; --i) {
-				sum = sum + (lanczos[i] / (x + i));
-			}
-			sum = sum + lanczos[0];
-
-			double tmp = x + g + .5;
-			ret = ((x + .5) * Math.log(tmp)) - tmp + HALF_LOG_2_PI
-					+ Math.log(sum / x);
+		if (Double.isNaN(x)) {
+			return x;
 		}
 
+		if (x >= 0 && x <= GAMMA_MINX) {
+			x = GAMMA_MINX;
+		}
+		double g = 607.0 / 128.0;
+
+		double sum = 0.0;
+		for (int i = lanczos.length - 1; i > 0; --i) {
+			sum = sum + (lanczos[i] / (x + i));
+		}
+		sum = sum + lanczos[0];
+
+		double tmp = x + g + .5;
+		ret = ((x + .5) * Math.log(tmp)) - tmp + HALF_LOG_2_PI
+				+ Math.log(sum / x);
 		return ret;
 	}
 
@@ -191,6 +197,32 @@ public class Gamma {
 		return lognum - lgamma(den);
 	}
 
+	/**
+	 * log Delta function with a concentration parameter alpha that is added to
+	 * every element in the vector.
+	 * 
+	 * @param x
+	 * @param alpha
+	 * @return
+	 */
+	public static double ldelta(int[] x, double[] alpha) {
+		double lognum = 0;
+		double den = 0;
+		for (int i = 0; i < x.length; i++) {
+			lognum += lgamma(x[i] + alpha[i]);
+			den += x[i];
+		}
+		den += Vectors.sum(alpha) * x.length;
+		return lognum - lgamma(den);
+	}
+
+	/**
+	 * "standard" fdelta function
+	 * 
+	 * @param x
+	 * @param alpha
+	 * @return
+	 */
 	public static double fdelta(int[] x, double alpha) {
 		return Math.exp(ldelta(x, alpha));
 	}
@@ -210,6 +242,32 @@ public class Gamma {
 
 	public static double fdelta(int K, double x) {
 		return Math.exp(ldelta(K, x));
+	}
+
+	/**
+	 * compute the ratio of the dirichlet partition functions
+	 * <p>
+	 * delta(n(k) + alpha(k)) / delta(n(k) - nless(k) + alpha(k))
+	 * 
+	 * @param nk
+	 *            [K] numerator counts / integer part
+	 * @param alphak
+	 *            [K] numerator hyperparameter / fractional part
+	 * @param nkless
+	 *            [K] count vector that denominator is less than numerator
+	 * @param temp
+	 *            [K] buffer used for computing
+	 * @return
+	 */
+	public static double fdeltaRatio(int[] nk, double[] alphak, int[] nkless,
+			double[] tempk) {
+		double rat = 0;
+		Vectors.copy(nk, tempk);
+		Vectors.add(tempk, alphak);
+		rat = Gamma.fdelta(tempk);
+		Vectors.subtract(tempk, nkless);
+		rat -= Gamma.fdelta(tempk);
+		return Math.exp(rat);
 	}
 
 	// limits for switching algorithm in digamma
@@ -239,6 +297,8 @@ public class Gamma {
 	 * 10^-8 absolute for results less than 10^5 and 10^-8 relative for results
 	 * larger than that.
 	 * </p>
+	 * gregh: this implementation sets 0 argument to a very small double (1e-15)
+	 * in order to cope with degenerate Dirichlet distributions
 	 * 
 	 * @param x
 	 *            the argument
@@ -252,7 +312,9 @@ public class Gamma {
 	 */
 	// from Apache Commons Math
 	public static double digamma(double x) {
-		assert !Double.isNaN(x) : "digamma: x is NaN";
+		if (x >= 0 && x < GAMMA_MINX) {
+			x = GAMMA_MINX;
+		}
 		if (x > 0 && x <= S_LIMIT) {
 			// use method 5 from Bernardo AS103
 			// accurate to O(x)
@@ -324,7 +386,7 @@ public class Gamma {
 	 *         is smaller
 	 * @see <a href="http://en.wikipedia.org/wiki/Trigamma_function"> Trigamma
 	 *      at wikipedia </a>
-	 * @see Gamma#digamma(double)
+	 * @see Gamma1#digamma(double)
 	 * @since 2.0
 	 */
 	// from Apache Commons Math
