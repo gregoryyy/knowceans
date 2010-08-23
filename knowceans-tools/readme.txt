@@ -1,7 +1,9 @@
-knowceans-tools (version 20050328)
+knowceans-tools
 
-@date 2005-03-28
+@date 2005-03-28 update 2010-08-23
 @author Gregor Heinrich questions / remarks email gregor :: arbylon . net
+
+License: These files are licensed under the GPL version 3. See license.txt for details.
 
 This package provides a couple of helper classes for diverse programming problems:
 
@@ -58,10 +60,38 @@ This package provides a couple of helper classes for diverse programming problem
 
    + Different interfaces allow to develop other implementations, e.g., TreeMap-based or such that
      leave the implementation of Map generic
+     
+   org.knowceans.corpus.*
+   Java-based handling of text corpora in a format similar to svmlight, which was originally used 
+   by lda-c by Dave Blei and consequently my Java port, lda-j. added this package 2010-08-23 as part
+   of codebase maintenance, code was originally written between 2005 and 2009. An example of a corpus
+   is provided in the directory corpus-example. This is the widely used NIPS test collection that I
+   have manually added year/volume information as well as labels as far as they could be possibly 
+   be inferred from the NIPS conference page. 
    
+   o Document: represents a text document
+
+   o DisjointDocTerms: partitions the corpus in sets of disjoint documents and terms (to sync
+     parallel threads)
+   
+   o NumCorpus: a corpus reader, accessing a *.corpus file with term vectors in svmlight format, 
+     a *.docs file with document names and a *.vocab file with term indices (one line per term). 
+     Allows splitting for cross validation.
+     
+   o LabelNumCorpus: a corpus reader, accessing the files of NumCorpus, plus optional labels,
+     for which different kinds can be defined: authors, classes, years, references. Allows multimodal
+     models to be fed with data. There are two types of label files: data (one line per entry, matching
+     the document indices) and key (one line per entry, matching label indices). This is similar to
+     the approach to the vocabulary
+     
+   o I*Corpus: interfaces to define the behaviour of the corpus implementations, including support 
+     for labels, cross-validation, term lookup with the CorpusResolver.
+     
+   o CorpusResolver: class used to actually resolve indices of items into names.
    
  - org.knowceans.sandbox.* 
    some classes for quick playing around
    
 The classes have been developed with the Eclipse platform, for which the .project and .classpath 
 files are provided. Further, an ant build.xml exists.
+
