@@ -21,24 +21,31 @@ public class Primes {
     }
 
     /**
-     * Sieve of Erastothenes method
+     * Sift the twos and sift the threes, / the sieve of Eratosthenes. / When
+     * the multiples sublime, / The numbers that remain are prime. ;)
+     * <p>
+     * code adapted from:
+     * http://en.literateprograms.org/Sieve_of_Eratosthenes_%28Java%29
      * 
      * @param N
      * @return
      */
     public static int[] primes(int n) {
+        // element k corresponds to number i = 2k + 3
         BitSet sieve = new BitSet((n + 2) >> 1);
         for (int i = 3; i * i <= n; i += 2) {
-            if (sieve.get((i - 3) / 2))
+            // if prime
+            if (sieve.get((i - 3) >> 1))
                 continue;
+            // loop over odd multiples of i
             for (int mi = i * i; mi <= n; mi += i << 1)
-                sieve.set((mi - 3) / 2);
-
+                // set prime
+                sieve.set((mi - 3) >> 1);
         }
         List<Integer> primes = new ArrayList<Integer>();
         primes.add(2);
         for (int i = 3; i <= n; i += 2)
-            if (!sieve.get((i - 3) / 2))
+            if (!sieve.get((i - 3) >> 1))
                 primes.add(i);
 
         return (int[]) ArrayUtils.asPrimitiveArray(primes);
