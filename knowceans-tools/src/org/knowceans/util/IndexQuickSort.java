@@ -4,6 +4,7 @@
 package org.knowceans.util;
 
 import java.util.Comparator;
+import java.util.List;
 
 /**
  * IndexQuickSort sorts indices of an array without changing its values. There
@@ -12,7 +13,7 @@ import java.util.Comparator;
  * double and int arrays as well as objects and associated Comparators.
  * 
  * @author gregor
- * @author original code at
+ * @author used quicksort algorithm at
  *         http://www.cs.princeton.edu/introcs/42sort/QuickSort.java.html
  */
 public class IndexQuickSort {
@@ -214,6 +215,31 @@ public class IndexQuickSort {
         return index;
     }
 
+    /**
+     * sort indices.
+     * 
+     * 
+     * @param <T>
+     *            a list of Comparables. Cast problem with <T extends
+     *            Comparable<T>>, so the argument has Comparable elements by
+     *            contract.
+     * 
+     * @param fixedList
+     *            values to be sorted should be Comparable
+     * @return index range of indices into fixedArray
+     * 
+     */
+    @SuppressWarnings("unchecked")
+    public static <T> int[] sort(List<T> fixedList) {
+        T[] array = (T[]) fixedList.toArray();
+        return sort(array, new Comparator<T>() {
+            @Override
+            public int compare(T o1, T o2) {
+                return ((Comparable) o1).compareTo(o2);
+            }
+        });
+    }
+
     // quicksort a[left] to a[right]
     public static void sort(int[] a, int[] index, int left, int right) {
         if (right <= left)
@@ -353,10 +379,10 @@ public class IndexQuickSort {
      * reorder in-place.
      * 
      * @param ds
-     * @param sort
+     * @param order
      */
-    public static void reorder(double[] x, int[] sort) {
-        int[] inv = inverse(sort);
+    public static void reorderSort(double[] x, int[] order) {
+        int[] inv = inverse(order);
         for (int j = x.length - 1; j >= 0; j--) {
             for (int i = 0; i < j; i++) {
                 if (inv[i] > inv[i + 1]) {
@@ -368,15 +394,37 @@ public class IndexQuickSort {
     }
 
     /**
+     * reordering without a sort
+     * 
+     * @param <T>
+     * @param x
+     * @param order
+     */
+    public static void reorder(double[] x, int[] order) {
+        int i, j;
+        for (i = 1; i < order.length; ++i) {
+            j = order[i];
+            while (j < i) {
+                j = order[j];
+            }
+            if (j == i) {
+                while ((j = order[j]) != i) {
+                    swap(x, i, j);
+                }
+            }
+        }
+    }
+
+    /**
      * reorder the array according to the sorting. This uses bubblesort to
      * reorder in-place.
      * 
      * @param x
-     * @param sort
+     * @param order
      *            sorting index new, element old
      */
-    public static void reorder(int[] x, int[] sort) {
-        int[] inv = inverse(sort);
+    public static void reorderSort(int[] x, int[] order) {
+        int[] inv = inverse(order);
         for (int j = x.length - 1; j >= 0; j--) {
             for (int i = 0; i < j; i++) {
                 if (inv[i] > inv[i + 1]) {
@@ -388,19 +436,108 @@ public class IndexQuickSort {
     }
 
     /**
+     * reordering without a sort.
+     * 
+     * @param <T>
+     * @param x
+     * @param order
+     */
+    public static void reorder(int[] x, int[] order) {
+        int i, j;
+        for (i = 1; i < order.length; ++i) {
+            j = order[i];
+            while (j < i) {
+                j = order[j];
+            }
+            if (j == i) {
+                while ((j = order[j]) != i) {
+                    swap(x, i, j);
+                }
+            }
+        }
+    }
+
+    /**
      * reorder the array according to the sorting. This uses bubblesort to
      * reorder in-place.
      * 
      * @param x
-     * @param sort
+     * @param order
      */
-    public static <T> void reorder(T[] x, int[] sort) {
-        int[] inv = inverse(sort);
+    public static <T> void reorderSort(T[] x, int[] order) {
+        int[] inv = inverse(order);
         for (int j = x.length - 1; j >= 0; j--) {
             for (int i = 0; i < j; i++) {
                 if (inv[i] > inv[i + 1]) {
                     swap(inv, i, i + 1);
                     swap(x, i, i + 1);
+                }
+            }
+        }
+    }
+
+    /**
+     * reordering without a sort
+     * 
+     * @param <T>
+     * @param x
+     * @param order
+     */
+    public static <T> void reorder(T[] x, int[] order) {
+        int i, j;
+        for (i = 1; i < order.length; ++i) {
+            j = order[i];
+            while (j < i) {
+                j = order[j];
+            }
+            if (j == i) {
+                while ((j = order[j]) != i) {
+                    swap(x, i, j);
+                }
+            }
+        }
+    }
+
+    /**
+     * reordering for lists
+     * 
+     * @param <T>
+     * @param x
+     * @param order
+     */
+    public static <T> void reorderSort(List<T> x, int[] order) {
+        int[] inv = inverse(order);
+        for (int j = x.size() - 1; j >= 0; j--) {
+            for (int i = 0; i < j; i++) {
+                if (inv[i] > inv[i + 1]) {
+                    swap(inv, i, i + 1);
+                    T temp = x.get(i);
+                    x.set(i, x.get(i + 1));
+                    x.set(i + 1, temp);
+                }
+            }
+        }
+    }
+
+    /**
+     * reordering without a sort
+     * 
+     * @param <T>
+     * @param x
+     * @param order
+     */
+    public static <T> void reorder(List<T> x, int[] order) {
+        int i, j;
+        for (i = 1; i < order.length; ++i) {
+            j = order[i];
+            while (j < i) {
+                j = order[j];
+            }
+            if (j == i) {
+                while ((j = order[j]) != i) {
+                    T temp = x.get(i);
+                    x.set(i, x.get(i + 1));
+                    x.set(i + 1, temp);
                 }
             }
         }
