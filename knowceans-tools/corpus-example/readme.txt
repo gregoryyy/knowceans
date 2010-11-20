@@ -1,7 +1,7 @@
 This is the NIPS0-12 test collection
 
 @author gregor :: arbylon . net
-@data 2010-08-23 (release)
+@date 2010-08-23 (release)
   
 Contents and line format: 
  - nips.authors        -- document author ids, 1 line per document (line 1 = document 0), 
@@ -17,6 +17,7 @@ Contents and line format:
  - nips.vocab          -- vocabulary index, 1 line per term (line 1 = term 0)
  - nips.vols           -- volume information, 1 line per document (line 1 = volume 0 
                           = year 1987, one volume per year continuously)
+ - nips.refs           -- citation information, 1 line per document
 
 
 Sources:
@@ -28,3 +29,6 @@ Preprocessed MAT files: http://cs.nyu.edu/~roweis/data.html
  --> term vectors
  --> document titles
  --> vocabulary  
+Text files: http://cs.nyu.edu/~roweis/data.html, http://ai.stanford.edu/~gal/
+ --> citation entries (via searches for nips title and abbreviations and manual
+     association with author/title/docnames)
