@@ -42,7 +42,7 @@ for i = 1:length(docs_names)
     % name
     fprintf(f, '%s\n', name);
     % more complete citation information
-    fprintf(f2, '%s: ', name);
+    fprintf(f2, '%04d %s: ', i - 1, name);
     aa = find(docs_authors(i, :));
     for j = 1:length(aa)
         fprintf(f2, '%s, ', authors_names{aa(j)});
