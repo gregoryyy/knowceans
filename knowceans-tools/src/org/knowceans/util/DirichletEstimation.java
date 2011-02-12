@@ -616,7 +616,6 @@ public class DirichletEstimation {
 			// System.out.println(alpha);
 			// System.out.println(Math.abs(alpha - alpha0));
 			if (Math.abs(alpha - alpha0) < prec) {
-				System.out.println(i);
 				return alpha;
 			}
 			alpha0 = alpha;
@@ -666,12 +665,73 @@ public class DirichletEstimation {
 			// System.out.println(alpha);
 			// System.out.println(Math.abs(alpha - alpha0));
 			if (Math.abs(alpha - alpha0) < prec) {
-				System.out.println(i);
 				return alpha;
 			}
 			alpha0 = alpha;
 		}
 		return alpha;
+	}
+
+	/**
+	 * estimate several alphas based on subsets of rows
+	 * 
+	 * @param nmk
+	 *            full array
+	 * @param nm
+	 *            full sums array
+	 * @param nmj
+	 *            row-wise association with set j (max j - 1 = alphajk.length)
+	 * @param alphajk
+	 *            set-wise hyperparameter
+	 * @param a
+	 * @param b
+	 * @return
+	 */
+	public static double[][] estimateAlphaMapSub(int[][] nmk, int[] nm,
+			int[] nmj, int J, double[][] alphajk, double a, double b) {
+		int i, m, M, k, K, iter = 200;
+		double sumalpha, summk, summ;
+		double prec = 1e-5;
+		M = nmk.length;
+		J = alphajk.length;
+		K = alphajk[0].length;
+		double[][] alphanew = new double[J][K];
+		for (int j = 0; j < J; j++) {
+
+			// alpha_k = alpha_k * ( [sum_m digamma(nmk + alpha_k) -
+			// digamma(alpha_k)] ) /
+			// ( [sum_m digamma(nm + sum_k alpha_k) - digamma(sum_k * alpha_k)]
+			// )
+
+			for (i = 0; i < iter; i++) {
+				sumalpha = Vectors.sum(alphajk[j]);
+				for (k = 0; k < K; k++) {
+					summk = 0;
+					summ = 0;
+					for (m = 0; m < M; m++) {
+						// filter by subset j
+						if (nmj[m] == j) {
+							summk += digamma(nmk[m][k] + alphajk[j][k]);
+							summ += digamma(nm[m] + sumalpha);
+						}
+					}
+					summk -= M * digamma(alphajk[j][k]);
+					summ -= M * digamma(sumalpha);
+					// MAP version
+					alphanew[j][k] = alphajk[j][k] * (a + summk)
+							/ (b / K + summ);
+					// ML version
+					// alphanew[k] = alpha[k] * summk / summ;
+				}
+				if (Vectors.sqdist(alphanew[j], alphajk[j]) < prec) {
+					break;
+				}
+				// System.out.println(Vectors.print(alphanew));
+				// update alpha to new values
+				alphajk[j] = Vectors.copy(alphanew[j]);
+			}
+		}
+		return alphajk;
 	}
 
 	/**
@@ -719,7 +779,6 @@ public class DirichletEstimation {
 				// alphanew[k] = alpha[k] * summk / summ;
 			}
 			if (Vectors.sqdist(alphanew, alpha) < prec) {
-				System.out.println(i);
 				return alphanew;
 			}
 			// System.out.println(Vectors.print(alphanew));
@@ -894,4 +953,5 @@ public class DirichletEstimation {
 		System.out.println(Vectors.print(getMean(mp)));
 		System.out.println(Vectors.print(getAlpha(mp)));
 	}
+
 }
