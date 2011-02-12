@@ -98,6 +98,13 @@ protected Config() {
 }
 
 /**
+ * reload this configuration from file
+ */
+public void reload() {
+    loadFile();
+}
+
+/**
  * load the properties file
  */
 protected void loadFile() {
@@ -281,4 +288,5 @@ public Class<?> getClass(String clazz)
         throws ClassNotFoundException {
     return Class.forName(get(clazz));
 }
+
 }

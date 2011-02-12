@@ -1057,9 +1057,9 @@ public class Samplers {
     }
 
     /**
-     * TODO: MAXSTIRLING should be made variable
+     * TODO: MAXSTIRLING should be made variable (what's the max?)
      */
-    protected static int MAXSTIRLING = 40;
+    protected static int MAXSTIRLING = 20000;
 
     /**
      * maximum stirling number in allss
@@ -1144,7 +1144,6 @@ public class Samplers {
         // }
         // }
         // Vectors.mult(p, 1. / R);
-        System.out.println(Vectors.print(p));
         return randMultDirect(p) + 1;
     }
 
