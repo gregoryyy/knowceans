@@ -688,12 +688,12 @@ public class DirichletEstimation {
 	 * @return
 	 */
 	public static double[][] estimateAlphaMapSub(int[][] nmk, int[] nm,
-			int[] nmj, int J, double[][] alphajk, double a, double b) {
+			int[] nmj, double[][] alphajk, double a, double b) {
 		int i, m, M, k, K, iter = 200;
 		double sumalpha, summk, summ;
 		double prec = 1e-5;
 		M = nmk.length;
-		J = alphajk.length;
+		int J = alphajk.length;
 		K = alphajk[0].length;
 		double[][] alphanew = new double[J][K];
 		for (int j = 0; j < J; j++) {
