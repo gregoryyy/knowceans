@@ -71,7 +71,7 @@ public class NumCorpus implements ICorpus, ITermCorpus, ISplitCorpus {
 
 	protected NumCorpus testCorpus;
 
-	private int[][] origDocIds;
+	protected int[][] origDocIds;
 
 	/**
 	 * term element before which a paragraph ends. Iterating through this allows
@@ -155,7 +155,7 @@ public class NumCorpus implements ICorpus, ITermCorpus, ISplitCorpus {
 					cdocs.add(d);
 					d.setNumTerms(length);
 					d.setNumWords(0);
-					d.setWords(new int[length]);
+					d.setTerms(new int[length]);
 					d.setCounts(new int[length]);
 
 					for (n = 0; n < length; n++) {
@@ -189,7 +189,7 @@ public class NumCorpus implements ICorpus, ITermCorpus, ISplitCorpus {
 						Document d = new Document();
 						d.setNumTerms(length);
 						d.setNumWords(0);
-						d.setWords(new int[length]);
+						d.setTerms(new int[length]);
 						d.setCounts(new int[length]);
 
 						for (n = 0; n < length; n++, token++) {
@@ -210,9 +210,9 @@ public class NumCorpus implements ICorpus, ITermCorpus, ISplitCorpus {
 						pd.addDocument(d);
 					}
 				}
-				if (nd % 1000 == 0) {
-					System.out.println(nd);
-				}
+				// if (nd % 1000 == 0) {
+				// System.out.println(nd);
+				// }
 				nd++;
 				// stop if read limit reached
 				if (readlimit >= 0 && nd >= readlimit) {
@@ -307,8 +307,7 @@ public class NumCorpus implements ICorpus, ITermCorpus, ISplitCorpus {
 		for (int j = 0; j < termbounds.length; j++) {
 			// sum up frequencies of range corresponding to paragraph
 			wordbounds[j] = Vectors.sum(Vectors.sub(d.counts, prevbound,
-					termbounds[j] - prevbound))
-					+ prevwbound;
+					termbounds[j] - prevbound)) + prevwbound;
 			prevbound = termbounds[j];
 			prevwbound = wordbounds[j];
 		}

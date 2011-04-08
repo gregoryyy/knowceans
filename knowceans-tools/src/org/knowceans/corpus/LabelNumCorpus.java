@@ -51,11 +51,11 @@ public class LabelNumCorpus extends NumCorpus implements ILabelCorpus {
 	/**
 	 * total count of labels
 	 */
-	private int[] labelsW;
+	int[] labelsW;
 	/**
 	 * total range of labels
 	 */
-	private int[] labelsV;
+	int[] labelsV;
 
 	String dataFilebase = null;
 
@@ -116,7 +116,7 @@ public class LabelNumCorpus extends NumCorpus implements ILabelCorpus {
 		init();
 	}
 
-	private void init() {
+	protected void init() {
 		labels = new int[EXTENSIONS.length][][];
 		labelsW = new int[EXTENSIONS.length];
 		labelsV = new int[EXTENSIONS.length];

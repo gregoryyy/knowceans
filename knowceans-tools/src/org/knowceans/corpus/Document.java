@@ -183,8 +183,44 @@ public class Document {
 	/**
 	 * @param is
 	 */
-	public void setWords(int[] is) {
+	public void setTerms(int[] is) {
 		terms = is;
+	}
+
+	public void setWords(int[] is) {
+		if (terms == null) {
+			terms = new int[numTerms];
+			counts = new int[numTerms];
+		}
+		// merging is easiest in a hash map
+		HashMap<Integer, Integer> termfreqs = new HashMap<Integer, Integer>();
+		for (int n = 0; n < numTerms; n++) {
+			Integer a = termfreqs.get(terms[n]);
+			if (a == 0) {
+				termfreqs.put(terms[n], counts[n]);
+			} else {
+				termfreqs.put(terms[n], counts[n] + a);
+			}
+		}
+		for (int n = 0; n < is.length; n++) {
+			Integer count = termfreqs.get(is[n]);
+			if (count == null) {
+				termfreqs.put(is[n], 1);
+			} else {
+				termfreqs.put(is[n], count + 1);
+			}
+		}
+		// create merged document
+		terms = new int[termfreqs.size()];
+		counts = new int[termfreqs.size()];
+		int n = 0;
+		for (Entry<Integer, Integer> tf : termfreqs.entrySet()) {
+			terms[n] = tf.getKey();
+			counts[n] = tf.getValue();
+			n++;
+		}
+		numTerms = terms.length;
+		numWords = Vectors.sum(counts);
 	}
 
 	/**
