@@ -172,6 +172,11 @@ public class LabelNumCorpus extends NumCorpus implements ILabelCorpus {
 			String line;
 			int j = 0;
 			while ((line = br.readLine()) != null) {
+				// remove additional info
+				int c = line.indexOf(" : ");
+				if (c > -1) {
+					line = line.substring(0, c);
+				}
 				line = line.trim();
 				if (line.length() == 0) {
 					data.add(new int[0]);
@@ -290,4 +295,14 @@ public class LabelNumCorpus extends NumCorpus implements ILabelCorpus {
 		System.out.println("document mapping");
 		System.out.println(Vectors.print(nc.getOrigDocIds()));
 	}
+
+	/**
+	 * get a resolver that acts on this corpus
+	 * 
+	 * @return
+	 */
+	public CorpusResolver getResolver() {
+		return new CorpusResolver(dataFilebase);
+	}
+
 }
