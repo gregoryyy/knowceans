@@ -6,6 +6,7 @@ import java.util.Random;
 import java.util.Set;
 
 import org.knowceans.util.CokusRandom;
+import org.knowceans.util.IndexQuickSort;
 import org.knowceans.util.Print;
 
 public class CorpusTest {
@@ -70,11 +71,13 @@ public class CorpusTest {
 		Print.f("TERMS:");
 		int T = 100;// corpus.getNumTerms()
 		int[] df = corpus.calcDocFreqs();
+		int[] index = IndexQuickSort.sort(df);
+		IndexQuickSort.reverse(index);
 		for (int t = 0; t < T; t++) {
 			if (t % 10 == 0) {
 				Print.f("\n\t");
 			}
-			Print.f("%d:%d %s ", t, df[t], cr.getTerm(t));
+			Print.f("%d:%d %s ", t, df[index[t]], cr.getTerm(index[t]));
 		}
 		Print.fln("");
 		Set<Integer> fields = new HashSet<Integer>();
@@ -130,9 +133,11 @@ public class CorpusTest {
 
 		if (fields.contains(LabelNumCorpus.LTERMS)) {
 			Print.f("TERMS:");
+			int[] index = IndexQuickSort.sort(corpus.docs[m].getCounts());
+			IndexQuickSort.reverse(index);
 			for (int t = 0; t < corpus.docs[m].getNumTerms(); t++) {
-				int term = corpus.docs[m].getTerm(t);
-				int count = corpus.docs[m].getCount(t);
+				int term = corpus.docs[m].getTerm(index[t]);
+				int count = corpus.docs[m].getCount(index[t]);
 				if (t % 10 == 0) {
 					Print.f("\n\t");
 				}
