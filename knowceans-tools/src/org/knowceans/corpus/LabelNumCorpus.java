@@ -25,6 +25,7 @@
 package org.knowceans.corpus;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
@@ -41,8 +42,11 @@ import org.knowceans.util.Vectors;
  */
 public class LabelNumCorpus extends NumCorpus implements ILabelCorpus {
 
+	/**
+	 * the extensions for the label type constants in ILabelCorpus.L*
+	 */
 	public static final String[] EXTENSIONS = { ".authors", ".labels", ".vols",
-			".refs", ".tags", ".years" };
+	/* ".refs", */".cite", ".tags", ".years" };
 
 	/**
 	 * array of labels. Elements are filled as soon as readlabels is called.
@@ -59,6 +63,8 @@ public class LabelNumCorpus extends NumCorpus implements ILabelCorpus {
 
 	String dataFilebase = null;
 
+	private CorpusResolver resolver;
+
 	/**
      * 
      */
@@ -68,8 +74,7 @@ public class LabelNumCorpus extends NumCorpus implements ILabelCorpus {
 	}
 
 	/**
-	 * @param dataFilebase
-	 *            (filename without extension)
+	 * @param dataFilebase (filename without extension)
 	 */
 	public LabelNumCorpus(String dataFilebase) {
 		super(dataFilebase + ".corpus");
@@ -78,10 +83,8 @@ public class LabelNumCorpus extends NumCorpus implements ILabelCorpus {
 	}
 
 	/**
-	 * @param dataFilebase
-	 *            (filename without extension)
-	 * @param parmode
-	 *            if true read paragraph corpus
+	 * @param dataFilebase (filename without extension)
+	 * @param parmode if true read paragraph corpus
 	 */
 	public LabelNumCorpus(String dataFilebase, boolean parmode) {
 		super(dataFilebase + (parmode ? ".par" : "") + ".corpus");
@@ -90,12 +93,10 @@ public class LabelNumCorpus extends NumCorpus implements ILabelCorpus {
 	}
 
 	/**
-	 * @param dataFilebase
-	 *            (filename without extension)
-	 * @param readlimit
-	 *            number of docs to reduce corpus when reading (-1 = unlimited)
-	 * @param parmode
-	 *            if true read paragraph corpus
+	 * @param dataFilebase (filename without extension)
+	 * @param readlimit number of docs to reduce corpus when reading (-1 =
+	 *        unlimited)
+	 * @param parmode if true read paragraph corpus
 	 */
 	public LabelNumCorpus(String dataFilebase, int readlimit, boolean parmode) {
 		super(dataFilebase + (parmode ? ".par" : "") + ".corpus", readlimit);
@@ -123,6 +124,34 @@ public class LabelNumCorpus extends NumCorpus implements ILabelCorpus {
 	}
 
 	/**
+	 * checks whether the corpus has labels
+	 * 
+	 * @param kind according to label constants ILabelCorpus.L*
+	 * @return 0 for no label values, 1 for yes, 2 for loaded, -1 for illegal
+	 */
+	public int hasLabels(int kind) {
+		if (kind >= labels.length || kind < -2) {
+			return -1;
+		}
+		if (kind < 0) {
+			// we have docs and terms loaded
+			if (docs != null)
+				return 2;
+		} else {
+			// any metadata
+			if (labels[kind] != null) {
+				return 2;
+			}
+			File f = new File(this.dataFilebase + EXTENSIONS[kind]);
+			if (f.exists()) {
+				return 1;
+			}
+		}
+		// not loaded
+		return 0;
+	}
+
+	/**
 	 * loads and returns the document labels of given kind
 	 */
 	// @Override
@@ -130,6 +159,19 @@ public class LabelNumCorpus extends NumCorpus implements ILabelCorpus {
 		if (labels[kind] == null)
 			readLabels(kind);
 		return labels[kind];
+	}
+
+	/**
+	 * get the labels for one document
+	 * 
+	 * @param m
+	 * @param kind
+	 * @return
+	 */
+	public int[] getDocLabels(int kind, int m) {
+		if (labels[kind] == null)
+			readLabels(kind);
+		return labels[kind][m];
 	}
 
 	/**
@@ -302,7 +344,9 @@ public class LabelNumCorpus extends NumCorpus implements ILabelCorpus {
 	 * @return
 	 */
 	public CorpusResolver getResolver() {
-		return new CorpusResolver(dataFilebase);
+		if (resolver == null) {
+			resolver = new CorpusResolver(dataFilebase);
+		}
+		return resolver;
 	}
-
 }

@@ -32,6 +32,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 import java.util.Random;
 
 import org.knowceans.util.ArrayUtils;
@@ -88,7 +89,7 @@ public class NumCorpus implements ICorpus, ITermCorpus, ISplitCorpus {
 	 */
 	private int[][] wordparbounds;
 
-	private int readlimit = -1;
+	protected int readlimit = -1;
 
 	public NumCorpus(String dataFilename) {
 		read(dataFilename);
@@ -340,8 +341,7 @@ public class NumCorpus implements ICorpus, ITermCorpus, ISplitCorpus {
 	 * Get the documents as vectors of bag of words, i.e., per document, a
 	 * scrambled array of term indices is generated.
 	 * 
-	 * @param rand
-	 *            random number generator or null to use standard generator
+	 * @param rand random number generator or null to use standard generator
 	 * @return
 	 */
 	public int[][] getDocWords(Random rand) {
@@ -363,8 +363,7 @@ public class NumCorpus implements ICorpus, ITermCorpus, ISplitCorpus {
 	 * boundaries.
 	 * 
 	 * @param m
-	 * @param rand
-	 *            random number generator or null to omit shuffling
+	 * @param rand random number generator or null to omit shuffling
 	 * @return
 	 */
 	public int[] getDocWords(int m, Random rand) {
@@ -488,17 +487,69 @@ public class NumCorpus implements ICorpus, ITermCorpus, ISplitCorpus {
 	}
 
 	/**
+	 * filter terms by frequency
+	 * 
+	 * @param minDf all more scarce terms are excluded
+	 * @param maxDf all more frequent terms are excluded
+	 * @return array with new indices in old index elements
+	 */
+	public int[] filterTerms(int minDf, int maxDf) {
+		int[] df = calcDocFreqs();
+		// rewrite indices
+		int[] indices = Vectors.range(0, numTerms - 1);
+		int newIndex = 0;
+		for (int t = 0; t < numTerms; t++) {
+			if (df[t] < minDf || df[t] > maxDf) {
+				indices[t] = -1;
+			} else {
+				indices[t] = newIndex;
+				newIndex++;
+			}
+		}
+		// rewrite corpus
+		for (int m = 0; m < numDocs; m++) {
+			List<Integer> tt = new ArrayList<Integer>();
+			List<Integer> ff = new ArrayList<Integer>();
+			for (int i = 0; i < docs[m].numTerms; i++) {
+				int term = docs[m].terms[i];
+				if (indices[term] >= 0) {
+					tt.add(indices[term]);
+					ff.add(docs[m].counts[i]);
+				}
+			}
+			docs[m].terms = (int[]) ArrayUtils.asPrimitiveArray(tt);
+			docs[m].counts = (int[]) ArrayUtils.asPrimitiveArray(ff);
+			docs[m].compile();
+		}
+		return indices;
+	}
+
+	/**
+	 * calculates the document frequencies of the terms
+	 * 
+	 * @return
+	 */
+	public int[] calcDocFreqs() {
+		// we construct term frequencies manually even if there may
+		// be another source
+		int[] df = new int[numTerms];
+		for (int m = 0; m < numDocs; m++) {
+			for (int t = 0; t < docs[m].numTerms; t++) {
+				df[docs[m].terms[t]]++;
+			}
+		}
+		return df;
+	}
+
+	/**
 	 * splits two child corpora of size 1/nsplit off the original corpus, which
 	 * itself is left unchanged (except storing the splits). The corpora can be
 	 * retrieved using getTrainCorpus and getTestCorpus after using this
 	 * function.
 	 * 
-	 * @param order
-	 *            number of partitions
-	 * @param split
-	 *            0-based split of corpus returned
-	 * @param rand
-	 *            random source (null for reusing existing splits)
+	 * @param order number of partitions
+	 * @param split 0-based split of corpus returned
+	 * @param rand random source (null for reusing existing splits)
 	 */
 	// @Override
 	public void split(int order, int split, Random rand) {

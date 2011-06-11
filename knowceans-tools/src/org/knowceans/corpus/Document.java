@@ -88,6 +88,12 @@ public class Document {
 	}
 
 	public void compile() {
+		if (counts == null) {
+			counts = new int[0];
+		}
+		if (terms == null) {
+			terms = new int[0];
+		}
 		try {
 			if (counts.length != terms.length)
 				throw new Exception("Document inconsistent.");
