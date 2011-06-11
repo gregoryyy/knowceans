@@ -33,7 +33,8 @@ public class CorpusTest {
 		int Ymax = Math.max(corpus.getLabelsMaxN(LabelNumCorpus.LCATEGORIES),
 				corpus.getLabelsMaxN(LabelNumCorpus.LCATEGORIES));
 
-		int[] index = corpus.filterTerms(0, 500);
+		// filter terms by document frequency
+		int[] index = corpus.filterTermsDf(10, 500);
 		corpus.write("testcorpus");
 		corpus.getResolver().filterTerms(index);
 		// corpus.getResolver().filterDocuments(index);

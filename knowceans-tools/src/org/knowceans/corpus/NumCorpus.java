@@ -487,13 +487,13 @@ public class NumCorpus implements ICorpus, ITermCorpus, ISplitCorpus {
 	}
 
 	/**
-	 * filter terms by frequency
+	 * filter terms by frequency. TODO: paragraph support
 	 * 
 	 * @param minDf all more scarce terms are excluded
 	 * @param maxDf all more frequent terms are excluded
 	 * @return array with new indices in old index elements
 	 */
-	public int[] filterTerms(int minDf, int maxDf) {
+	public int[] filterTermsDf(int minDf, int maxDf) {
 		int[] df = calcDocFreqs();
 		// rewrite indices
 		int[] indices = Vectors.range(0, numTerms - 1);
@@ -507,6 +507,7 @@ public class NumCorpus implements ICorpus, ITermCorpus, ISplitCorpus {
 			}
 		}
 		// rewrite corpus
+		int W = 0;
 		for (int m = 0; m < numDocs; m++) {
 			List<Integer> tt = new ArrayList<Integer>();
 			List<Integer> ff = new ArrayList<Integer>();
@@ -515,12 +516,15 @@ public class NumCorpus implements ICorpus, ITermCorpus, ISplitCorpus {
 				if (indices[term] >= 0) {
 					tt.add(indices[term]);
 					ff.add(docs[m].counts[i]);
+					W += docs[m].counts[i];
 				}
 			}
 			docs[m].terms = (int[]) ArrayUtils.asPrimitiveArray(tt);
 			docs[m].counts = (int[]) ArrayUtils.asPrimitiveArray(ff);
 			docs[m].compile();
 		}
+		numTerms = newIndex;
+		numWords = W;
 		return indices;
 	}
 
