@@ -38,6 +38,7 @@ import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -72,7 +73,7 @@ public MutableConfig(String file) {
         propFile = file;
         content = new StringBuffer();
         modifications = new HashMap<String, String>();
-        additions = new HashMap<String, String>();
+        additions = new LinkedHashMap<String, String>();
         File f = new File(file);
         if (f.exists()) {
             loadFile();
@@ -82,6 +83,16 @@ public MutableConfig(String file) {
     } catch (IOException e) {
         e.printStackTrace();
     }
+}
+
+/**
+ * reload this configuration from file, discarding any changes
+ */
+public void reload() {
+    content.setLength(0);
+    modifications.clear();
+    additions.clear();
+    loadFile();
 }
 
 /**
@@ -118,7 +129,10 @@ protected void loadFile() {
  */
 public void set(Config conf) {
     for (Map.Entry<Object, Object> e : conf.entrySet()) {
-        set((String) e.getKey(), (String) e.getValue());
+        Object val = e.getKey();
+        if (val == null || !val.equals(e.getValue())) {
+            set((String) e.getKey(), (String) e.getValue());
+        }
     }
 }
 
@@ -133,7 +147,7 @@ public void save() throws IOException {
     // file with their changed values, preserving all other
     // formatting
     Pattern p = Pattern
-        .compile("(.*?\n)?([^=\n]+ *)=( *)([^\n]+)\n");
+        .compile("(\\s*(?:#.*?\n)*\\s*)?([^=\n]+ *)=( *)([^\n]+)\n");
     StringBuffer sb = new StringBuffer();
     Matcher m = p.matcher(content);
     int end = 0;
@@ -154,13 +168,14 @@ public void save() throws IOException {
         sb.append('\n');
         end = m.end(4);
     }
-    sb.append(content.substring(end + 1));
+    if (content.length() > 0) {
+        sb.append(content.substring(end + 1));
+    }
     // now put in the additions
     for (Map.Entry<String, String> e : additions.entrySet()) {
         sb.append(e.getKey()).append(" = ").append(
             e.getValue()).append('\n');
     }
-    System.out.println(sb);
     File f = new File(propFile);
     SimpleDateFormat a = new SimpleDateFormat(
             "-yyMMdd-HHmmss");
@@ -180,11 +195,14 @@ public void save() throws IOException {
 public void set(String key, String value) {
     String x = get(key);
     if (x != null) {
-        modifications.put(key, value);
+        if (!x.equals(value)) {
+            modifications.put(key, value);
+            put(key, value);
+        }
     } else {
         additions.put(key, value);
+        put(key, value);
     }
-    put(key, value);
 }
 
 public void set(String key, int value) {

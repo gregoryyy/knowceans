@@ -33,7 +33,7 @@ import java.util.Set;
 
 /**
  * A Collection that implements both the List and the Set interface. Based on
- * the implementation of Vector, this class ensures uniqueness of items. The
+ * the implementation of ArrayList, this class ensures uniqueness of items. The
  * strategy is conservative, which means duplication between a modifying
  * argument and an existing element will result in avoiding the modification.
  * 

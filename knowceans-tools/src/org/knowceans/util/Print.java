@@ -20,8 +20,7 @@ public class Print {
 	/**
 	 * sets the output stream for the printer
 	 * 
-	 * @param s
-	 *            null to disable
+	 * @param s null to disable
 	 */
 	public static void setOutput(PrintStream s) {
 		sout = s;
@@ -134,6 +133,29 @@ public class Print {
 			printarray(sb, s);
 		}
 		sout.println(sb);
+	}
+
+	/**
+	 * simply printfs to sout
+	 * 
+	 * @param string
+	 * @param m
+	 * @param doc
+	 */
+	public static void f(String format, Object... b) {
+		if (sout == null)
+			return;
+		sout.print(String.format(format, b));
+	}
+
+	/**
+	 * call f() with newline
+	 * 
+	 * @param format
+	 * @param b
+	 */
+	public static void fln(String format, Object... b) {
+		f(format + "\n", b);
 	}
 
 	/**
@@ -254,4 +276,5 @@ public class Print {
 		Print.string();
 		Print.newString();
 	}
+
 }

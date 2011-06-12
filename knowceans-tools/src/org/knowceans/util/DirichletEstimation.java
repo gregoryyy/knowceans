@@ -679,7 +679,7 @@ public class DirichletEstimation {
 	 *            full array
 	 * @param nm
 	 *            full sums array
-	 * @param nmj
+	 * @param m2j
 	 *            row-wise association with set j (max j - 1 = alphajk.length)
 	 * @param alphajk
 	 *            set-wise hyperparameter
@@ -688,7 +688,7 @@ public class DirichletEstimation {
 	 * @return
 	 */
 	public static double[][] estimateAlphaMapSub(int[][] nmk, int[] nm,
-			int[] nmj, double[][] alphajk, double a, double b) {
+			int[] m2j, double[][] alphajk, double a, double b) {
 		int i, m, M, k, K, iter = 200;
 		double sumalpha, summk, summ;
 		double prec = 1e-5;
@@ -710,7 +710,7 @@ public class DirichletEstimation {
 					summ = 0;
 					for (m = 0; m < M; m++) {
 						// filter by subset j
-						if (nmj[m] == j) {
+						if (m2j[m] == j) {
 							summk += digamma(nmk[m][k] + alphajk[j][k]);
 							summ += digamma(nm[m] + sumalpha);
 						}

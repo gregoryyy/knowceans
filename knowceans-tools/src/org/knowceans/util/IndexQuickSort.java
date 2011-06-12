@@ -381,7 +381,7 @@ public class IndexQuickSort {
      * @param ds
      * @param order
      */
-    public static void reorderSort(double[] x, int[] order) {
+    public static void reorder(double[] x, int[] order) {
         int[] inv = inverse(order);
         for (int j = x.length - 1; j >= 0; j--) {
             for (int i = 0; i < j; i++) {
@@ -393,27 +393,27 @@ public class IndexQuickSort {
         }
     }
 
-    /**
-     * reordering without a sort
-     * 
-     * @param <T>
-     * @param x
-     * @param order
-     */
-    public static void reorder(double[] x, int[] order) {
-        int i, j;
-        for (i = 1; i < order.length; ++i) {
-            j = order[i];
-            while (j < i) {
-                j = order[j];
-            }
-            if (j == i) {
-                while ((j = order[j]) != i) {
-                    swap(x, i, j);
-                }
-            }
-        }
-    }
+//    /**
+//     * reordering without a sort
+//     * 
+//     * @param <T>
+//     * @param x
+//     * @param order
+//     */
+//    public static void reorder(double[] x, int[] order) {
+//        int i, j;
+//        for (i = 1; i < order.length; ++i) {
+//            j = order[i];
+//            while (j < i) {
+//                j = order[j];
+//            }
+//            if (j == i) {
+//                while ((j = order[j]) != i) {
+//                    swap(x, i, j);
+//                }
+//            }
+//        }
+//    }
 
     /**
      * reorder the array according to the sorting. This uses bubblesort to
@@ -423,7 +423,7 @@ public class IndexQuickSort {
      * @param order
      *            sorting index new, element old
      */
-    public static void reorderSort(int[] x, int[] order) {
+    public static void reorder(int[] x, int[] order) {
         int[] inv = inverse(order);
         for (int j = x.length - 1; j >= 0; j--) {
             for (int i = 0; i < j; i++) {
@@ -435,27 +435,27 @@ public class IndexQuickSort {
         }
     }
 
-    /**
-     * reordering without a sort.
-     * 
-     * @param <T>
-     * @param x
-     * @param order
-     */
-    public static void reorder(int[] x, int[] order) {
-        int i, j;
-        for (i = 1; i < order.length; ++i) {
-            j = order[i];
-            while (j < i) {
-                j = order[j];
-            }
-            if (j == i) {
-                while ((j = order[j]) != i) {
-                    swap(x, i, j);
-                }
-            }
-        }
-    }
+//    /**
+//     * reordering without a sort.
+//     * 
+//     * @param <T>
+//     * @param x
+//     * @param order
+//     */
+//    public static void reorder(int[] x, int[] order) {
+//        int i, j;
+//        for (i = 1; i < order.length; ++i) {
+//            j = order[i];
+//            while (j < i) {
+//                j = order[j];
+//            }
+//            if (j == i) {
+//                while ((j = order[j]) != i) {
+//                    swap(x, i, j);
+//                }
+//            }
+//        }
+//    }
 
     /**
      * reorder the array according to the sorting. This uses bubblesort to
@@ -464,7 +464,7 @@ public class IndexQuickSort {
      * @param x
      * @param order
      */
-    public static <T> void reorderSort(T[] x, int[] order) {
+    public static <T> void reorder(T[] x, int[] order) {
         int[] inv = inverse(order);
         for (int j = x.length - 1; j >= 0; j--) {
             for (int i = 0; i < j; i++) {
@@ -476,27 +476,27 @@ public class IndexQuickSort {
         }
     }
 
-    /**
-     * reordering without a sort
-     * 
-     * @param <T>
-     * @param x
-     * @param order
-     */
-    public static <T> void reorder(T[] x, int[] order) {
-        int i, j;
-        for (i = 1; i < order.length; ++i) {
-            j = order[i];
-            while (j < i) {
-                j = order[j];
-            }
-            if (j == i) {
-                while ((j = order[j]) != i) {
-                    swap(x, i, j);
-                }
-            }
-        }
-    }
+//    /**
+//     * reordering without a sort
+//     * 
+//     * @param <T>
+//     * @param x
+//     * @param order
+//     */
+//    public static <T> void reorder(T[] x, int[] order) {
+//        int i, j;
+//        for (i = 1; i < order.length; ++i) {
+//            j = order[i];
+//            while (j < i) {
+//                j = order[j];
+//            }
+//            if (j == i) {
+//                while ((j = order[j]) != i) {
+//                    swap(x, i, j);
+//                }
+//            }
+//        }
+//    }
 
     /**
      * reordering for lists
@@ -505,7 +505,7 @@ public class IndexQuickSort {
      * @param x
      * @param order
      */
-    public static <T> void reorderSort(List<T> x, int[] order) {
+    public static <T> void reorder(List<T> x, int[] order) {
         int[] inv = inverse(order);
         for (int j = x.size() - 1; j >= 0; j--) {
             for (int i = 0; i < j; i++) {
@@ -519,28 +519,28 @@ public class IndexQuickSort {
         }
     }
 
-    /**
-     * reordering without a sort
-     * 
-     * @param <T>
-     * @param x
-     * @param order
-     */
-    public static <T> void reorder(List<T> x, int[] order) {
-        int i, j;
-        for (i = 1; i < order.length; ++i) {
-            j = order[i];
-            while (j < i) {
-                j = order[j];
-            }
-            if (j == i) {
-                while ((j = order[j]) != i) {
-                    T temp = x.get(i);
-                    x.set(i, x.get(i + 1));
-                    x.set(i + 1, temp);
-                }
-            }
-        }
-    }
+//    /**
+//     * reordering without a sort
+//     * 
+//     * @param <T>
+//     * @param x
+//     * @param order
+//     */
+//    public static <T> void reorder(List<T> x, int[] order) {
+//        int i, j;
+//        for (i = 1; i < order.length; ++i) {
+//            j = order[i];
+//            while (j < i) {
+//                j = order[j];
+//            }
+//            if (j == i) {
+//                while ((j = order[j]) != i) {
+//                    T temp = x.get(i);
+//                    x.set(i, x.get(i + 1));
+//                    x.set(i + 1, temp);
+//                }
+//            }
+//        }
+//    }
 
 }
