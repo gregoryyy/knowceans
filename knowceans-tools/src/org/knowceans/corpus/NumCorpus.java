@@ -269,6 +269,26 @@ public class NumCorpus implements ICorpus, ITermCorpus, ISplitCorpus {
 	}
 
 	/**
+	 * get matrix with tfidf weighting for corpus
+	 * 
+	 * @return
+	 */
+	public double[][] getTfIdf() {
+		int[] df = calcDocFreqs();
+		double[][] tfidf = new double[numDocs][];
+		for (int m = 0; m < numDocs; m++) {
+			for (int n = 0; n < docs[m].numTerms; n++) {
+				int tf = docs[m].getCount(n);
+				double idf = Math
+						.log(numDocs / (double) df[docs[m].getTerm(n)]);
+				// may add weighting, e.g., 1 + 0.5 * tf / tfmax(m)
+				tfidf[m][n] = tf * idf;
+			}
+		}
+		return tfidf;
+	}
+
+	/**
 	 * get array of paragraph start indices of the documents (term-based)
 	 * 
 	 * @return
