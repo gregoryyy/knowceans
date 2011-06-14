@@ -29,6 +29,8 @@ import java.util.List;
  * dimensions. For array arguments, reflection and Object arguments are chosen
  * as an alternative to overloading. Hopefully, this class will be obsolete in
  * Java 1.6...
+ * <p>
+ * TODO: make robust for empty array (see getElement0()).
  * 
  * @author gregor heinrich
  */
@@ -99,9 +101,8 @@ public class ArrayUtils {
 	 * array was not initialised as an Wrapper[] where wrapper is one of the
 	 * primitive wrapper object types excluding Void.
 	 * 
-	 * @param objects
-	 *            object array with elements of primitive wrapper classes
-	 *            excluding Void.
+	 * @param objects object array with elements of primitive wrapper classes
+	 *        excluding Void.
 	 * @return an array of the relevant primitive type or null if size = 0 and
 	 *         or invalid type.
 	 */
@@ -129,8 +130,7 @@ public class ArrayUtils {
 	 * Get an array of the wrapper type corresponding to the primitive element
 	 * type of the argument.
 	 * 
-	 * @param array
-	 *            array of a primitive type
+	 * @param array array of a primitive type
 	 * @return array of the object type corresponding to the primitive type or
 	 *         null if invalid element type or no array in argument.
 	 */
@@ -214,8 +214,7 @@ public class ArrayUtils {
 	 * determined).
 	 * 
 	 * @param objects
-	 * @param sample
-	 *            object (instantiate primitive array[0] if objects.size = 0)
+	 * @param sample object (instantiate primitive array[0] if objects.size = 0)
 	 * @return array of primitive types or null if invalid.
 	 */
 	public static Object asPrimitiveArray(List<? extends Object> objects,
@@ -272,10 +271,8 @@ public class ArrayUtils {
 	 * <p>
 	 * Note: This method is rather slow. Use System.arraycopy for scalability.
 	 * 
-	 * @param array
-	 *            whose content is copied
-	 * @param target
-	 *            array whose content is overwritten (same size as array).
+	 * @param array whose content is copied
+	 * @param target array whose content is overwritten (same size as array).
 	 */
 	public static void copy(Object target, Object array) {
 		Class<? extends Object> c = array.getClass();
@@ -312,6 +309,12 @@ public class ArrayUtils {
 			Array.get(s, 0);
 		} catch (IllegalArgumentException e) {
 			return false;
+		} catch (NullPointerException e) {
+			// no array here, just null
+			return false;
+		} catch (ArrayIndexOutOfBoundsException e) {
+			// empty array
+			return true;
 		}
 		return true;
 	}

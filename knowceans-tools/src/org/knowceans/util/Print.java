@@ -184,8 +184,7 @@ public class Print {
 	 */
 	private static void printarray(StringBuffer sb, Object s, String format) {
 		if (ArrayUtils.isArray(s)) {
-			// nested arrays?
-			Object z = Array.get(s, 0);
+			Object z = getElement0(s);
 			if (ArrayUtils.isArray(z)) {
 				for (int i = 0; i < Array.getLength(s); i++) {
 					printarray(sb, Array.get(s, i), format);
@@ -203,8 +202,10 @@ public class Print {
 	private static void printarray(StringBuffer sb, Object s) {
 		if (ArrayUtils.isArray(s)) {
 			// nested arrays?
-			Object z = Array.get(s, 0);
-			if (ArrayUtils.isArray(z)) {
+			Object z = getElement0(s);
+			if (z == null) {
+				sb.append("[]");
+			} else if (ArrayUtils.isArray(z)) {
 				for (int i = 0; i < Array.getLength(s); i++) {
 					printarray(sb, Array.get(s, i));
 					// sb.append("; ");
@@ -215,6 +216,21 @@ public class Print {
 			}
 		} else {
 			sb.append(s);
+		}
+	}
+
+	/**
+	 * gets the first element or null if empty array
+	 * 
+	 * @param s
+	 * @return
+	 */
+	public static Object getElement0(Object s) {
+		try {
+			Object z = Array.get(s, 0);
+			return z;
+		} catch (ArrayIndexOutOfBoundsException e) {
+			return null;
 		}
 	}
 
