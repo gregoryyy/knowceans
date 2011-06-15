@@ -15,35 +15,39 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 
-import org.knowceans.util.ArrayUtils;
-import org.knowceans.util.Print;
-
 /**
  * CorpusResolver resolves indices into names.
  * 
  * @author gregor
  */
-public class CorpusResolver {
-
-	public static void main(String[] args) {
-		CorpusResolver cr = new CorpusResolver("corpus-example/nips");
-		System.out.println(cr.getLabel(20));
-		System.out.println(cr.getDoc(501));
-		System.out.println(cr.getTerm(1));
-		System.out.println(cr.getTermId(cr.getTerm(1)));
-	}
+public class CorpusResolver implements ICorpusResolver {
 
 	/**
 	 * these indices correspond to ILabelCorpus.L* + 2 (docs and terms are -2
 	 * and -1 there)
 	 */
-	public final String[] EXTENSIONS = { "docs", "vocab", "authors.key",
-			"labels.key", "vols.key", "docnames", "docs.key" };
+	public static final String[] keyExtensions = { "docs", "vocab",
+			"authors.key", "labels.key", "tags.key", "vols.key", "years.key" };
+
+	public static final String[] keyNames = { "documents", "terms", "authors",
+			"labels", "tags", "volumess", "years" };
+
+	public static final int[] keyExt2labelId = { -2, -1, 0, 1, 2, 3, 4 };
+	public static final int[] labelId2keyExt = { 2, 3, 3, 4, 5, -1, -1 };
+
+	public static void main(String[] args) {
+		CorpusResolver cr = new CorpusResolver("corpus-example/nips");
+		System.out.println(cr.getLabel(20));
+		System.out.println(cr.getDocTitle(501));
+		System.out.println(cr.getTerm(1));
+		System.out.println(cr.getTermId(cr.getTerm(1)));
+	}
 
 	HashMap<String, Integer> termids;
-	String[][] data = new String[EXTENSIONS.length][];
+	String[][] data = new String[keyExtensions.length][];
 	String filebase;
 
+	@SuppressWarnings("unused")
 	private boolean parmode;
 
 	public CorpusResolver(String filebase) {
@@ -59,28 +63,27 @@ public class CorpusResolver {
 	public CorpusResolver(String filebase, boolean parmode) {
 		this.parmode = parmode;
 		this.filebase = filebase;
-		for (int i = 0; i < EXTENSIONS.length; i++) {
+		for (int i = 0; i < keyExtensions.length; i++) {
 			String base = filebase;
 			// read alternative vocabulary for paragraph mode
-			if (parmode && EXTENSIONS[i].equals("vocab")) {
+			if (parmode && keyExtensions[i].equals("vocab")) {
 				base += ".par";
 			}
-			File f = new File(base + "." + EXTENSIONS[i]);
+			File f = new File(base + "." + keyExtensions[i]);
 			if (f.exists()) {
 				data[i] = load(f);
 			}
 		}
 	}
 
-	/**
-	 * check whether labels exist
+	/*
+	 * (non-Javadoc)
 	 * 
-	 * @param i
-	 * @return 0 for no label values, 1 for yes, 2 for loaded, -1 for illegal
-	 *         index
+	 * @see org.knowceans.corpus.IResolver#hasValues(int)
 	 */
+	@Override
 	public int hasValues(int i) {
-		if (i >= EXTENSIONS.length || i < 0) {
+		if (i >= keyExtensions.length || i < 0) {
 			return -1;
 		}
 		// in the current impl, labels are pre-fetched
@@ -134,8 +137,7 @@ public class CorpusResolver {
 				terms.add(old2new[i], getTerm(i));
 			}
 		}
-		data[LabelNumCorpus.LTERMS + 2] = (String[]) terms
-				.toArray(new String[0]);
+		data[KTERMS] = (String[]) terms.toArray(new String[0]);
 		termids = newids;
 	}
 
@@ -147,37 +149,37 @@ public class CorpusResolver {
 	 */
 	public void writeTerms(String file) throws IOException {
 		BufferedWriter bw = new BufferedWriter(new FileWriter(file));
-		for (String term : data[LabelNumCorpus.LTERMS + 2]) {
+		for (String term : data[KTERMS]) {
 			bw.append(term).append('\n');
 		}
 		bw.close();
 	}
 
-	/**
-	 * resolve the numeric term id
+	/*
+	 * (non-Javadoc)
 	 * 
-	 * @param t
-	 * @return
+	 * @see org.knowceans.corpus.IResolver#getTerm(int)
 	 */
+	@Override
 	public String getTerm(int t) {
-		if (data[1] != null) {
+		if (data[KTERMS] != null) {
 			return data[1][t];
 		} else {
 			return null;
 		}
 	}
 
-	/**
-	 * find id for string term or return -1 if unknown
+	/*
+	 * (non-Javadoc)
 	 * 
-	 * @param term
-	 * @return
+	 * @see org.knowceans.corpus.IResolver#getTermId(java.lang.String)
 	 */
+	@Override
 	public int getTermId(String term) {
 		if (termids == null) {
 			termids = new HashMap<String, Integer>();
-			for (int i = 0; i < data[1].length; i++) {
-				termids.put(data[1][i], i);
+			for (int i = 0; i < data[KTERMS].length; i++) {
+				termids.put(data[KTERMS][i], i);
 			}
 		}
 		Integer id = termids.get(term);
@@ -187,71 +189,71 @@ public class CorpusResolver {
 		return id;
 	}
 
-	/**
-	 * resolve the numeric label id
+	/*
+	 * (non-Javadoc)
 	 * 
-	 * @param i
-	 * @return
+	 * @see org.knowceans.corpus.IResolver#getLabel(int)
 	 */
+	@Override
 	public String getLabel(int i) {
-		if (data[3] != null) {
-			return data[3][i];
+		if (data[KLABELS] != null) {
+			return data[KLABELS][i];
 		} else {
 			return null;
 		}
 	}
 
-	/**
-	 * resolve the numeric author id
+	/*
+	 * (non-Javadoc)
 	 * 
-	 * @param i
-	 * @return
+	 * @see org.knowceans.corpus.IResolver#getAuthor(int)
 	 */
+	@Override
 	public String getAuthor(int i) {
-		if (data[2] != null) {
-			return data[2][i];
+		if (data[KAUTHORS] != null) {
+			return data[KAUTHORS][i];
 		} else {
 			return null;
 		}
 	}
 
-	/**
-	 * resolve the numeric term id
+	/*
+	 * (non-Javadoc)
 	 * 
-	 * @param i
-	 * @return
+	 * @see org.knowceans.corpus.IResolver#getDoc(int)
 	 */
-	public String getDoc(int i) {
-		if (data[0] != null) {
-			return data[0][i];
+	@Override
+	public String getDocTitle(int i) {
+		if (data[KDOCS] != null) {
+			return data[KDOCS][i];
 		} else {
 			return null;
 		}
 	}
 
-	/**
-	 * resolve the numeric term id
+	/*
+	 * (non-Javadoc)
 	 * 
-	 * @param i
-	 * @return
+	 * @see org.knowceans.corpus.IResolver#getDocName(int)
 	 */
+	@Override
 	public String getDocName(int i) {
-		if (data[5] != null) {
-			return data[5][i];
+		if (data[KDOCNAME] != null) {
+			return data[KDOCNAME][i];
 		} else {
 			return null;
 		}
 	}
 
-	/**
-	 * resolve the numeric term id
+	/*
+	 * (non-Javadoc)
 	 * 
-	 * @param i
-	 * @return
+	 * @see org.knowceans.corpus.IResolver#getDocKey(int)
 	 */
-	public String getDocKey(int i) {
-		if (data[6] != null) {
-			return data[6][i];
+	@Override
+	public String getDocRef(int i) {
+		if (data[KDOCREF] != null) {
+			return data[KDOCREF][i];
 		} else {
 			return null;
 		}
@@ -266,37 +268,51 @@ public class CorpusResolver {
 		throw new Error();
 	}
 
-	/**
-	 * resolve the numeric volume id
+	/*
+	 * (non-Javadoc)
 	 * 
-	 * @param i
-	 * @return
+	 * @see org.knowceans.corpus.IResolver#getVol(int)
 	 */
+	@Override
 	public String getVol(int i) {
-		if (data[4] != null) {
-			return data[4][i];
+		if (data[KVOLS] != null) {
+			return data[KVOLS][i];
 		} else {
 			return null;
 		}
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see org.knowceans.corpus.IResolver#getLabel(int, int)
+	 */
+	@Override
 	public String getLabel(int type, int id) {
-		if (type == LabelNumCorpus.LTERMS) {
+		if (type == KTERMS) {
 			return getTerm(id);
-		} else if (type == LabelNumCorpus.LAUTHORS) {
+		} else if (type == KAUTHORS) {
 			return getAuthor(id);
-		} else if (type == LabelNumCorpus.LCATEGORIES) {
+		} else if (type == KLABELS) {
 			return getLabel(id);
-		} else if (type == LabelNumCorpus.LVOLS) {
+		} else if (type == KVOLS) {
 			return getVol(id);
-		} else if (type == LabelNumCorpus.LREFERENCES) {
-			return getDocKey(id);
-		} else if (type == LabelNumCorpus.LDOCS) {
-			return getDoc(id);
+		} else if (type == KDOCREF) {
+			return getDocRef(id);
+		} else if (type == KDOCS) {
+			return getDocTitle(id);
+		} else if (type == KDOCNAME) {
+			return getDocName(id);
 		}
 		return null;
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see org.knowceans.corpus.IResolver#getId(int, java.lang.String)
+	 */
+	@Override
 	public int getId(int type, String label) {
 		if (type == LabelNumCorpus.LTERMS) {
 			return getTermId(label);

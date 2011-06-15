@@ -1,0 +1,16 @@
+algorithm = 4 = 3 3
+application = 8 = 2 2
+delay = 15 = 2 2
+differential = 1 = 8 8
+equation = 0 = 10 10
+implementation = 7 = 2 2
+integral = 3 = 3 3
+introduction = 10 = 3 2
+method = 11 = 2 2
+nonlinear = 13 = 2 2
+ordinary = 12 = 2 2
+oscillation = 14 = 2 2
+partial = 9 = 2 2
+probl = 6 = 3 3
+syst = 5 = 3 3
+theory = 2 = 5 4

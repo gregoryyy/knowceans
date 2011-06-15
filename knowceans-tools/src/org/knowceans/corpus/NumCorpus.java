@@ -72,6 +72,10 @@ public class NumCorpus implements ICorpus, ITermCorpus, ISplitCorpus {
 
 	protected NumCorpus testCorpus;
 
+	/**
+	 * for splitting, these are the original document ids [0] = training, [1] =
+	 * test.
+	 */
 	protected int[][] origDocIds;
 
 	/**
@@ -82,12 +86,12 @@ public class NumCorpus implements ICorpus, ITermCorpus, ISplitCorpus {
 	 * vector are allowed. Conversion to docWords is transparent, merging to
 	 * unstructured docs using mergeDocuments.
 	 */
-	int[][] parbounds;
+	protected int[][] parbounds;
 
 	/**
 	 * word before a paragraph end.
 	 */
-	private int[][] wordparbounds;
+	protected int[][] wordparbounds;
 
 	protected int readlimit = -1;
 
@@ -489,12 +493,15 @@ public class NumCorpus implements ICorpus, ITermCorpus, ISplitCorpus {
 
 	/**
 	 * reduce the size of the corpus to ndocs maximum. This should be called
-	 * directly after loading as it only reduces the documents and count
+	 * directly after loading as it only reduces the documents and count.
+	 * Consider using split instead.
 	 * 
 	 * @param ndocs
-	 * @param rand
+	 * @param rand ignored
 	 */
 	public void reduce(int ndocs, Random rand) {
+		// todo: handle reordering
+		// split((int)(ndocs/(double)numDocs + 0.5), 1, rand);
 		System.out.println(numDocs + ".");
 		if (numDocs > ndocs) {
 			Document[] docsnew = new Document[ndocs];

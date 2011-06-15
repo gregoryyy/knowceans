@@ -1,7 +1,8 @@
 This is the NIPS0-12 test collection
 
 @author gregor :: arbylon . net
-@date 2010-08-23 (release), 2010-11-25 added citation structure
+@date 2010-08-23 (release), 2010-11-25 added citation structure, 2011-06-17 changes in mentions 
+(exclude authors and removed frequencies to svmlight like corpus)
   
 To obtain a corpus with various different co-occurrence types is usually difficult. The NIPS corpus
 as assembled here has, however, such a wide variety: Full word content, full authorship, vocabulary,
@@ -36,15 +37,19 @@ Contents and line format:
  - nips.vols           -- volume information, 1 line per document (line 1 = volume 0 
                           = year 1987, one volume per year continuously. Note: publication year
                           officially is one year later, as NIPS is held in December)
- - nips.cite          -- citation information, 1 line per document, (docid )*
- - nips.ment           -- mentioning authors that are in the NIPS community don't need direct
-                          citations. format like citations, but indexing author ids. Does not
-                          contain the authors of the document but may overlap with citations.
- - documents.txt       -- citations of the documents, for aligning references (publication
-                          dates starting 1987). Tabbed entries are citations to other NIPS
+ - nips.cite           -- citation information, 1 line per document, (docid )*
+ - nips.ment           -- mentioned author names in the NIPS community. this complements the
+                          relatively small citation network. includes self-citations
+ - nips.ment-acf       -- working file: mentioning all NIPS community authors, including the ones listed as 
+                          authors and citations of the mentioning paper, ids
+ - nips.ment.cands     -- working file: like *-acf but including real names
+ - nips.docs.key       -- citations of the documents, for aligning references (publication
+                          dates starting 1987). 
+ - nips.cite.cands        like docs.key, but tabbed entries are citations to other NIPS
                           papers and authors. Annotations if vague: =? same as previous, 
                           +? additional candidate, -? inconclusive, =! spelling correction,
-                          # comment for the following line  
+                          # comment for the following line
+ - berry.*             -- minimalistic corpus for debugging. 
 
 Sources:
 OCR'ed files: http://nips.djvuzone.org/
@@ -58,6 +63,9 @@ Preprocessed MAT files: http://cs.nyu.edu/~roweis/data.html
 Text files: http://cs.nyu.edu/~roweis/data.html, http://ai.stanford.edu/~gal/
  --> citation entries (via searches for nips title and abbreviations and manual
      association with author/title/docnames)
+Berry corpus
+ --> example term document matrix from Berry & Browne, Understanding Search Engines, SIAM, 2005
+     (with one or two changes)
      
 Extraction process (leading to citations.txt):
 

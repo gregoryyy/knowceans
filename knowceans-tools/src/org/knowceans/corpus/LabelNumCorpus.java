@@ -45,25 +45,38 @@ public class LabelNumCorpus extends NumCorpus implements ILabelCorpus {
 	/**
 	 * the extensions for the label type constants in ILabelCorpus.L*
 	 */
-	public static final String[] EXTENSIONS = { ".authors", ".labels", ".vols",
-	/* ".refs", */".cite", ".tags", ".years" };
+	public static final String[] labelExtensions = { ".authors", ".labels", ".tags",
+			".vols", ".years", ".cite", ".ment" };
 
+	public static final String[] labelNames = { "authors", "labels", "tags",
+			"volumes", "years", "citations", "mentionings" };
+
+	public static final int LDOCS = -2;
+	public static final int LTERMS = -1;
+	// these are the rows of the data field in label corpus
+	public static final int LAUTHORS = 0;
+	public static final int LCATEGORIES = 1;
+	public static final int LTAGS = 2;
+	public static final int LVOLS = 3;
+	public static final int LYEARS = 4;
+	public static final int LREFERENCES = 5;
+	public static final int LMENTIONS = 6;
 	/**
 	 * array of labels. Elements are filled as soon as readlabels is called.
 	 */
-	int[][][] labels;
+	protected int[][][] labels;
 	/**
 	 * total count of labels
 	 */
-	int[] labelsW;
+	protected int[] labelsW;
 	/**
 	 * total range of labels
 	 */
-	int[] labelsV;
+	protected int[] labelsV;
 
 	String dataFilebase = null;
 
-	private CorpusResolver resolver;
+	protected CorpusResolver resolver;
 
 	/**
      * 
@@ -118,9 +131,9 @@ public class LabelNumCorpus extends NumCorpus implements ILabelCorpus {
 	}
 
 	protected void init() {
-		labels = new int[EXTENSIONS.length][][];
-		labelsW = new int[EXTENSIONS.length];
-		labelsV = new int[EXTENSIONS.length];
+		labels = new int[labelExtensions.length][][];
+		labelsW = new int[labelExtensions.length];
+		labelsV = new int[labelExtensions.length];
 	}
 
 	/**
@@ -142,7 +155,7 @@ public class LabelNumCorpus extends NumCorpus implements ILabelCorpus {
 			if (labels[kind] != null) {
 				return 2;
 			}
-			File f = new File(this.dataFilebase + EXTENSIONS[kind]);
+			File f = new File(this.dataFilebase + labelExtensions[kind]);
 			if (f.exists()) {
 				return 1;
 			}
@@ -210,7 +223,7 @@ public class LabelNumCorpus extends NumCorpus implements ILabelCorpus {
 		int V = 0;
 		try {
 			BufferedReader br = new BufferedReader(new FileReader(dataFilebase
-					+ EXTENSIONS[kind]));
+					+ labelExtensions[kind]));
 			String line;
 			int j = 0;
 			while ((line = br.readLine()) != null) {
@@ -256,16 +269,16 @@ public class LabelNumCorpus extends NumCorpus implements ILabelCorpus {
 
 		// now also split labels
 		int Mtest = splitstarts[split + 1] - splitstarts[split];
-		labelsW = new int[EXTENSIONS.length];
+		labelsW = new int[labelExtensions.length];
 
-		int[][][] trainLabels = new int[EXTENSIONS.length][numDocs - Mtest][];
-		int[][][] testLabels = new int[EXTENSIONS.length][Mtest][];
-		int[] trainLabelsW = new int[EXTENSIONS.length];
-		int[] testLabelsW = new int[EXTENSIONS.length];
+		int[][][] trainLabels = new int[labelExtensions.length][numDocs - Mtest][];
+		int[][][] testLabels = new int[labelExtensions.length][Mtest][];
+		int[] trainLabelsW = new int[labelExtensions.length];
+		int[] testLabelsW = new int[labelExtensions.length];
 
 		int mstart = splitstarts[split];
 		// for each label type
-		for (int type = 0; type < EXTENSIONS.length; type++) {
+		for (int type = 0; type < labelExtensions.length; type++) {
 			if (labels[type] == null) {
 				continue;
 			}
@@ -312,7 +325,8 @@ public class LabelNumCorpus extends NumCorpus implements ILabelCorpus {
 	 * @param args
 	 */
 	public static void main(String[] args) {
-		LabelNumCorpus nc = new LabelNumCorpus("berry95/berry95");
+		//LabelNumCorpus nc = new LabelNumCorpus("berry95/berry95");
+		LabelNumCorpus nc = new LabelNumCorpus("corpus-example/nips");
 		nc.getDocLabels(LAUTHORS);
 		nc.split(10, 0, new Random());
 

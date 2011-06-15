@@ -59,8 +59,8 @@ public class CorpusTest {
 		Print.fln("stats: M = %d, V = %d, W = %d", corpus.getNumDocs(),
 				corpus.getNumTerms(), corpus.getNumWords());
 		Print.fln("labels:");
-		for (int i = 0; i < LabelNumCorpus.EXTENSIONS.length; i++) {
-			Print.fln(" %s = %d, .keys = %d", LabelNumCorpus.EXTENSIONS[i],
+		for (int i = 0; i < LabelNumCorpus.labelExtensions.length; i++) {
+			Print.fln(" %s = %d, .keys = %d", LabelNumCorpus.labelExtensions[i],
 					corpus.hasLabels(i), cr.hasValues(i + 2));
 		}
 
@@ -108,7 +108,7 @@ public class CorpusTest {
 	private static void printDocument(LabelNumCorpus corpus, CorpusResolver cr,
 			int m, Set<Integer> fields) {
 		if (fields.contains(LabelNumCorpus.LDOCS)) {
-			Print.fln("##### document %d %s:", m, cr.getDoc(m));
+			Print.fln("##### document %d %s:", m, cr.getDocTitle(m));
 		} else {
 			Print.fln("%d:", m);
 		}
