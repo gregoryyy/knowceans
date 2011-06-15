@@ -121,12 +121,14 @@ public class IndexQuickSort {
 	 * 
 	 * @param main
 	 * @param index
+	 * @return the argument
 	 */
-	public static void reverse(int[] index) {
+	public static int[] reverse(int[] index) {
 		int N = index.length;
 		for (int i = 0; i < (N / 2); i++) {
 			swap(index, i, N - 1 - i);
 		}
+		return index;
 	}
 
 	// /////////////////

@@ -61,7 +61,7 @@ public class CorpusTest {
 		Print.fln("labels:");
 		for (int i = 0; i < LabelNumCorpus.labelExtensions.length; i++) {
 			Print.fln(" %s = %d, .keys = %d", LabelNumCorpus.labelExtensions[i],
-					corpus.hasLabels(i), cr.hasValues(i + 2));
+					corpus.hasLabels(i), cr.hasLabelKeys(i + 2));
 		}
 
 		Print.fln("file base: ", corpus.dataFilebase);
@@ -77,7 +77,7 @@ public class CorpusTest {
 			if (t % 10 == 0) {
 				Print.f("\n\t");
 			}
-			Print.f("%d:%d %s ", t, df[index[t]], cr.getTerm(index[t]));
+			Print.f("%d:%d %s ", t, df[index[t]], cr.resolveTerm(index[t]));
 		}
 		Print.fln("");
 		Set<Integer> fields = new HashSet<Integer>();
@@ -108,7 +108,7 @@ public class CorpusTest {
 	private static void printDocument(LabelNumCorpus corpus, CorpusResolver cr,
 			int m, Set<Integer> fields) {
 		if (fields.contains(LabelNumCorpus.LDOCS)) {
-			Print.fln("##### document %d %s:", m, cr.getDocTitle(m));
+			Print.fln("##### document %d %s:", m, cr.resolveDocTitle(m));
 		} else {
 			Print.fln("%d:", m);
 		}
@@ -122,7 +122,7 @@ public class CorpusTest {
 			if (fields.contains(kind)) {
 				Print.f(labelNames[kind]);
 				for (int label : corpus.getDocLabels(kind, m)) {
-					Print.f(" %d:%s", label, cr.getLabel(kind, label));
+					Print.f(" %d:%s", label, cr.resolveLabel(kind, label));
 					if (kind == LabelNumCorpus.LREFERENCES) {
 						Print.f("\n\t");
 					}
@@ -141,7 +141,7 @@ public class CorpusTest {
 				if (t % 10 == 0) {
 					Print.f("\n\t");
 				}
-				Print.f("%s:%d %s ", count, term, cr.getTerm(term));
+				Print.f("%s:%d %s ", count, term, cr.resolveTerm(term));
 			}
 		}
 		Print.fln("\n");

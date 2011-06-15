@@ -1,22 +1,77 @@
 package org.knowceans.corpus;
 
+import java.io.BufferedWriter;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Random;
 
+import org.knowceans.util.IndexQuickSort;
+import org.knowceans.util.Print;
+import org.knowceans.util.Vectors;
+
 /**
  * a full corpus is a label numeric corpus that uses a resolver to allow
- * consistent access especially to filtered data. Draft stage but usable.
+ * consistent access especially to filtered data. Draft stage but usable. <br>
+ * <p>
+ * TODO: harmonise the usage of label keys.
  * 
  * @author gregor
  * 
  */
 public class FullCorpus extends LabelNumCorpus implements ICorpusResolver {
 
+	@SuppressWarnings("static-access")
 	public static void main(String[] args) {
 		FullCorpus fc = new FullCorpus("corpus-example/nips");
 		fc.loadAllLabels();
-		System.out.println(fc);
 
+		Print.newString();
+		Print.fln("%s", fc);
+		for (int i = 0; i < fc.numDocs; i++) {
+
+			Print.fln("***\ndocname: %s", fc.resolveDocTitle(i));
+			Print.fln("docref: %s", fc.resolveDocRef(i));
+			int[] x = fc.getDoc(i).getTerms();
+			int[] f = fc.getDoc(i).getCounts();
+			Print.f("%d terms, %d words:", x.length, Vectors.sum(f));
+			int[] ranks = IndexQuickSort.reverse(IndexQuickSort.sort(f));
+			for (int j = 0; j < x.length; j++) {
+				Print.f(" %d:%s:%d", x[j], fc.resolveTerm(x[ranks[j]]),
+						f[ranks[j]]);
+			}
+			Print.fln("");
+			x = fc.getDocLabels(fc.LAUTHORS, i);
+			Print.f("%d authors:", x.length);
+			for (int j = 0; j < x.length; j++) {
+				Print.f(" %d:%s", x[j], fc.resolveAuthor(x[j]));
+			}
+			Print.fln("");
+			x = fc.getDocLabels(fc.LCATEGORIES, i);
+			Print.f("%d categories:", x.length);
+			for (int j = 0; j < x.length; j++) {
+				Print.fln(" %d:%s", x[j], fc.resolveCategory(x[j]));
+			}
+			x = fc.getDocLabels(fc.LREFERENCES, i);
+			Print.fln("%d references:", x.length);
+			for (int j = 0; j < x.length; j++) {
+				Print.fln(" %d:%s", x[j], fc.resolveDocRef(x[j]));
+			}
+			x = fc.getDocLabels(fc.LMENTIONS, i);
+			Print.f("%d mentioned authors:", x.length);
+			for (int j = 0; j < x.length; j++) {
+				Print.f(" %d:%s", x[j], fc.resolveAuthor(x[j]));
+			}
+			Print.fln("");
+		}
+		try {
+			BufferedWriter bw = new BufferedWriter(new FileWriter(
+					"corpus-example/nips.all.txt"));
+			bw.append(Print.getString());
+			bw.close();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 
 	public FullCorpus() {
@@ -83,8 +138,8 @@ public class FullCorpus extends LabelNumCorpus implements ICorpusResolver {
 	}
 
 	@Override
-	public int hasValues(int i) {
-		return resolver.hasValues(i);
+	public int hasLabelKeys(int i) {
+		return resolver.hasLabelKeys(i);
 	}
 
 	public void writeTerms(String file) throws IOException {
@@ -92,8 +147,8 @@ public class FullCorpus extends LabelNumCorpus implements ICorpusResolver {
 	}
 
 	@Override
-	public String getTerm(int t) {
-		return resolver.getTerm(t);
+	public String resolveTerm(int t) {
+		return resolver.resolveTerm(t);
 	}
 
 	@Override
@@ -102,38 +157,38 @@ public class FullCorpus extends LabelNumCorpus implements ICorpusResolver {
 	}
 
 	@Override
-	public String getLabel(int i) {
-		return resolver.getLabel(i);
+	public String resolveCategory(int i) {
+		return resolver.resolveCategory(i);
 	}
 
 	@Override
-	public String getAuthor(int i) {
-		return resolver.getAuthor(i);
+	public String resolveAuthor(int i) {
+		return resolver.resolveAuthor(i);
 	}
 
 	@Override
-	public String getDocTitle(int i) {
-		return resolver.getDocTitle(i);
+	public String resolveDocTitle(int i) {
+		return resolver.resolveDocTitle(i);
 	}
 
 	@Override
-	public String getDocName(int i) {
-		return resolver.getDocName(i);
+	public String resolveDocName(int i) {
+		return resolver.resolveDocName(i);
 	}
 
 	@Override
-	public String getDocRef(int i) {
-		return resolver.getDocRef(i);
+	public String resolveDocRef(int i) {
+		return resolver.resolveDocRef(i);
 	}
 
 	@Override
-	public String getVol(int i) {
-		return resolver.getVol(i);
+	public String resolveVolume(int i) {
+		return resolver.resolveVolume(i);
 	}
 
 	@Override
-	public String getLabel(int type, int id) {
-		return resolver.getLabel(type, id);
+	public String resolveLabel(int type, int id) {
+		return resolver.resolveLabel(type, id);
 	}
 
 	@Override
@@ -156,7 +211,7 @@ public class FullCorpus extends LabelNumCorpus implements ICorpusResolver {
 		for (int i = 0; i < LabelNumCorpus.labelExtensions.length; i++) {
 			sb.append(String.format(" %s = %d, .keys = %d\n",
 					LabelNumCorpus.labelExtensions[i], hasLabels(i),
-					resolver.hasValues(i + 2)));
+					resolver.hasLabelKeys(i + 2)));
 			if (hasLabels(i) >= 2) {
 				sb.append(String.format("    V = %d, W = %d, max N[m] = %d\n",
 						getLabelsV(i), getLabelsW(i), getLabelsMaxN(i)));

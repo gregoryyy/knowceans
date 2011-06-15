@@ -49,6 +49,7 @@ Contents and line format:
                           papers and authors. Annotations if vague: =? same as previous, 
                           +? additional candidate, -? inconclusive, =! spelling correction,
                           # comment for the following line
+ - nips.all.txt        -- dump of the nips corpus using FullCorpus.main()
  - berry.*             -- minimalistic corpus for debugging. 
 
 Sources:

@@ -5,7 +5,7 @@ public interface ICorpusResolver {
 	public static final int KDOCS = 0;
 	public static final int KTERMS = 1;
 	public static final int KAUTHORS = 2;
-	public static final int KLABELS = 3;
+	public static final int KCATEGORIES = 3;
 	public static final int KTAGS = 4;
 	public static final int KVOLS = 5;
 	public static final int KYEAR = 6;
@@ -21,7 +21,7 @@ public interface ICorpusResolver {
 	 * @return 0 for no label values, 1 for yes, 2 for loaded, -1 for illegal
 	 *         index
 	 */
-	public abstract int hasValues(int i);
+	public abstract int hasLabelKeys(int i);
 
 	/**
 	 * resolve the numeric term id
@@ -29,7 +29,7 @@ public interface ICorpusResolver {
 	 * @param t
 	 * @return
 	 */
-	public abstract String getTerm(int t);
+	public abstract String resolveTerm(int t);
 
 	/**
 	 * find id for string term or return -1 if unknown
@@ -45,7 +45,7 @@ public interface ICorpusResolver {
 	 * @param i
 	 * @return
 	 */
-	public abstract String getLabel(int i);
+	public abstract String resolveCategory(int i);
 
 	/**
 	 * resolve the numeric author id
@@ -53,7 +53,7 @@ public interface ICorpusResolver {
 	 * @param i
 	 * @return
 	 */
-	public abstract String getAuthor(int i);
+	public abstract String resolveAuthor(int i);
 
 	/**
 	 * resolve the numeric term id
@@ -61,7 +61,7 @@ public interface ICorpusResolver {
 	 * @param i
 	 * @return
 	 */
-	public abstract String getDocTitle(int i);
+	public abstract String resolveDocTitle(int i);
 
 	/**
 	 * resolve the numeric term id
@@ -69,7 +69,7 @@ public interface ICorpusResolver {
 	 * @param i
 	 * @return
 	 */
-	public abstract String getDocName(int i);
+	public abstract String resolveDocName(int i);
 
 	/**
 	 * resolve the numeric term id
@@ -77,7 +77,7 @@ public interface ICorpusResolver {
 	 * @param i
 	 * @return
 	 */
-	public abstract String getDocRef(int i);
+	public abstract String resolveDocRef(int i);
 
 	/**
 	 * resolve the numeric volume id
@@ -85,10 +85,24 @@ public interface ICorpusResolver {
 	 * @param i
 	 * @return
 	 */
-	public abstract String getVol(int i);
+	public abstract String resolveVolume(int i);
 
-	public abstract String getLabel(int type, int id);
+	/**
+	 * resolve a label
+	 * 
+	 * @param type
+	 * @param id
+	 * @return
+	 */
+	public abstract String resolveLabel(int type, int id);
 
+	/**
+	 * reverse lookup of label to id
+	 * 
+	 * @param type
+	 * @param label
+	 * @return
+	 */
 	public abstract int getId(int type, String label);
 
 }

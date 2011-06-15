@@ -32,6 +32,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Random;
 
+import org.knowceans.util.Print;
 import org.knowceans.util.Vectors;
 
 /**
@@ -260,6 +261,7 @@ public class LabelNumCorpus extends NumCorpus implements ILabelCorpus {
 		labels[kind] = data.toArray(new int[0][0]);
 		labelsW[kind] = W;
 		labelsV[kind] = V;
+		Print.fln("labels loaded: %s: V = %d, W = %d", labelNames[kind], V, W);
 	}
 
 	@Override

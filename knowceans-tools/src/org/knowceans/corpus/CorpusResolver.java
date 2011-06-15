@@ -27,20 +27,21 @@ public class CorpusResolver implements ICorpusResolver {
 	 * and -1 there)
 	 */
 	public static final String[] keyExtensions = { "docs", "vocab",
-			"authors.key", "labels.key", "tags.key", "vols.key", "years.key" };
+			"authors.key", "labels.key", "tags.key", "vols.key", "years.key",
+			"docnames", "docs.key" };
 
 	public static final String[] keyNames = { "documents", "terms", "authors",
-			"labels", "tags", "volumess", "years" };
+			"labels", "tags", "volumes", "years" };
 
 	public static final int[] keyExt2labelId = { -2, -1, 0, 1, 2, 3, 4 };
 	public static final int[] labelId2keyExt = { 2, 3, 3, 4, 5, -1, -1 };
 
 	public static void main(String[] args) {
 		CorpusResolver cr = new CorpusResolver("corpus-example/nips");
-		System.out.println(cr.getLabel(20));
-		System.out.println(cr.getDocTitle(501));
-		System.out.println(cr.getTerm(1));
-		System.out.println(cr.getTermId(cr.getTerm(1)));
+		System.out.println(cr.resolveCategory(20));
+		System.out.println(cr.resolveDocTitle(501));
+		System.out.println(cr.resolveTerm(1));
+		System.out.println(cr.getTermId(cr.resolveTerm(1)));
 	}
 
 	HashMap<String, Integer> termids;
@@ -82,7 +83,7 @@ public class CorpusResolver implements ICorpusResolver {
 	 * @see org.knowceans.corpus.IResolver#hasValues(int)
 	 */
 	@Override
-	public int hasValues(int i) {
+	public int hasLabelKeys(int i) {
 		if (i >= keyExtensions.length || i < 0) {
 			return -1;
 		}
@@ -133,8 +134,8 @@ public class CorpusResolver implements ICorpusResolver {
 		// replace term ids.
 		for (int i = 0; i < old2new.length; i++) {
 			if (old2new[i] >= 0) {
-				newids.put(getTerm(i), old2new[i]);
-				terms.add(old2new[i], getTerm(i));
+				newids.put(resolveTerm(i), old2new[i]);
+				terms.add(old2new[i], resolveTerm(i));
 			}
 		}
 		data[KTERMS] = (String[]) terms.toArray(new String[0]);
@@ -161,9 +162,9 @@ public class CorpusResolver implements ICorpusResolver {
 	 * @see org.knowceans.corpus.IResolver#getTerm(int)
 	 */
 	@Override
-	public String getTerm(int t) {
+	public String resolveTerm(int t) {
 		if (data[KTERMS] != null) {
-			return data[1][t];
+			return data[KTERMS][t];
 		} else {
 			return null;
 		}
@@ -195,9 +196,9 @@ public class CorpusResolver implements ICorpusResolver {
 	 * @see org.knowceans.corpus.IResolver#getLabel(int)
 	 */
 	@Override
-	public String getLabel(int i) {
-		if (data[KLABELS] != null) {
-			return data[KLABELS][i];
+	public String resolveCategory(int i) {
+		if (data[KCATEGORIES] != null) {
+			return data[KCATEGORIES][i];
 		} else {
 			return null;
 		}
@@ -209,7 +210,7 @@ public class CorpusResolver implements ICorpusResolver {
 	 * @see org.knowceans.corpus.IResolver#getAuthor(int)
 	 */
 	@Override
-	public String getAuthor(int i) {
+	public String resolveAuthor(int i) {
 		if (data[KAUTHORS] != null) {
 			return data[KAUTHORS][i];
 		} else {
@@ -223,7 +224,7 @@ public class CorpusResolver implements ICorpusResolver {
 	 * @see org.knowceans.corpus.IResolver#getDoc(int)
 	 */
 	@Override
-	public String getDocTitle(int i) {
+	public String resolveDocTitle(int i) {
 		if (data[KDOCS] != null) {
 			return data[KDOCS][i];
 		} else {
@@ -237,7 +238,7 @@ public class CorpusResolver implements ICorpusResolver {
 	 * @see org.knowceans.corpus.IResolver#getDocName(int)
 	 */
 	@Override
-	public String getDocName(int i) {
+	public String resolveDocName(int i) {
 		if (data[KDOCNAME] != null) {
 			return data[KDOCNAME][i];
 		} else {
@@ -251,7 +252,7 @@ public class CorpusResolver implements ICorpusResolver {
 	 * @see org.knowceans.corpus.IResolver#getDocKey(int)
 	 */
 	@Override
-	public String getDocRef(int i) {
+	public String resolveDocRef(int i) {
 		if (data[KDOCREF] != null) {
 			return data[KDOCREF][i];
 		} else {
@@ -274,7 +275,7 @@ public class CorpusResolver implements ICorpusResolver {
 	 * @see org.knowceans.corpus.IResolver#getVol(int)
 	 */
 	@Override
-	public String getVol(int i) {
+	public String resolveVolume(int i) {
 		if (data[KVOLS] != null) {
 			return data[KVOLS][i];
 		} else {
@@ -288,21 +289,21 @@ public class CorpusResolver implements ICorpusResolver {
 	 * @see org.knowceans.corpus.IResolver#getLabel(int, int)
 	 */
 	@Override
-	public String getLabel(int type, int id) {
+	public String resolveLabel(int type, int id) {
 		if (type == KTERMS) {
-			return getTerm(id);
+			return resolveTerm(id);
 		} else if (type == KAUTHORS) {
-			return getAuthor(id);
-		} else if (type == KLABELS) {
-			return getLabel(id);
+			return resolveAuthor(id);
+		} else if (type == KCATEGORIES) {
+			return resolveCategory(id);
 		} else if (type == KVOLS) {
-			return getVol(id);
+			return resolveVolume(id);
 		} else if (type == KDOCREF) {
-			return getDocRef(id);
+			return resolveDocRef(id);
 		} else if (type == KDOCS) {
-			return getDocTitle(id);
+			return resolveDocTitle(id);
 		} else if (type == KDOCNAME) {
-			return getDocName(id);
+			return resolveDocName(id);
 		}
 		return null;
 	}

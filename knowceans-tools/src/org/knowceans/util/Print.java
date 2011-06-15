@@ -48,7 +48,7 @@ public class Print {
 	public static void setToStderr() {
 		sout = System.err;
 	}
-
+	
 	/**
 	 * setup the Print object for a new string output
 	 */
@@ -292,5 +292,6 @@ public class Print {
 		Print.string();
 		Print.newString();
 	}
+
 
 }
