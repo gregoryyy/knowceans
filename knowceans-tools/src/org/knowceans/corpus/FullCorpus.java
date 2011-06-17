@@ -22,56 +22,109 @@ public class FullCorpus extends LabelNumCorpus implements ICorpusResolver {
 
 	@SuppressWarnings("static-access")
 	public static void main(String[] args) {
-		FullCorpus fc = new FullCorpus("corpus-example/nips");
+		String filebase = "corpus-example/nips";
+		filebase = "/data/diss/datasets/acl-anthology/aan-corpus/aan";
+		FullCorpus fc = new FullCorpus(filebase);
 		fc.loadAllLabels();
-
+		
 		Print.newString();
 		Print.fln("%s", fc);
-		for (int i = 0; i < fc.numDocs; i++) {
+		for (int m = 0; m < fc.numDocs; m++) {
 
-			Print.fln("***\ndocname: %s", fc.resolveDocTitle(i));
-			Print.fln("docref: %s", fc.resolveDocRef(i));
-			int[] x = fc.getDoc(i).getTerms();
-			int[] f = fc.getDoc(i).getCounts();
+			Print.fln("***\ndocname: %s", fc.resolveDocTitle(m));
+			if (fc.hasLabelKeys(fc.KDOCREF) > 0) {
+				Print.fln("docref: %s", fc.resolveDocRef(m));
+			} else {
+				printDocRef(fc, m);
+			}
+			int[] x = fc.getDoc(m).getTerms();
+			int[] f = fc.getDoc(m).getCounts();
 			Print.f("%d terms, %d words:", x.length, Vectors.sum(f));
 			int[] ranks = IndexQuickSort.reverse(IndexQuickSort.sort(f));
 			for (int j = 0; j < x.length; j++) {
-				Print.f(" %d:%s:%d", x[j], fc.resolveTerm(x[ranks[j]]),
+				Print.f(" %d:'%s':%d", x[ranks[j]], fc.resolveTerm(x[ranks[j]]),
 						f[ranks[j]]);
 			}
 			Print.fln("");
-			x = fc.getDocLabels(fc.LAUTHORS, i);
-			Print.f("%d authors:", x.length);
-			for (int j = 0; j < x.length; j++) {
-				Print.f(" %d:%s", x[j], fc.resolveAuthor(x[j]));
+			x = fc.getDocLabels(fc.LAUTHORS, m);
+			if (x != null) {
+				Print.f("%d authors:", x.length);
+				for (int j = 0; j < x.length; j++) {
+					Print.f(" %d:'%s'", x[j], fc.resolveAuthor(x[j]));
+				}
+				Print.fln("");
 			}
-			Print.fln("");
-			x = fc.getDocLabels(fc.LCATEGORIES, i);
-			Print.f("%d categories:", x.length);
-			for (int j = 0; j < x.length; j++) {
-				Print.fln(" %d:%s", x[j], fc.resolveCategory(x[j]));
+			x = fc.getDocLabels(fc.LCATEGORIES, m);
+			if (x != null) {
+				Print.f("%d categories:", x.length);
+				for (int j = 0; j < x.length; j++) {
+					Print.fln(" %d:'%s'", x[j], fc.resolveCategory(x[j]));
+				}
 			}
-			x = fc.getDocLabels(fc.LREFERENCES, i);
-			Print.fln("%d references:", x.length);
-			for (int j = 0; j < x.length; j++) {
-				Print.fln(" %d:%s", x[j], fc.resolveDocRef(x[j]));
+			x = fc.getDocLabels(fc.LVOLS, m);
+			if (x != null) {
+				Print.fln("volume: %d:'%s'", x[0], fc.resolveVolume(x[0]));
 			}
-			x = fc.getDocLabels(fc.LMENTIONS, i);
-			Print.f("%d mentioned authors:", x.length);
-			for (int j = 0; j < x.length; j++) {
-				Print.f(" %d:%s", x[j], fc.resolveAuthor(x[j]));
+			x = fc.getDocLabels(fc.LYEARS, m);
+			if (x != null) {
+				Print.fln("year: '%d'", x[0]);
 			}
-			Print.fln("");
+			x = fc.getDocLabels(fc.LREFERENCES, m);
+			if (x != null) {
+				Print.fln("%d references:", x.length);
+				for (int j = 0; j < x.length; j++) {
+					// do we have the full document refs
+					if (fc.hasLabelKeys(fc.KDOCREF) > 0) {
+						Print.fln(" %d:'%s'", x[j], fc.resolveDocRef(x[j]));
+					} else {
+						int ref = x[j];
+						printDocRef(fc, ref);
+					}
+				}
+			}
+			x = fc.getDocLabels(fc.LMENTIONS, m);
+			if (x != null) {
+				Print.f("%d mentioned authors:", x.length);
+				for (int j = 0; j < x.length; j++) {
+					Print.f(" %d:%s", x[j], fc.resolveAuthor(x[j]));
+				}
+				Print.fln("");
+			}
 		}
 		try {
-			BufferedWriter bw = new BufferedWriter(new FileWriter(
-					"corpus-example/nips.all.txt"));
+			BufferedWriter bw = new BufferedWriter(new FileWriter(filebase
+					+ ".all.txt"));
 			bw.append(Print.getString());
 			bw.close();
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+	}
+
+	public static void printDocRef(FullCorpus fc, int did) {
+		// create document ref
+		Print.f(" %d:", did);
+		if (fc.hasLabels(fc.LAUTHORS) > 0) {
+			int[] y = fc.getDocLabels(fc.LAUTHORS, did);
+			for (int k = 0; k < y.length; k++) {
+				Print.f(" %d", y[k]);
+				if (fc.hasLabelKeys(fc.KAUTHORS) > 0) {
+					Print.f(":'%s'", fc.resolveAuthor(y[k]));
+				}
+			}
+		}
+		if (fc.hasLabelKeys(fc.KDOCS) > 0) {
+			Print.f(": %s", fc.resolveDocTitle(did));
+		}
+		if (fc.hasLabels(fc.LVOLS) > 0) {
+			int[] y = fc.getDocLabels(fc.LVOLS, did);
+			Print.f(" In: %d", y[0]);
+			if (fc.hasLabelKeys(fc.KVOLS) > 0) {
+				Print.f(": %s", fc.resolveVolume(y[0]));
+			}
+		}
+		Print.fln("");
 	}
 
 	public FullCorpus() {
