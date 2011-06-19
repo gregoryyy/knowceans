@@ -292,17 +292,23 @@ public class LdaTeaLeaves {
 	}
 
 	/**
-	 * sample from low ranks and make sure that the term found is globally
-	 * frequent and at least in half of the topics has a higher probability than
-	 * in k. Side-effect: Fills lowTerms with the chosen terms to avoid
-	 * duplicate intruders.
+	 * sample from other topics (first 30 or so positions) a term that's
+	 * sufficiently low ranked in topic k. Side-effect: Fills lowTerms with the
+	 * chosen terms to avoid duplicate intruders.
 	 * 
 	 * @param t2rank
 	 * @param k
 	 * @return
 	 */
 	private int getLowRankCommonTerm(int[] t2rank, int k) {
-		int nsamples = 50;
+		/*
+		 * Samples about nsamp times over all foreign topics according to their
+		 * global importance p(k), with binomial distribution of their ranks
+		 * Binom(30, 0.1). After the samples, the candidate with lowest rank
+		 * (highest number in t2rank), or the first one that is in the lower
+		 * half of t2rank, is taken.
+		 */
+		int nsamp = 50;
 		int term = 0;
 		int bestterm = 0;
 		int lowestrank = 0;
@@ -311,7 +317,7 @@ public class LdaTeaLeaves {
 		}
 		double pbinom = 0.1;
 		int nranks = rank2bestTerms[0].length;
-		for (int i = 0; i < nsamples; i++) {
+		for (int i = 0; i < nsamp; i++) {
 			// sample k with its weight
 			int kk = rand.randMult(pk);
 			if (kk == k) {
@@ -339,7 +345,7 @@ public class LdaTeaLeaves {
 			}
 		}
 		// System.out.println("using " + resolver.resolveTerm(bestterm) + " -> "
-		//		+ lowestrank);
+		// + lowestrank);
 		lowTerms.add(bestterm);
 		return bestterm;
 	}
