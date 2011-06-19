@@ -284,7 +284,7 @@ public class LdaTeaLeaves {
 			btest.append(String.format("    %3d. %s\n", idxseq + 1, term));
 			// write solution, test option has 1-based index
 			bsolv.append(String
-					.format("  %s %2d. t = %3d. p(k|m) = %6.3f/V, local rank %2d, global rank: %2d: %s\n",
+					.format("  %s %2d. t = %3d. p(t|k) = %6.3f/V, local rank %2d, global rank: %2d: %s\n",
 							seq[idxseq] >= nterms ? "*" : " ", idxseq + 1, t,
 							phi[k][t] * V, t2rank[t], term2dfRank[t], term));
 		}
