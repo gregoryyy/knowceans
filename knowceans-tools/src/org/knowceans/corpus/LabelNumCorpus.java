@@ -46,8 +46,8 @@ public class LabelNumCorpus extends NumCorpus implements ILabelCorpus {
 	/**
 	 * the extensions for the label type constants in ILabelCorpus.L*
 	 */
-	public static final String[] labelExtensions = { ".authors", ".labels", ".tags",
-			".vols", ".years", ".cite", ".ment" };
+	public static final String[] labelExtensions = { ".authors", ".labels",
+			".tags", ".vols", ".years", ".cite", ".ment" };
 
 	public static final String[] labelNames = { "authors", "labels", "tags",
 			"volumes", "years", "citations", "mentionings" };
@@ -170,6 +170,9 @@ public class LabelNumCorpus extends NumCorpus implements ILabelCorpus {
 	 */
 	// @Override
 	public int[][] getDocLabels(int kind) {
+		if (hasLabels(kind) <= 0) {
+			return null;
+		}
 		if (labels[kind] == null)
 			readLabels(kind);
 		return labels[kind];
@@ -183,6 +186,9 @@ public class LabelNumCorpus extends NumCorpus implements ILabelCorpus {
 	 * @return
 	 */
 	public int[] getDocLabels(int kind, int m) {
+		if (hasLabels(kind) <= 0) {
+			return null;
+		}
 		if (labels[kind] == null)
 			readLabels(kind);
 		return labels[kind][m];
@@ -327,7 +333,7 @@ public class LabelNumCorpus extends NumCorpus implements ILabelCorpus {
 	 * @param args
 	 */
 	public static void main(String[] args) {
-		//LabelNumCorpus nc = new LabelNumCorpus("berry95/berry95");
+		// LabelNumCorpus nc = new LabelNumCorpus("berry95/berry95");
 		LabelNumCorpus nc = new LabelNumCorpus("corpus-example/nips");
 		nc.getDocLabels(LAUTHORS);
 		nc.split(10, 0, new Random());
@@ -365,4 +371,5 @@ public class LabelNumCorpus extends NumCorpus implements ILabelCorpus {
 		}
 		return resolver;
 	}
+
 }

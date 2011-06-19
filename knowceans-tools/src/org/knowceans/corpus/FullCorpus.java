@@ -24,9 +24,10 @@ public class FullCorpus extends LabelNumCorpus implements ICorpusResolver {
 	public static void main(String[] args) {
 		String filebase = "corpus-example/nips";
 		filebase = "/data/diss/datasets/acl-anthology/aan-corpus/aan";
+		filebase = "/data/diss/mypapers/research-notes/ecml11challenge/whole_dataset/vlex";
 		FullCorpus fc = new FullCorpus(filebase);
 		fc.loadAllLabels();
-		
+
 		Print.newString();
 		Print.fln("%s", fc);
 		for (int m = 0; m < fc.numDocs; m++) {
@@ -42,8 +43,8 @@ public class FullCorpus extends LabelNumCorpus implements ICorpusResolver {
 			Print.f("%d terms, %d words:", x.length, Vectors.sum(f));
 			int[] ranks = IndexQuickSort.reverse(IndexQuickSort.sort(f));
 			for (int j = 0; j < x.length; j++) {
-				Print.f(" %d:'%s':%d", x[ranks[j]], fc.resolveTerm(x[ranks[j]]),
-						f[ranks[j]]);
+				Print.f(" %d:'%s':%d", x[ranks[j]],
+						fc.resolveTerm(x[ranks[j]]), f[ranks[j]]);
 			}
 			Print.fln("");
 			x = fc.getDocLabels(fc.LAUTHORS, m);
