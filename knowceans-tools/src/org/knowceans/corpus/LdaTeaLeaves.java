@@ -6,6 +6,7 @@ package org.knowceans.corpus;
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.HashSet;
 import java.util.Random;
 
 import org.knowceans.corpus.CorpusResolver;
@@ -41,7 +42,19 @@ public class LdaTeaLeaves {
 	 */
 	private int[] rk;
 
-	private int[] theta2docIds;
+	/**
+	 * unshuffle cross-validation: indices of theta --> document ids in corpus
+	 */
+	private int[] theta2docId;
+
+	/**
+	 * inversely ranked document frequencies: dfrank --> term id
+	 */
+	private int[] term2dfRank;
+
+	private int[][] rank2bestTerms;
+
+	private HashSet<Integer> lowTerms;
 
 	/**
 	 * initialise with filebase
@@ -75,7 +88,18 @@ public class LdaTeaLeaves {
 		getTopicWeights();
 		getTopicRanks();
 		// these are the ids of the original corpus
-		theta2docIds = corpus.getOrigDocIds()[0];
+		theta2docId = corpus.getOrigDocIds()[0];
+		term2dfRank = IndexQuickSort.inverse(IndexQuickSort.revsort(corpus
+				.calcDocFreqs()));
+
+		int K = phi.length;
+		int limit = 30;
+		rank2bestTerms = new int[K][];
+		for (int k = 0; k < phi.length; k++) {
+			int[] rank = IndexQuickSort.revsort(phi[k]);
+			rank2bestTerms[k] = Vectors.sub(rank, 0, limit);
+		}
+
 	}
 
 	/**
@@ -95,7 +119,7 @@ public class LdaTeaLeaves {
 				+ ".lda.tea"));
 
 		// tea leaves for random documents
-		int[] a = rand.randPerm(theta2docIds.length);
+		int[] a = rand.randPerm(theta2docId.length);
 		numdocs = Math.min(numdocs, theta.length);
 		for (int m = 0; m < numdocs; m++) {
 			String[] doctest = printDocument(a[m], 3, 1, 20, 50);
@@ -137,7 +161,7 @@ public class LdaTeaLeaves {
 			int ntopicTerms, int ndocTerms) {
 		ntopicTerms = Math.min(phi[0].length, ntopicTerms);
 		int K = phi.length;
-		int morig = theta2docIds[m];
+		int morig = theta2docId[m];
 		StringBuffer btest = new StringBuffer();
 		StringBuffer bsolv = new StringBuffer();
 		btest.append(String.format("%d: %s (theta[%d])\n", morig,
@@ -223,24 +247,23 @@ public class LdaTeaLeaves {
 		StringBuffer bsolv = new StringBuffer();
 
 		// sort topics by weight
-		int[] a = IndexQuickSort.revsort(phi[k]);
-		int[] t2rank = IndexQuickSort.inverse(a);
+		int[] rank2t = IndexQuickSort.revsort(phi[k]);
+		int[] t2rank = IndexQuickSort.inverse(rank2t);
 		int[] shortlist = new int[nterms + nintruders];
 
 		// wanting too much?
-		if (a.length < nterms + nintruders) {
+		if (rank2t.length < nterms + nintruders) {
 			return new String[] {
 					"error: topics must exceed number of positive and negative examples)",
 					"" };
 		}
 		// best topics
 		for (int t = 0; t < nterms; t++) {
-			shortlist[t] = a[t];
+			shortlist[t] = rank2t[t];
 		}
 		for (int t = 0; t < nintruders; t++) {
 			// worst terms from last quarter
-			int bad = rand.randUniform((int) (V / 4.));
-			shortlist[nterms + t] = a[a.length - bad - 1];
+			shortlist[nterms + t] = getLowRankCommonTerm(t2rank, k);
 		}
 		// scramble list
 		int[] seq = rand.randPerm(nterms + nintruders);
@@ -256,15 +279,80 @@ public class LdaTeaLeaves {
 		for (int idxseq = 0; idxseq < seq.length; idxseq++) {
 			int t = shortlist[seq[idxseq]];
 			String term = resolver.resolveTerm(t);
+			term = stripTerm(term);
 			// write query, test option has 1-based index
 			btest.append(String.format("    %3d. %s\n", idxseq + 1, term));
 			// write solution, test option has 1-based index
-			bsolv.append(String.format(
-					"  %s %2d. t = %3d. p(k|m) = %6.3f/V, rank %2d: %s\n",
-					seq[idxseq] >= nterms ? "*" : " ", idxseq + 1, t, phi[k][t]
-							* V, t2rank[t], term));
+			bsolv.append(String
+					.format("  %s %2d. t = %3d. p(k|m) = %6.3f/V, local rank %2d, global rank: %2d: %s\n",
+							seq[idxseq] >= nterms ? "*" : " ", idxseq + 1, t,
+							phi[k][t] * V, t2rank[t], term2dfRank[t], term));
 		}
 		return new String[] { btest.toString(), bsolv.toString() };
+	}
+
+	/**
+	 * sample from low ranks and make sure that the term found is globally
+	 * frequent and at least in half of the topics has a higher probability than
+	 * in k. Side-effect: Fills lowTerms with the chosen terms to avoid
+	 * duplicate intruders.
+	 * 
+	 * @param t2rank
+	 * @param k
+	 * @return
+	 */
+	private int getLowRankCommonTerm(int[] t2rank, int k) {
+		int nsamples = 50;
+		int term = 0;
+		int bestterm = 0;
+		int lowestrank = 0;
+		if (lowTerms == null) {
+			lowTerms = new HashSet<Integer>();
+		}
+		double pbinom = 0.1;
+		int nranks = rank2bestTerms[0].length;
+		for (int i = 0; i < nsamples; i++) {
+			// sample k with its weight
+			int kk = rand.randMult(pk);
+			if (kk == k) {
+				continue;
+			}
+			// highly ranked in foreign k
+			int rank = rand.randBinom(nranks, pbinom);
+			term = rank2bestTerms[kk][rank];
+			// System.out.println(String.format(
+			// "sampling k = %d rank = %d term = %d %s -> %d", kk, rank,
+			// term, resolver.resolveTerm(term), t2rank[term]));
+			// low ranked in k
+			if (lowestrank < t2rank[term] && !lowTerms.contains(term)) {
+				bestterm = term;
+				lowestrank = t2rank[term];
+				// System.out.println(String.format(
+				// "best term = %s, lowest rank = %d",
+				// resolver.resolveTerm(term), lowestrank));
+			}
+			if (lowestrank > phi[0].length / 2) {
+				// System.out.println("good: " + resolver.resolveTerm(bestterm)
+				// + " -> " + lowestrank);
+				lowTerms.add(bestterm);
+				return bestterm;
+			}
+		}
+		// System.out.println("using " + resolver.resolveTerm(bestterm) + " -> "
+		//		+ lowestrank);
+		lowTerms.add(bestterm);
+		return bestterm;
+	}
+
+	/**
+	 * strip term of any space or number stuff (sometimes df values and indices
+	 * are in the vocabulary)
+	 * 
+	 * @param term
+	 * @return
+	 */
+	private String stripTerm(String term) {
+		return term.replaceAll("[\\s0-9]+", "");
 	}
 
 	// auxiliaries
@@ -290,12 +378,12 @@ public class LdaTeaLeaves {
 
 		for (int i = 0; i < terms.length; i++) {
 			int t = terms[i];
+			String term = stripTerm(corpus.getResolver().resolveTerm(t));
 			if (withWeights) {
-				u += String.format("%s (%5.3f/V)%s", corpus.getResolver()
-						.resolveTerm(t), phi[k][t] * V, newLine);
-			} else {
-				u += String.format("%s%s", corpus.getResolver().resolveTerm(t),
+				u += String.format("%s (%5.3f/V)%s", term, phi[k][t] * V,
 						newLine);
+			} else {
+				u += String.format("%s%s", term, newLine);
 			}
 		}
 		u += "\n";
