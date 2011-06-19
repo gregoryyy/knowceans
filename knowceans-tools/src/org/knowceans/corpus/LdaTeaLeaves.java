@@ -340,8 +340,7 @@ public class LdaTeaLeaves {
 			if (lowestrank > phi[0].length / 2) {
 				// System.out.println("good: " + resolver.resolveTerm(bestterm)
 				// + " -> " + lowestrank);
-				lowTerms.add(bestterm);
-				return bestterm;
+				break;
 			}
 		}
 		// System.out.println("using " + resolver.resolveTerm(bestterm) + " -> "
