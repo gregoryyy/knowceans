@@ -20,6 +20,7 @@
 package org.knowceans.util;
 
 import java.lang.reflect.Array;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -317,5 +318,27 @@ public class ArrayUtils {
 			return true;
 		}
 		return true;
+	}
+
+	/**
+	 * transpose the matrix of some object type. Assumes the matrix is
+	 * rectangular
+	 * 
+	 * @param mat
+	 * @return
+	 */
+	@SuppressWarnings("unchecked")
+	public static <T> T[][] transpose(T[][] a) {
+		Class<T> elementclass = (Class<T>) a[0][0].getClass();
+		Class<T[]> rowclass = (Class<T[]>) Array.newInstance(elementclass,
+				a.length).getClass();
+		T[][] transpose = (T[][]) Array.newInstance(rowclass, a[0].length);
+		for (int i = 0; i < a[0].length; i++) {
+			transpose[i] = (T[]) Array.newInstance(elementclass, a.length);
+			for (int j = 0; j < a.length; j++) {
+				transpose[i][j] = a[j][i];
+			}
+		}
+		return transpose;
 	}
 }
