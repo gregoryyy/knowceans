@@ -2,23 +2,23 @@
  * Created on 07.07.2006
  */
 /*
- * Copyright (c) 2005-2006 Gregor Heinrich. All rights reserved. Redistribution and
- * use in source and binary forms, with or without modification, are permitted
- * provided that the following conditions are met: 1. Redistributions of source
- * code must retain the above copyright notice, this list of conditions and the
- * following disclaimer. 2. Redistributions in binary form must reproduce the
- * above copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the distribution.
- * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESSED OR
- * IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
- * MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO
- * EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
- * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
- * OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
- * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
- * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
- * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Copyright (c) 2005-2006 Gregor Heinrich. All rights reserved. Redistribution
+ * and use in source and binary forms, with or without modification, are
+ * permitted provided that the following conditions are met: 1. Redistributions
+ * of source code must retain the above copyright notice, this list of
+ * conditions and the following disclaimer. 2. Redistributions in binary form
+ * must reproduce the above copyright notice, this list of conditions and the
+ * following disclaimer in the documentation and/or other materials provided
+ * with the distribution. THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND
+ * ANY EXPRESSED OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT,
+ * INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 package org.knowceans.util;
 
@@ -40,8 +40,7 @@ public class DirichletEstimation {
 	/**
 	 * Estimator for the Dirichlet parameters.
 	 * 
-	 * @param multinomial
-	 *            parameters p
+	 * @param multinomial parameters p
 	 * @return ML estimate of the corresponding parameters alpha
 	 */
 	public static double[] estimateAlpha(double[][] pp) {
@@ -66,8 +65,7 @@ public class DirichletEstimation {
 	/**
 	 * estimate mean and precision of the observations separately.
 	 * 
-	 * @param pp
-	 *            input data with vectors in rows
+	 * @param pp input data with vectors in rows
 	 * @return a vector of the Dirichlet mean in the elements 0..K-2 (the last
 	 *         element is the difference between the others and 1) and Dirichlet
 	 *         precision in the element K-1, where K is the dimensionality of
@@ -94,8 +92,7 @@ public class DirichletEstimation {
 	 * the estimation of the Polya distribution but is done via Dirichlet
 	 * parameter estimation.
 	 * 
-	 * @param nn
-	 *            counts in each multinomial experiment
+	 * @param nn counts in each multinomial experiment
 	 * @return ML estimate of the corresponding parameters alpha
 	 */
 	public static double[] estimateAlpha(int[][] nmk) {
@@ -118,11 +115,9 @@ public class DirichletEstimation {
 	 * Polya estimation using the fixed point iteration of the leave-one-out
 	 * likelihood, after Minka 2003. TODO: Gibbs sampler for Polya distribution.
 	 * 
-	 * @param alpha
-	 *            [in/out] Dirichlet parameter with element for each k
-	 * @param nmk
-	 *            count matrix with individual observations in rows
-	 *            ("documents") and categories in columns ("topics")
+	 * @param alpha [in/out] Dirichlet parameter with element for each k
+	 * @param nmk count matrix with individual observations in rows
+	 *        ("documents") and categories in columns ("topics")
 	 * @return number of iterations
 	 */
 	public static int estimateAlphaLoo(double[] alpha, int[][] nmk) {
@@ -170,8 +165,7 @@ public class DirichletEstimation {
 	 * Estimate mean and precision of the observations separately from counts.
 	 * This corresponds to estimation of the Polya distribution.
 	 * 
-	 * @param nn
-	 *            input data with vectors in rows
+	 * @param nn input data with vectors in rows
 	 * @return a vector of the Dirichlet mean in the elements 0..K-2 (the last
 	 *         element is the difference between the others and 1) and Dirichlet
 	 *         precision in the element K-1, where K is the dimensionality of
@@ -226,10 +220,8 @@ public class DirichletEstimation {
 	/**
 	 * Estimate the dirichlet parameters using the moments method
 	 * 
-	 * @param pp
-	 *            data with items in rows and dimensions in cols
-	 * @param pmean
-	 *            first moment of pp
+	 * @param pp data with items in rows and dimensions in cols
+	 * @param pmean first moment of pp
 	 * @return
 	 */
 	public static double[] guessAlpha(double[][] pp, double[] pmean) {
@@ -266,8 +258,7 @@ public class DirichletEstimation {
 	 * (2004).
 	 * 
 	 * @param suffstats
-	 * @param mean
-	 *            [in / out]
+	 * @param mean [in / out]
 	 * @param prec
 	 */
 	private static void meanGenNewton(double[] suffstats, double[] mean,
@@ -348,9 +339,8 @@ public class DirichletEstimation {
 	 * Equation (19ff).
 	 * 
 	 * @param nmk
-	 * @param nm
-	 *            sums of observations for all categories (eg document lengths,
-	 *            ndsum)
+	 * @param nm sums of observations for all categories (eg document lengths,
+	 *        ndsum)
 	 */
 	public static double[] guessAlphaDirect(int[][] nmk, int[] nm) {
 		double[] pmean, pmk;
@@ -529,8 +519,7 @@ public class DirichletEstimation {
 	 * fixpoint iteration on alpha.
 	 * 
 	 * @param suffstats
-	 * @param alpha
-	 *            [in/out]
+	 * @param alpha [in/out]
 	 */
 	public static int alphaFixedPoint(double[] suffstats, double[] alpha) {
 		int K = alpha.length;
@@ -581,10 +570,8 @@ public class DirichletEstimation {
 	 * fixpoint iteration on alpha using counts as input and estimating by Polya
 	 * distribution directly. Eq. 55 in Minka (2003)
 	 * 
-	 * @param nmk
-	 *            count data (documents in rows, topic associations in cols)
-	 * @param nm
-	 *            total counts across rows
+	 * @param nmk count data (documents in rows, topic associations in cols)
+	 * @param nm total counts across rows
 	 * @param alpha
 	 * @param alpha
 	 */
@@ -628,12 +615,9 @@ public class DirichletEstimation {
 	 * distribution directly. Eq. 55 in Minka (2003). This version uses a subset
 	 * of rows in nmk, indexed by mrows.
 	 * 
-	 * @param nmk
-	 *            count data (documents in rows, topic associations in cols)
-	 * @param nm
-	 *            total counts across rows
-	 * @param mrows
-	 *            set of rows to be used for estimation
+	 * @param nmk count data (documents in rows, topic associations in cols)
+	 * @param nm total counts across rows
+	 * @param mrows set of rows to be used for estimation
 	 * @param alpha
 	 * @param alpha
 	 */
@@ -675,14 +659,10 @@ public class DirichletEstimation {
 	/**
 	 * estimate several alphas based on subsets of rows
 	 * 
-	 * @param nmk
-	 *            full array
-	 * @param nm
-	 *            full sums array
-	 * @param m2j
-	 *            row-wise association with set j (max j - 1 = alphajk.length)
-	 * @param alphajk
-	 *            set-wise hyperparameter
+	 * @param nmk full array
+	 * @param nm full sums array
+	 * @param m2j row-wise association with set j (max j - 1 = alphajk.length)
+	 * @param alphajk set-wise hyperparameter
 	 * @param a
 	 * @param b
 	 * @return
@@ -738,12 +718,9 @@ public class DirichletEstimation {
 	 * fixpoint iteration on alpha using counts as input and estimating by Polya
 	 * distribution directly. Eq. 55 in Minka (2003)
 	 * 
-	 * @param nmk
-	 *            count data (documents in rows, topic associations in cols)
-	 * @param nm
-	 *            total counts across rows
-	 * @param alpha
-	 *            [in/out]
+	 * @param nmk count data (documents in rows, topic associations in cols)
+	 * @param nm total counts across rows
+	 * @param alpha [in/out]
 	 */
 	public static double[] estimateAlphaMap(int[][] nmk, int[] nm,
 			double[] alpha, double a, double b) {
@@ -793,12 +770,9 @@ public class DirichletEstimation {
 	/**
 	 * sampling function for adaptive rejection sampler
 	 * 
-	 * @param nmk
-	 *            count matrix (rows for observations)
-	 * @param a
-	 *            Gamma prior shape
-	 * @param b
-	 *            Gamma prior scale
+	 * @param nmk count matrix (rows for observations)
+	 * @param a Gamma prior shape
+	 * @param b Gamma prior scale
 	 * @throws Exception
 	 */
 	private static double[] sampleAlphaArms(int[][] nmk, double a, double b,
@@ -860,6 +834,108 @@ public class DirichletEstimation {
 			}
 		}
 
+	}
+
+	/**
+	 * get the lengths of the array rows.
+	 * 
+	 * @param w
+	 * @return
+	 */
+	public static int[] getRowLengths(int[][] w) {
+		int[] len = new int[w.length];
+		for (int m = 0; m < w.length; m++) {
+			len[m] = w[m].length;
+		}
+		return len;
+	}
+
+	/**
+	 * estimate parameters of the Dirichlet as posterior mean
+	 * 
+	 * @param nkt
+	 * @param alpha
+	 */
+	public static double[][] estimateTheta(int[][] nkt, int[] nk, double alpha) {
+		int T = nkt[0].length;
+		double[][] theta = new double[nkt.length][T];
+		for (int k = 0; k < nkt.length; k++) {
+			double denom = nk[k] + T * alpha;
+			for (int t = 0; t < T; t++) {
+				theta[k][t] = (nkt[k][t] + alpha) / denom;
+			}
+		}
+		return theta;
+	}
+
+	/**
+	 * estimate parameters of the Dirichlet as posterior mean
+	 * 
+	 * @param nkt
+	 * @param alpha
+	 */
+	public static double[][] estimateTheta(int[][] nkt, int[] nk,
+			double[] alpha, double alphaSum) {
+		int T = nkt[0].length;
+		double[][] theta = new double[nkt.length][T];
+		for (int k = 0; k < nkt.length; k++) {
+			double denom = nk[k] + alphaSum;
+			for (int t = 0; t < T; t++) {
+				theta[k][t] = (nkt[k][t] + alpha[t]) / denom;
+			}
+		}
+		return theta;
+	}
+
+	/**
+	 * quantile corresponding to the weight
+	 * 
+	 * @param weight to which the quantile should be computed
+	 * 
+	 * @return
+	 */
+	public static double quantile(double[] theta, double weight) {
+		int[] sort = IndexQuickSort.revsort(theta);
+		double sum = 0;
+		for (int i = 0; i < theta.length; i++) {
+			double thetai = theta[sort[i]];
+			if (sum + thetai >= weight) {
+				return i + (weight - sum) / thetai;
+			} else {
+				sum += theta[sort[i]];
+			}
+		}
+		return theta.length - 1;
+	}
+
+	public static final double LOG2 = Math.log(2);
+
+	/**
+	 * entropy of the complete parameter set
+	 * 
+	 * @param theta
+	 * @return
+	 */
+	public static double entropy(double[][] theta) {
+		double H = 0;
+		for (int i = 0; i < theta.length; i++) {
+			H += entropy(theta[i]);
+		}
+		return H;
+	}
+
+	/**
+	 * entropy of the multinomial parameter distribution
+	 * 
+	 * @param args
+	 * @throws Exception
+	 */
+	public static double entropy(double[] theta) {
+		double H = 0;
+		for (int i = 0; i < theta.length; i++) {
+			H -= theta[i] * Math.log(theta[i]);
+		}
+		return H / LOG2;
 	}
 
 	// ////////////////////////////
