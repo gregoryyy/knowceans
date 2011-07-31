@@ -30,9 +30,14 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
+import java.util.Set;
 
+import org.knowceans.map.IInvertibleMultiMap;
+import org.knowceans.map.InvertibleHashMultiMap;
 import org.knowceans.util.Print;
+import org.knowceans.util.RandomSamplers;
 import org.knowceans.util.Vectors;
 
 /**
@@ -270,6 +275,62 @@ public class LabelNumCorpus extends NumCorpus implements ILabelCorpus {
 		Print.fln("labels loaded: %s: V = %d, W = %d", labelNames[kind], V, W);
 	}
 
+	/**
+	 * split corpus so that the test labels are guaranteed to be in the training
+	 * set. This constraint will be
+	 * 
+	 * @param order the split order, see split()
+	 * @param labelConstraints the labels that should be completely contained in
+	 *        the training set
+	 */
+	public void splitTestLabels(int order, Set<Integer> labelConstraints,
+			Random rand) {
+		// TODO: implement
+		System.out.println("splitTestLabels not implemented");
+		// IInvertibleMultiMap<Integer, Integer>[] labels2docs = new
+		// InvertibleHashMultiMap[labelConstraints
+		// .size()];
+		// int i = 0;
+		// for (int label : labelConstraints) {
+		// labels2docs[i] = new InvertibleHashMultiMap<Integer, Integer>();
+		// int[][] ll = getDocLabels(label);
+		// for (int m = 0; m < numDocs; m++) {
+		// for (int j = 0; j < ll[m].length; j++) {
+		// labels2docs[i].add(ll[m][j], m);
+		// }
+		// }
+		// }
+		//
+		// // from the label-document association, sample documents and check
+		// // whether they fulfill our requirements
+		// List<Integer> testDocs = new ArrayList<Integer>();
+		// RandomSamplers rs = new RandomSamplers(rand);
+		// int[] perm = rs.randPerm(numDocs);
+		// for (int j = 0; j < perm.length; j++) {
+		// int m = perm[j];
+		// // we try to remove the document from the labels2docs set and
+		// // see if there are docs left with the same labels
+		// boolean ok = true;
+		// for (int label : labelConstraints) {
+		// for (int lab : this.labels[label][m]) {
+		// // how many documents for the label?
+		// if (labels2docs[label].get(lab).size() <= 1) {
+		// ok = false;
+		// break;
+		// }
+		// }
+		// }
+		// if (ok) {
+		// testDocs.add(m);
+		// for (int label : labelConstraints) {
+		// // TODO: remove from
+		// labels2docs[label].rem
+		// }
+		// }
+		// }
+
+	}
+
 	@Override
 	public void split(int order, int split, Random rand) {
 		// get plain num corpora
@@ -315,10 +376,14 @@ public class LabelNumCorpus extends NumCorpus implements ILabelCorpus {
 		train.labels = trainLabels;
 		train.labelsV = labelsV;
 		train.labelsW = trainLabelsW;
+		// readonly corpus we can copy this for split corpora, so the resolver
+		// can be created directly from train (and test, below)
+		train.dataFilebase = dataFilebase;
 		LabelNumCorpus test = (LabelNumCorpus) testCorpus;
 		test.labels = testLabels;
 		test.labelsV = labelsV;
 		test.labelsW = testLabelsW;
+		test.dataFilebase = dataFilebase;
 	}
 
 	@Override

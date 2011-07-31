@@ -577,6 +577,10 @@ public class NumCorpus implements ICorpus, ITermCorpus, ISplitCorpus {
 	 * itself is left unchanged (except storing the splits). The corpora can be
 	 * retrieved using getTrainCorpus and getTestCorpus after using this
 	 * function.
+	 * <p>
+	 * IMPORTANT: if labels are used in the split corpora, the
+	 * getDocLabels(kind) method needs to be called to split these values
+	 * appropriately.
 	 * 
 	 * @param order number of partitions
 	 * @param split 0-based split of corpus returned
