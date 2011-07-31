@@ -536,6 +536,17 @@ public class IndexQuickSort {
 	 * @param ds
 	 * @return
 	 */
+	public static void revsort(int[] x, int[] index) {
+		sort(x, index);
+		reverse(index);
+	}
+
+	/**
+	 * reverse sorting shorthand
+	 * 
+	 * @param ds
+	 * @return
+	 */
 	public static <T> int[] revsort(List<T> x) {
 		return reverse(sort(x));
 	}
