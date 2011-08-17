@@ -26,6 +26,7 @@ Contents and line format:
  - nips.authors        -- document author ids, 1 line per document (line 1 = document 0), 
                           space-separated
  - nips.authors.key    -- author names, 1 line per author (line 1 = author 0)
+ - nips.abstracts      -- abstract texts (for subjective experiments, etc.)
  - nips.corpus         -- term vectors, 1 line per document, svm-light line format: 
                           nterms (termid:termfreq)+
  - nips.docs           -- document titles, 1 line per document (line 1 = document 0)
