@@ -28,18 +28,21 @@ public class CorpusResolver implements ICorpusResolver {
 	 */
 	public static final String[] keyExtensions = { "docs", "vocab",
 			"authors.key", "labels.key", "tags.key", "vols.key", "years.key",
-			"docnames", "docs.key" };
+			"docnames", "docs.key", "abstracts" };
 
 	public static final String[] keyNames = { "documents", "terms", "authors",
 			"labels", "tags", "volumes", "years" };
 
+	// TODO: add abstracts
 	public static final int[] keyExt2labelId = { -2, -1, 0, 1, 2, 3, 4 };
 	public static final int[] labelId2keyExt = { 2, 3, 3, 4, 5, -1, -1 };
 
 	public static void main(String[] args) {
 		CorpusResolver cr = new CorpusResolver("corpus-example/nips");
 		System.out.println(cr.resolveCategory(20));
+		System.out.println(cr.resolveDocRef(501));
 		System.out.println(cr.resolveDocTitle(501));
+		System.out.println(cr.resolveDocContent(501));
 		System.out.println(cr.resolveTerm(1));
 		System.out.println(cr.getTermId(cr.resolveTerm(1)));
 	}
@@ -260,6 +263,20 @@ public class CorpusResolver implements ICorpusResolver {
 		}
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see org.knowceans.corpus.IResolver#getDocName(int)
+	 */
+	@Override
+	public String resolveDocContent(int i) {
+		if (data[KDOCCONTENT] != null) {
+			return data[KDOCCONTENT][i];
+		} else {
+			return null;
+		}
+	}
+
 	/**
 	 * filters the documents according to the new index
 	 * 
@@ -300,6 +317,8 @@ public class CorpusResolver implements ICorpusResolver {
 			return resolveVolume(id);
 		} else if (type == KDOCREF) {
 			return resolveDocRef(id);
+		} else if (type == KDOCCONTENT) {
+			return resolveDocContent(id);
 		} else if (type == KDOCS) {
 			return resolveDocTitle(id);
 		} else if (type == KDOCNAME) {

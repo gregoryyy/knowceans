@@ -44,5 +44,4 @@ public interface ICorpusIdResolver {
 	 * @return
 	 */
 	public abstract int getId(int type, String label);
-
 }

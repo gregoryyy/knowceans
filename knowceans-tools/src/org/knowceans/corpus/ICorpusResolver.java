@@ -13,6 +13,8 @@ public interface ICorpusResolver extends ICorpusIdResolver {
 	public static final int KDOCNAME = 7;
 	// full reference for easy lookup
 	public static final int KDOCREF = 8;
+	// allow to display abstract
+	public static final int KDOCCONTENT = 9;
 
 	/**
 	 * resolve the numeric label id
@@ -53,6 +55,14 @@ public interface ICorpusResolver extends ICorpusIdResolver {
 	 * @return
 	 */
 	public abstract String resolveDocRef(int i);
+
+	/**
+	 * resolve document content (abstract or body)
+	 * 
+	 * @param i
+	 * @return
+	 */
+	public abstract String resolveDocContent(int i);
 
 	/**
 	 * resolve the numeric volume id

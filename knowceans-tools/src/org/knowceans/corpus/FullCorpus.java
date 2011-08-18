@@ -236,6 +236,11 @@ public class FullCorpus extends LabelNumCorpus implements ICorpusResolver {
 	}
 
 	@Override
+	public String resolveDocContent(int i) {
+		return resolver.resolveDocContent(i);
+	}
+
+	@Override
 	public String resolveVolume(int i) {
 		return resolver.resolveVolume(i);
 	}
