@@ -25,19 +25,18 @@
 package org.knowceans.corpus;
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 import java.util.Set;
 
-import org.knowceans.map.IInvertibleMultiMap;
-import org.knowceans.map.InvertibleHashMultiMap;
 import org.knowceans.util.Print;
-import org.knowceans.util.RandomSamplers;
 import org.knowceans.util.Vectors;
 
 /**
@@ -80,10 +79,6 @@ public class LabelNumCorpus extends NumCorpus implements ILabelCorpus {
 	 */
 	protected int[] labelsV;
 
-	String dataFilebase = null;
-
-	protected CorpusResolver resolver;
-
 	/**
      * 
      */
@@ -96,7 +91,7 @@ public class LabelNumCorpus extends NumCorpus implements ILabelCorpus {
 	 * @param dataFilebase (filename without extension)
 	 */
 	public LabelNumCorpus(String dataFilebase) {
-		super(dataFilebase + ".corpus");
+		super(dataFilebase);
 		this.dataFilebase = dataFilebase;
 		init();
 	}
@@ -106,7 +101,7 @@ public class LabelNumCorpus extends NumCorpus implements ILabelCorpus {
 	 * @param parmode if true read paragraph corpus
 	 */
 	public LabelNumCorpus(String dataFilebase, boolean parmode) {
-		super(dataFilebase + (parmode ? ".par" : "") + ".corpus");
+		super(dataFilebase + (parmode ? ".par" : ""));
 		this.dataFilebase = dataFilebase;
 		init();
 	}
@@ -118,7 +113,7 @@ public class LabelNumCorpus extends NumCorpus implements ILabelCorpus {
 	 * @param parmode if true read paragraph corpus
 	 */
 	public LabelNumCorpus(String dataFilebase, int readlimit, boolean parmode) {
-		super(dataFilebase + (parmode ? ".par" : "") + ".corpus", readlimit);
+		super(dataFilebase + (parmode ? ".par" : ""), readlimit);
 		this.dataFilebase = dataFilebase;
 		init();
 	}
@@ -171,6 +166,18 @@ public class LabelNumCorpus extends NumCorpus implements ILabelCorpus {
 	}
 
 	/**
+	 * loads all labels (metadata)
+	 */
+	public void loadAllLabels() {
+		for (int i = 0; i < LabelNumCorpus.labelExtensions.length; i++) {
+			if (hasLabels(i) == 1) {
+				System.out.println("loading " + LabelNumCorpus.labelNames[i]);
+				getDocLabels(i);
+			}
+		}
+	}
+
+	/**
 	 * loads and returns the document labels of given kind
 	 */
 	// @Override
@@ -205,9 +212,23 @@ public class LabelNumCorpus extends NumCorpus implements ILabelCorpus {
 	 * @param kind
 	 * @return
 	 */
+	public int getLabelsMinN(int kind) {
+		int min = Integer.MAX_VALUE;
+		for (int m = 0; m < numDocs; m++) {
+			min = min < labels[kind][m].length ? min : labels[kind][m].length;
+		}
+		return min;
+	}
+
+	/**
+	 * return the maximum number of labels in any document
+	 * 
+	 * @param kind
+	 * @return
+	 */
 	public int getLabelsMaxN(int kind) {
 		int max = 0;
-		for (int m = 0; m < labels[kind].length; m++) {
+		for (int m = 0; m < numDocs; m++) {
 			max = max < labels[kind][m].length ? labels[kind][m].length : max;
 		}
 		return max;
@@ -331,6 +352,106 @@ public class LabelNumCorpus extends NumCorpus implements ILabelCorpus {
 
 	}
 
+	// document filtering
+
+	/**
+	 * filter out documents with empty labels of the type in the set.
+	 * 
+	 * @param set of L constants
+	 * @return old2new indices
+	 */
+	public int[] reduceEmptyLabels(final Set<Integer> labelTypes) {
+		DocPredicate filter = new DocPredicate() {
+			@Override
+			public boolean doesApply(NumCorpus self, int m) {
+				for (int ltype : labelTypes) {
+					if (labels[ltype][m].length == 0) {
+						return false;
+					}
+				}
+				return true;
+			}
+		};
+		return filterDocs(filter, null);
+	}
+
+	/**
+	 * removes documents that have no inlinks and/or no outlinks.
+	 * 
+	 * @return
+	 */
+	// , TODO: boolean usementions
+	public int[] reduceUnlinkedDocs(final boolean in, final boolean out) {
+
+		// first create a list of incoming links by transposing the relation
+		@SuppressWarnings("unchecked")
+		final List<Integer>[] inlinks = new List[numDocs];
+		for (int m = 0; m < inlinks.length; m++) {
+			inlinks[m] = new ArrayList<Integer>();
+		}
+
+		final int[][] citations = labels[LREFERENCES];
+		// TODO: add mentions
+		// int[][] mentions = labels[LMENTIONS];
+		// int[][] authors = labels[LAUTHORS];
+
+		for (int m = 0; m < inlinks.length; m++) {
+			for (int i = 0; i < citations[m].length; i++) {
+				inlinks[citations[m][i]].add(m);
+			}
+		}
+
+		DocPredicate filter = new DocPredicate() {
+			@Override
+			public boolean doesApply(NumCorpus self, int m) {
+				if (in && out) {
+					return inlinks[m].size() > 0 && citations[m].length > 0;
+				} else if (!out) {
+					return inlinks[m].size() > 0;
+				} else if (!in) {
+					return citations[m].length > 0;
+				} else {
+					return false;
+				}
+			}
+		};
+		return filterDocs(filter, null);
+	}
+
+	/**
+	 * filter documents. Also updates the resolver. Vocabulary must be rebuilt
+	 * separately because frequencies change: use filterTermsDf().
+	 * 
+	 * @param filter predicate to keep documents in list
+	 * @param rand random number generator to be used generate a random
+	 *        permutation, null if no random permutation
+	 * 
+	 * @return old2new indices
+	 */
+	public int[] filterDocs(DocPredicate filter, Random rand) {
+		int[] old2new = super.filterDocs(filter, rand);
+		// by now, we have filtered documents (even by label predicates) and
+		// need to sync the labels to them
+		int[][][] newLabels = new int[labelExtensions.length][][];
+		int[] newLabelsW = new int[labelExtensions.length];
+		for (int type = 0; type < labelExtensions.length; type++) {
+			if (labels[type] != null) {
+				newLabels[type] = new int[numDocs][];
+				for (int m = 0; m < numDocs; m++) {
+					if (old2new[m] >= 0) {
+						newLabels[type][old2new[m]] = labels[type][m];
+						newLabelsW[type] += labels[type][m].length;
+					}
+				}
+			}
+		}
+		CorpusResolver cr = getResolver();
+		cr.filterDocs(old2new);
+		return old2new;
+	}
+
+	// end document filtering
+
 	@Override
 	public void split(int order, int split, Random rand) {
 		// get plain num corpora
@@ -388,8 +509,127 @@ public class LabelNumCorpus extends NumCorpus implements ILabelCorpus {
 
 	@Override
 	public void write(String pathbase) throws IOException {
+		// TODO: fully test
 		super.write(pathbase);
-		// TODO: write authors and labels
+		// write the stuff that labels add to the plain NumCorpus
+		for (int type = 0; type < labelExtensions.length; type++) {
+			if (labels[type] == null) {
+				continue;
+			}
+			BufferedWriter bw = new BufferedWriter(new FileWriter(pathbase
+					+ labelExtensions[type]));
+			for (int m = 0; m < numDocs; m++) {
+				// NOTE: null and zero-length are treated same, but null may be
+				// an error
+				if (labels[type][m] != null) {
+					for (int n = 0; n < labels[type][m].length; n++) {
+						if (n > 0) {
+							bw.write(' ');
+						}
+						bw.write(Integer.toString(labels[type][m][n]));
+					}
+				}
+				bw.append('\n');
+			}
+			bw.close();
+		}
+	}
+
+	/**
+	 * check the consistency of the corpus, basically checking for array sizes
+	 * in conjunction with the index values contained.
+	 * 
+	 * @param resolver whether to include the resolver class
+	 * @return error report or null if ok.
+	 */
+	public String checkConsistency(boolean resolver) {
+		StringBuffer sb = new StringBuffer();
+		// TODO: we have the resolver (including labels) checked before the
+		// numerical labels... suboptimal but ok for a consistency check but.
+		sb.append(super.checkConsistency(resolver));
+
+		for (int type = 0; type < labelExtensions.length; type++) {
+			if (labels[type] != null) {
+				// check whether labels array size matches that of the metadata
+				if (labels[type].length != labelsV[type]) {
+					int W = 0;
+					int[] ll = new int[labelsV[type]];
+					// check W and availability of all labels
+					for (int m = 0; m < numDocs; m++) {
+						for (int n = 0; n < labels[type][m].length; n++) {
+							ll[labels[type][m][n]]++;
+						}
+						W += labels[type][m].length;
+					}
+					for (int t = 0; t < ll.length; t++) {
+						if (ll[t] == 0) {
+							sb.append(String.format(
+									"label type %s : %d frequency = 0\n",
+									labelNames[type], t));
+						}
+					}
+				}
+
+			}
+		}
+
+		// check terms
+		int V = 0;
+		int W = 0;
+		for (int m = 0; m < numDocs; m++) {
+			if (docs[m] == null) {
+				sb.append(String.format("docs[%d] = null\n", m));
+			}
+			String docstatus = docs[m].checkConsistency();
+			if (docstatus != null) {
+				sb.append(String.format("docs[%d] = null:\n%s", m, docstatus));
+			}
+		}
+		if (numTerms != V) {
+			sb.append(String.format("numTerms = %d != V %d\n", numTerms, V));
+		} else {
+			// check whether all terms appear in the corpus
+			int[] df = calcDocFreqs();
+			for (int term = 0; term < numTerms; term++) {
+				if (df[term] == 0) {
+					sb.append(String.format("term = %d df = 0\n", term));
+				}
+			}
+		}
+		// check documents
+		if (numDocs != docs.length) {
+			sb.append(String.format("numDocs = %d != docs.length = %d\n",
+					numDocs, docs.length));
+		}
+		// check resolver
+		if (resolver) {
+			getResolver().checkConsistency(this);
+		}
+
+		return sb.length() != 0 ? sb.toString() : null;
+	}
+
+	@Override
+	public String toString() {
+		StringBuffer sb = new StringBuffer();
+		// corpus statistics
+		sb.append(String.format("LabelNumCorpus instance:\n"));
+		sb.append(String.format("file base: %s\n", dataFilebase));
+		sb.append(String.format("docs: M = %d, V = %d, W = %d\n", getNumDocs(),
+				getNumTerms(), getNumWords()));
+		sb.append(String
+				.format("labels (0 = not available, 1 = available, 2 = loaded):\n"));
+		for (int i = 0; i < LabelNumCorpus.labelExtensions.length; i++) {
+			sb.append(String.format(" %s = %d, .keys = %d\n",
+					LabelNumCorpus.labelExtensions[i], hasLabels(i),
+					resolver.hasLabelKeys(i + 2)));
+			if (hasLabels(i) >= 2) {
+				sb.append(String.format(
+						"    V = %d, W = %d, N[m] = [%d, %d]\n", getLabelsV(i),
+						getLabelsW(i), getLabelsMinN(i), getLabelsMaxN(i)));
+			}
+		}
+		return sb.toString();
 	}
 
 	/**
@@ -423,18 +663,6 @@ public class LabelNumCorpus extends NumCorpus implements ILabelCorpus {
 
 		System.out.println("document mapping");
 		System.out.println(Vectors.print(nc.getOrigDocIds()));
-	}
-
-	/**
-	 * get a resolver that acts on this corpus
-	 * 
-	 * @return
-	 */
-	public CorpusResolver getResolver() {
-		if (resolver == null) {
-			resolver = new CorpusResolver(dataFilebase);
-		}
-		return resolver;
 	}
 
 }

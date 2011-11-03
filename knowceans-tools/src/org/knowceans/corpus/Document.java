@@ -317,4 +317,20 @@ public class Document {
 		return b.toString();
 	}
 
+	public String checkConsistency() {
+		StringBuffer sb = new StringBuffer();
+		if (counts.length != terms.length) {
+			sb.append(String.format(
+					"counts.length = %d != terms.length = %d\n", counts.length,
+					terms.length));
+		}
+		if (counts.length != numTerms || Vectors.sum(counts) != numWords) {
+			sb.append(String
+					.format("terms|counts.length = %d != terms = %d, sum(counts) = %d != words = %d, \n",
+							counts.length, numTerms,
+							Vectors.sum(counts) != numWords));
+		}
+		return sb.length() != 0 ? sb.toString() : null;
+	}
+
 }

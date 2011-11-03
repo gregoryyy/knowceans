@@ -184,9 +184,9 @@ public class FullCorpus extends LabelNumCorpus implements ICorpusResolver {
 	 * reduce corpus and. Note: rand is currently ignored!
 	 */
 	@Override
-	public void reduce(int ndocs, Random rand) {
+	public int[] reduce(int ndocs, Random rand) {
 		// just reduces the document list
-		super.reduce(ndocs, rand);
+		return super.reduce(ndocs, rand);
 		// now reduce the resolver fields
 
 	}

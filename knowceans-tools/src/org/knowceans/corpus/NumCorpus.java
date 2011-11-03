@@ -34,10 +34,16 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Random;
+import java.util.Set;
 
+import org.knowceans.map.BijectiveHashMap;
+import org.knowceans.map.CategoryMap;
+import org.knowceans.map.RankingMap;
 import org.knowceans.util.ArrayUtils;
 import org.knowceans.util.RandomSamplers;
 import org.knowceans.util.Vectors;
+
+import sun.tools.tree.LengthExpression;
 
 /**
  * Represents a corpus of documents, using numerical data only.
@@ -57,6 +63,8 @@ public class NumCorpus implements ICorpus, ITermCorpus, ISplitCorpus {
 	protected int numWords;
 
 	protected boolean debug = false;
+
+	protected String dataFilebase = null;
 
 	/**
 	 * permutation of the corpus used for splitting
@@ -95,19 +103,27 @@ public class NumCorpus implements ICorpus, ITermCorpus, ISplitCorpus {
 
 	protected int readlimit = -1;
 
-	public NumCorpus(String dataFilename) {
-		read(dataFilename);
+	protected CorpusResolver resolver;
+
+	/**
+	 * @param dataFilebase (without .corpus)
+	 */
+	public NumCorpus(String dataFilebase) {
+		this.dataFilebase = dataFilebase;
+		read(dataFilebase + ".corpus");
 	}
 
 	/**
 	 * init the corpus with a reduced set of documents
 	 * 
-	 * @param dataFilename
+	 * @param dataFilebase (without .corpus)
 	 * @param readlimit
 	 */
-	public NumCorpus(String dataFilename, int readlimit) {
+	public NumCorpus(String dataFilebase, int readlimit) {
+		this.dataFilebase = dataFilebase;
 		this.readlimit = readlimit;
-		read(dataFilename);
+		this.dataFilebase = dataFilebase;
+		read(dataFilebase + ".corpus");
 	}
 
 	public NumCorpus() {
@@ -474,6 +490,25 @@ public class NumCorpus implements ICorpus, ITermCorpus, ISplitCorpus {
 	}
 
 	/**
+	 * Get the document ids for a current term. This method uses linear
+	 * iteration through the corpus and is intended only for debug purposes.
+	 * 
+	 * @param term
+	 * @return
+	 */
+	public List<Integer> getDocs(int term) {
+		List<Integer> termDocs = new ArrayList<Integer>();
+		for (int m = 0; m < numDocs; m++) {
+			for (int i = 0; i < docs[m].getTerms().length; i++) {
+				if (docs[m].getTerm(i) == term) {
+					termDocs.add(m);
+				}
+			}
+		}
+		return termDocs;
+	}
+
+	/**
 	 * @param documents
 	 */
 	public void setDocs(Document[] documents) {
@@ -492,29 +527,8 @@ public class NumCorpus implements ICorpus, ITermCorpus, ISplitCorpus {
 	}
 
 	/**
-	 * reduce the size of the corpus to ndocs maximum. This should be called
-	 * directly after loading as it only reduces the documents and count.
-	 * Consider using split instead.
-	 * 
-	 * @param ndocs
-	 * @param rand ignored
-	 */
-	public void reduce(int ndocs, Random rand) {
-		// todo: handle reordering
-		// split((int)(ndocs/(double)numDocs + 0.5), 1, rand);
-		System.out.println(numDocs + ".");
-		if (numDocs > ndocs) {
-			Document[] docsnew = new Document[ndocs];
-			for (int i = 0; i < ndocs; i++) {
-				docsnew[i] = docs[i];
-			}
-			docs = docsnew;
-			numDocs = ndocs;
-		}
-	}
-
-	/**
-	 * filter terms by frequency. TODO: paragraph support
+	 * filter terms by frequency. TODO: paragraph support. The corpus resolver
+	 * obtained by getResolver() is updated to the new term mapping.
 	 * 
 	 * @param minDf all more scarce terms are excluded
 	 * @param maxDf all more frequent terms are excluded
@@ -552,7 +566,89 @@ public class NumCorpus implements ICorpus, ITermCorpus, ISplitCorpus {
 		}
 		numTerms = newIndex;
 		numWords = W;
+		// map to novel term indices
+		getResolver().filterTerms(indices);
 		return indices;
+	}
+
+	/**
+	 * predicate to filter the set of documents. Add well-defined random
+	 */
+	// TODO: also may be applied to terms
+	public interface DocPredicate {
+
+		/**
+		 * allow access to corpus and current index
+		 * 
+		 * @param self refers to current corpus
+		 * @param m current document index
+		 * @return whether to keep in list
+		 */
+		boolean doesApply(NumCorpus self, int m);
+	}
+
+	/**
+	 * reduce the size of the corpus to ndocs maximum. This should be called
+	 * directly after loading as it only reduces the documents and count.
+	 * Consider using split instead.
+	 * 
+	 * @param ndocs
+	 * @param rand scramble documents, if null use the first ndocs
+	 * @return old2new indices
+	 */
+	public int[] reduce(int ndocs, Random rand) {
+		final int nndocs = ndocs;
+		DocPredicate filter = new DocPredicate() {
+			@Override
+			public boolean doesApply(NumCorpus self, int m) {
+				return (m < nndocs);
+			}
+		};
+		return filterDocs(filter, rand);
+	}
+
+	/**
+	 * filter documents. Also updates the resolver. Vocabulary must be rebuilt
+	 * separately because frequencies change: use filterTermsDf().
+	 * 
+	 * @param filter predicate to keep documents in list
+	 * @param rand random number generator to be used generate a random
+	 *        permutation, null if no random permutation
+	 * 
+	 * @return old2new indices
+	 */
+	public int[] filterDocs(DocPredicate filter, Random rand) {
+		int[] perm = Vectors.range(0, numDocs - 1);
+		if (rand != null) {
+			RandomSamplers rs = new RandomSamplers(rand);
+			perm = rs.randPerm(perm);
+		}
+		List<Integer> newDocsList = new ArrayList<Integer>();
+		int[] old2new = new int[numDocs];
+		for (int m = 0; m < numDocs; m++) {
+			int mperm = perm[m];
+			if (filter.doesApply(this, mperm)) {
+				// add to new list
+				old2new[mperm] = newDocsList.size();
+				newDocsList.add(mperm);
+			} else {
+				old2new[mperm] = -1;
+			}
+		}
+		int newW = 0;
+		Document[] newDocs = new Document[newDocsList.size()];
+		for (int m = 0; m < newDocsList.size(); m++) {
+			newDocs[m] = docs[newDocsList.get(m)];
+			newW += newDocs[m].numWords;
+		}
+		docs = newDocs;
+		numDocs = newDocs.length;
+		numWords = newW;
+
+		CorpusResolver cr = getResolver();
+		cr.filterDocs(old2new);
+
+		return old2new;
 	}
 
 	/**
@@ -633,6 +729,55 @@ public class NumCorpus implements ICorpus, ITermCorpus, ISplitCorpus {
 	}
 
 	/**
+	 * check the consistency of the corpus, basically checking for array sizes
+	 * in conjunction with the index values contained.
+	 * 
+	 * @param resolver whether to include the resolver class
+	 * @return error report or null if ok.
+	 */
+	public String checkConsistency(boolean resolver) {
+		StringBuffer sb = new StringBuffer();
+
+		// check terms
+		int W = 0;
+		for (int m = 0; m < numDocs; m++) {
+			if (docs[m] == null) {
+				sb.append(String.format("docs[%d] = null\n", m));
+			} else {
+				W += docs[m].numWords;
+			}
+			String docstatus = docs[m].checkConsistency();
+			if (docstatus != null) {
+				sb.append(String.format("docs[%d] = null:\n%s", m, docstatus));
+			}
+		}
+		int[] df = calcDocFreqs();
+		int V = df.length;
+		if (numTerms != V) {
+			// sums of terms equal to what is extracted from docs?
+			sb.append(String.format("numTerms = %d != V %d\n", numTerms, V));
+		} else {
+			// do all terms appear in the corpus
+			for (int term = 0; term < numTerms; term++) {
+				if (df[term] == 0) {
+					sb.append(String.format("term = %d df = 0\n", term));
+				}
+			}
+		}
+		// check documents
+		if (numDocs != docs.length) {
+			sb.append(String.format("numDocs = %d != docs.length = %d\n",
+					numDocs, docs.length));
+		}
+		// check resolver
+		if (resolver) {
+			getResolver().checkConsistency(this);
+		}
+
+		return sb.length() != 0 ? sb.toString() : null;
+	}
+
+	/**
 	 * return the training corpus split
 	 */
 	public ICorpus getTrainCorpus() {
@@ -697,6 +842,19 @@ public class NumCorpus implements ICorpus, ITermCorpus, ISplitCorpus {
 	}
 
 	/**
+	 * get a resolver that acts on this corpus. For this, dataFilebase needs to
+	 * be known.
+	 * 
+	 * @return
+	 */
+	public CorpusResolver getResolver() {
+		if (resolver == null && dataFilebase != null) {
+			resolver = new CorpusResolver(dataFilebase);
+		}
+		return resolver;
+	}
+
+	/**
 	 * test corpus reading and splitting
 	 * 
 	 * @param args
@@ -716,5 +874,13 @@ public class NumCorpus implements ICorpus, ITermCorpus, ISplitCorpus {
 		System.out.println(Vectors.print(x));
 		System.out.println("document mapping");
 		System.out.println(Vectors.print(nc.getOrigDocIds()));
+	}
+
+	public String getDataFilebase() {
+		return dataFilebase;
+	}
+
+	public void setDataFilebase(String dataFilebase) {
+		this.dataFilebase = dataFilebase;
 	}
 }

@@ -16,7 +16,8 @@ import java.util.HashMap;
 import java.util.List;
 
 /**
- * CorpusResolver resolves indices into names.
+ * CorpusResolver resolves indices into names. To live-check for available data,
+ * use LabelNumCorpus
  * 
  * @author gregor
  */
@@ -33,6 +34,8 @@ public class CorpusResolver implements ICorpusResolver {
 	public static final String[] keyNames = { "documents", "terms", "authors",
 			"labels", "tags", "volumes", "years" };
 
+	public static final int[] docRelatedKeys = { KDOCS, KDOCNAME, KDOCREF,
+			KDOCCONTENT };
 	// TODO: add abstracts
 	public static final int[] keyExt2labelId = { -2, -1, 0, 1, 2, 3, 4 };
 	public static final int[] labelId2keyExt = { 2, 3, 3, 4, 5, -1, -1 };
@@ -143,6 +146,38 @@ public class CorpusResolver implements ICorpusResolver {
 		}
 		data[KTERMS] = (String[]) terms.toArray(new String[0]);
 		termids = newids;
+	}
+
+	/**
+	 * filter label arrays according to the new document ids. keys are not being
+	 * touched
+	 * 
+	 * @param old2new
+	 */
+	public void filterDocs(int[] old2new) {
+		int newM = 0;
+		for (int m = 0; m < old2new.length; m++) {
+			if (old2new[m] >= 0) {
+				newM++;
+			}
+		}
+		String[][] newData = new String[data.length][];
+		for (int type = 0; type < data.length; type++) {
+			if (data[type] != null) {
+				if (Arrays.binarySearch(docRelatedKeys, type) > 0) {
+					newData[type] = new String[newM];
+					for (int m = 0; m < old2new.length; m++) {
+						if (old2new[m] >= 0) {
+							newData[type][old2new[m]] = data[type][m];
+						}
+					}
+				} else {
+					// copy over complete array for non-document meta-data
+					newData[type] = data[type];
+				}
+			}
+		}
+		data = newData;
 	}
 
 	/**
@@ -327,6 +362,60 @@ public class CorpusResolver implements ICorpusResolver {
 		return null;
 	}
 
+	/**
+	 * resolve the kind of the label key
+	 * 
+	 * @param label key constant (KTERMS, KCATEGORIES etc.)
+	 * @return
+	 */
+	public String resolveKeyType(int type) {
+		if (type == KTERMS) {
+			return "term";
+		} else if (type == KAUTHORS) {
+			return "author";
+		} else if (type == KCATEGORIES) {
+			return "category";
+		} else if (type == KVOLS) {
+			return "volume";
+		} else if (type == KDOCREF) {
+			return "document summary";
+		} else if (type == KDOCCONTENT) {
+			return "document content";
+		} else if (type == KDOCS) {
+			return "document title";
+		} else if (type == KDOCNAME) {
+			return "document name";
+		}
+		return null;
+	}
+
+	/**
+	 * resolve the kind of the label
+	 * 
+	 * @param label constant L-constant (LTERMS, LCATEGORIES etc.)
+	 * @return
+	 */
+	public String resolveLabelType(int type) {
+		if (type == ILabelCorpus.LTERMS) {
+			return "term";
+		} else if (type == ILabelCorpus.LAUTHORS) {
+			return "author";
+		} else if (type == ILabelCorpus.LCATEGORIES) {
+			return "category";
+		} else if (type == ILabelCorpus.LVOLS) {
+			return "volume";
+		} else if (type == ILabelCorpus.LTAGS) {
+			return "document tag";
+		} else if (type == ILabelCorpus.LMENTIONS) {
+			return "mention";
+		} else if (type == ILabelCorpus.LREFERENCES) {
+			return "reference";
+		} else if (type == ILabelCorpus.LDOCS) {
+			return "document name";
+		}
+		return null;
+	}
+
 	/*
 	 * (non-Javadoc)
 	 * 
@@ -340,5 +429,58 @@ public class CorpusResolver implements ICorpusResolver {
 			return Arrays.asList(data[type]).indexOf(label);
 		}
 		return -1;
+	}
+
+	/**
+	 * check the consistency of the corpus resolver, basically checking for
+	 * array sizes in conjunction with the index values contained. Labels to be
+	 * checked need to be loaded beforehand.
+	 * 
+	 * @param corpus the corpus to be used
+	 * @return error report or null if ok.
+	 */
+	public String checkConsistency(NumCorpus corpus) {
+		StringBuffer sb = new StringBuffer();
+
+		// check documents and terms
+		if (termids.size() != corpus.getNumTerms()) {
+			sb.append(String.format("numTerms = %d != termids = %d\n",
+					corpus.getNumTerms(), termids.size()));
+
+		}
+		if (data[KDOCS].length != corpus.getNumDocs()) {
+			sb.append(String.format("numDocs = %d != data[docs].length = %d\n",
+					corpus.getNumDocs(), data[KDOCS].length));
+		}
+
+		// advanced stuff for the labels
+		if (corpus instanceof LabelNumCorpus) {
+			LabelNumCorpus lc = (LabelNumCorpus) corpus;
+			// for all key types, compare with labels
+			for (int keyType = 0; keyType < keyExt2labelId.length; keyType++) {
+				if (data[keyType] != null) {
+					if (data[keyType].length != lc
+							.getLabelsV(keyExt2labelId[keyType])) {
+						sb.append(String.format(
+								"keys %s length = %d != corpus %s V = %d",
+								keyNames[keyType], data[keyType].length,
+								keyExt2labelId[keyType],
+								lc.getLabelsV(keyExt2labelId[keyType])));
+					}
+				}
+			}
+			for (int keyType : docRelatedKeys) {
+				if (data[keyType] != null) {
+					if (data[keyType].length != corpus.getNumDocs()) {
+						sb.append(String.format(
+								"keys %s length = %d != corpus M = %d\n",
+								keyNames[keyType], data[keyType].length,
+								corpus.getNumDocs()));
+					}
+				}
+			}
+
+		}
+		return sb.length() != 0 ? sb.toString() : null;
 	}
 }
