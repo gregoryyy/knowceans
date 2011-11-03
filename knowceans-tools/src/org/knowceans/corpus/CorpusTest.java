@@ -39,7 +39,7 @@ public class CorpusTest {
 		corpus.write("testcorpus");
 		corpus.getResolver().filterTerms(index);
 		// corpus.getResolver().filterDocuments(index);
-		corpus.getResolver().writeTerms("testcorpus.vocab");
+		corpus.getResolver().write("testcorpus", ICorpusResolver.KTERMS);
 
 		displayCorpus(corpus);
 	}
@@ -60,8 +60,9 @@ public class CorpusTest {
 				corpus.getNumTerms(), corpus.getNumWords());
 		Print.fln("labels:");
 		for (int i = 0; i < LabelNumCorpus.labelExtensions.length; i++) {
-			Print.fln(" %s = %d, .keys = %d", LabelNumCorpus.labelExtensions[i],
-					corpus.hasLabels(i), cr.hasLabelKeys(i + 2));
+			Print.fln(" %s = %d, .keys = %d",
+					LabelNumCorpus.labelExtensions[i], corpus.hasLabels(i),
+					cr.hasLabelKeys(i + 2));
 		}
 
 		Print.fln("file base: ", corpus.dataFilebase);

@@ -32,6 +32,7 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 import java.util.Set;
@@ -46,6 +47,39 @@ import org.knowceans.util.Vectors;
  * @author heinrich
  */
 public class LabelNumCorpus extends NumCorpus implements ILabelCorpus {
+
+	/**
+	 * test corpus reading and splitting
+	 * 
+	 * @param args
+	 */
+	public static void main(String[] args) {
+		// LabelNumCorpus nc = new LabelNumCorpus("berry95/berry95");
+		LabelNumCorpus nc = new LabelNumCorpus("corpus-example/nips");
+		nc.getDocLabels(LAUTHORS);
+		nc.split(10, 0, new Random());
+
+		System.out.println("train");
+		LabelNumCorpus ncc = (LabelNumCorpus) nc.getTrainCorpus();
+		System.out.println(ncc);
+		int[][] x = ncc.getDocWords(new Random());
+		System.out.println(Vectors.print(x));
+		System.out.println("labels");
+		int[][] a = ncc.getDocLabels(LAUTHORS);
+		System.out.println(Vectors.print(a));
+
+		System.out.println("test");
+		ncc = (LabelNumCorpus) nc.getTestCorpus();
+		System.out.println(ncc);
+		x = ncc.getDocWords(new Random());
+		System.out.println(Vectors.print(x));
+		System.out.println("labels");
+		a = ncc.getDocLabels(LAUTHORS);
+		System.out.println(Vectors.print(a));
+
+		System.out.println("document mapping");
+		System.out.println(Vectors.print(nc.getOrigDocIds()));
+	}
 
 	/**
 	 * the extensions for the label type constants in ILabelCorpus.L*
@@ -66,6 +100,17 @@ public class LabelNumCorpus extends NumCorpus implements ILabelCorpus {
 	public static final int LYEARS = 4;
 	public static final int LREFERENCES = 5;
 	public static final int LMENTIONS = 6;
+
+	// cardinality constraints for documents (how many per document)
+	public static final int[] cardinalityOne = { LVOLS, LYEARS };
+	public static final int[] cardinalityGeOne = { LAUTHORS };
+	public static final int[] cardinalityGeZero = { LREFERENCES, LMENTIONS,
+			LTAGS, LCATEGORIES };
+
+	// may there be labels that don't appear (e.g., documents without inlinks,
+	// authors without mentions, categories without instance)
+	public static final int[] allowEmptyLabels = { LREFERENCES, LMENTIONS,
+			LCATEGORIES };
 	/**
 	 * array of labels. Elements are filled as soon as readlabels is called.
 	 */
@@ -535,80 +580,6 @@ public class LabelNumCorpus extends NumCorpus implements ILabelCorpus {
 		}
 	}
 
-	/**
-	 * check the consistency of the corpus, basically checking for array sizes
-	 * in conjunction with the index values contained.
-	 * 
-	 * @param resolver whether to include the resolver class
-	 * @return error report or null if ok.
-	 */
-	public String checkConsistency(boolean resolver) {
-		StringBuffer sb = new StringBuffer();
-		// TODO: we have the resolver (including labels) checked before the
-		// numerical labels... suboptimal but ok for a consistency check but.
-		sb.append(super.checkConsistency(resolver));
-
-		for (int type = 0; type < labelExtensions.length; type++) {
-			if (labels[type] != null) {
-				// check whether labels array size matches that of the metadata
-				if (labels[type].length != labelsV[type]) {
-					int W = 0;
-					int[] ll = new int[labelsV[type]];
-					// check W and availability of all labels
-					for (int m = 0; m < numDocs; m++) {
-						for (int n = 0; n < labels[type][m].length; n++) {
-							ll[labels[type][m][n]]++;
-						}
-						W += labels[type][m].length;
-					}
-					for (int t = 0; t < ll.length; t++) {
-						if (ll[t] == 0) {
-							sb.append(String.format(
-									"label type %s : %d frequency = 0\n",
-									labelNames[type], t));
-						}
-					}
-				}
-
-			}
-		}
-
-		// check terms
-		int V = 0;
-		int W = 0;
-		for (int m = 0; m < numDocs; m++) {
-			if (docs[m] == null) {
-				sb.append(String.format("docs[%d] = null\n", m));
-			}
-			String docstatus = docs[m].checkConsistency();
-			if (docstatus != null) {
-				sb.append(String.format("docs[%d] = null:\n%s", m, docstatus));
-			}
-		}
-		if (numTerms != V) {
-			sb.append(String.format("numTerms = %d != V %d\n", numTerms, V));
-		} else {
-			// check whether all terms appear in the corpus
-			int[] df = calcDocFreqs();
-			for (int term = 0; term < numTerms; term++) {
-				if (df[term] == 0) {
-					sb.append(String.format("term = %d df = 0\n", term));
-				}
-			}
-		}
-		// check documents
-		if (numDocs != docs.length) {
-			sb.append(String.format("numDocs = %d != docs.length = %d\n",
-					numDocs, docs.length));
-		}
-		// check resolver
-		if (resolver) {
-			getResolver().checkConsistency(this);
-		}
-
-		return sb.length() != 0 ? sb.toString() : null;
-	}
-
 	@Override
 	public String toString() {
 		StringBuffer sb = new StringBuffer();
@@ -633,36 +604,73 @@ public class LabelNumCorpus extends NumCorpus implements ILabelCorpus {
 	}
 
 	/**
-	 * test corpus reading and splitting
+	 * check the consistency of the corpus, basically checking for array sizes
+	 * in conjunction with the index values contained.
 	 * 
-	 * @param args
+	 * @param resolver whether to include the resolver class
+	 * @return error report or null if ok.
 	 */
-	public static void main(String[] args) {
-		// LabelNumCorpus nc = new LabelNumCorpus("berry95/berry95");
-		LabelNumCorpus nc = new LabelNumCorpus("corpus-example/nips");
-		nc.getDocLabels(LAUTHORS);
-		nc.split(10, 0, new Random());
+	public String check(boolean resolver) {
+		StringBuffer sb = new StringBuffer();
+		// TODO: we have the resolver (including labels) checked before the
+		// numerical labels... suboptimal but ok for a consistency check but.
+		String st = super.check(resolver);
+		sb.append(st == null ? "" : st);
 
-		System.out.println("train");
-		LabelNumCorpus ncc = (LabelNumCorpus) nc.getTrainCorpus();
-		System.out.println(ncc);
-		int[][] x = ncc.getDocWords(new Random());
-		System.out.println(Vectors.print(x));
-		System.out.println("labels");
-		int[][] a = ncc.getDocLabels(LAUTHORS);
-		System.out.println(Vectors.print(a));
-
-		System.out.println("test");
-		ncc = (LabelNumCorpus) nc.getTestCorpus();
-		System.out.println(ncc);
-		x = ncc.getDocWords(new Random());
-		System.out.println(Vectors.print(x));
-		System.out.println("labels");
-		a = ncc.getDocLabels(LAUTHORS);
-		System.out.println(Vectors.print(a));
-
-		System.out.println("document mapping");
-		System.out.println(Vectors.print(nc.getOrigDocIds()));
+		for (int type = 0; type < labelExtensions.length; type++) {
+			if (labels[type] != null) {
+				if (labels[type].length != numDocs) {
+					// each document needs to have a label
+					sb.append(String
+							.format("label type %s length = %d != document count M = %d\n",
+									labelNames[type], labels[type].length,
+									numDocs));
+				} else {
+					// check whether labels array size matches that of the
+					// metadata
+					int W = 0;
+					int V = labelsV[type];
+					int[] ll = new int[V];
+					boolean needOne = Arrays.binarySearch(cardinalityGeOne,
+							type) >= 0;
+					boolean exactlyOne = Arrays.binarySearch(cardinalityOne,
+							type) >= 0;
+					// check W and availability of all labels
+					for (int m = 0; m < numDocs; m++) {
+						int[] row = labels[type][m];
+						for (int n = 0; n < row.length; n++) {
+							if (row[n] < labelsV[type]) {
+								ll[row[n]]++;
+							} else {
+								sb.append(String
+										.format("label type %s [%d][%d]  %d > V = %d\n",
+												labelNames[type], m, n, row[n],
+												V));
+							}
+						}
+						if (((exactlyOne || needOne) && labels[type][m].length == 0)
+								|| (exactlyOne && labels[type][m].length > 1)) {
+							sb.append(String
+									.format("label type %s : %d cardinality constraint broken: m = %d\n",
+											labelNames[type], m));
+						}
+						W += labels[type][m].length;
+					}
+					boolean cannotBeEmpty = Arrays.binarySearch(
+							allowEmptyLabels, type) < 0;
+					if (cannotBeEmpty) {
+						for (int t = 0; t < ll.length; t++) {
+							if (ll[t] == 0) {
+								sb.append(String.format(
+										"label type %s : %d frequency = 0\n",
+										labelNames[type], t));
+							}
+						}
+					}
+				}
+			}
+		}
+		return sb.length() != 0 ? sb.toString() : null;
 	}
 
 }

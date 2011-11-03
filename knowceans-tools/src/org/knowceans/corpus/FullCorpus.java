@@ -197,7 +197,7 @@ public class FullCorpus extends LabelNumCorpus implements ICorpusResolver {
 	}
 
 	public void writeTerms(String file) throws IOException {
-		resolver.writeTerms(file);
+		resolver.write(file, resolver.KTERMS);
 	}
 
 	@Override

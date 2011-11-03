@@ -181,13 +181,30 @@ public class CorpusResolver implements ICorpusResolver {
 	}
 
 	/**
-	 * write the term set to the file
+	 * write all key information loaded to the filebase. The directory must
+	 * exist. Files are overwritten.
 	 * 
-	 * @param file (full file name, no .vocab appended)
+	 * @param filebase
 	 * @throws IOException
 	 */
-	public void writeTerms(String file) throws IOException {
-		BufferedWriter bw = new BufferedWriter(new FileWriter(file));
+	public void write(String filebase) throws IOException {
+		for (int type = 0; type < keyNames.length; type++) {
+			if (data[type] != null) {
+				write(filebase, type);
+			}
+		}
+	}
+
+	/**
+	 * write the term set to the file with filebase
+	 * 
+	 * @param filebase (no .vocab etc. appended)
+	 * @param type key type (KTERMS, KLABELS etc.)
+	 * @throws IOException
+	 */
+	public void write(String filebase, int type) throws IOException {
+		BufferedWriter bw = new BufferedWriter(new FileWriter(filebase + "."
+				+ keyExtensions[type]));
 		for (String term : data[KTERMS]) {
 			bw.append(term).append('\n');
 		}
@@ -312,15 +329,6 @@ public class CorpusResolver implements ICorpusResolver {
 		}
 	}
 
-	/**
-	 * filters the documents according to the new index
-	 * 
-	 * @param index
-	 */
-	public void filterDocuments(int[] old2new) {
-		throw new Error();
-	}
-
 	/*
 	 * (non-Javadoc)
 	 * 
@@ -433,13 +441,13 @@ public class CorpusResolver implements ICorpusResolver {
 
 	/**
 	 * check the consistency of the corpus resolver, basically checking for
-	 * array sizes in conjunction with the index values contained. Labels to be
-	 * checked need to be loaded beforehand.
+	 * array sizes in conjunction with the respective corpus quanitities. Labels
+	 * to be checked need to be loaded beforehand.
 	 * 
 	 * @param corpus the corpus to be used
 	 * @return error report or null if ok.
 	 */
-	public String checkConsistency(NumCorpus corpus) {
+	public String check(NumCorpus corpus) {
 		StringBuffer sb = new StringBuffer();
 
 		// check documents and terms
@@ -479,7 +487,6 @@ public class CorpusResolver implements ICorpusResolver {
 					}
 				}
 			}
-
 		}
 		return sb.length() != 0 ? sb.toString() : null;
 	}

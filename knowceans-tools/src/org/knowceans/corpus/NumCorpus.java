@@ -54,6 +54,28 @@ import sun.tools.tree.LengthExpression;
  */
 public class NumCorpus implements ICorpus, ITermCorpus, ISplitCorpus {
 
+	/**
+	 * test corpus reading and splitting
+	 * 
+	 * @param args
+	 */
+	public static void main(String[] args) {
+		NumCorpus nc = new NumCorpus("berry95/berry95.corpus");
+		nc.split(10, 0, new Random());
+		System.out.println("train");
+		ICorpus ncc = nc.getTrainCorpus();
+		System.out.println(ncc);
+		int[][] x = ncc.getDocWords(new Random());
+		System.out.println(Vectors.print(x));
+		System.out.println("test");
+		ncc = nc.getTestCorpus();
+		System.out.println(ncc);
+		x = ncc.getDocWords(new Random());
+		System.out.println(Vectors.print(x));
+		System.out.println("document mapping");
+		System.out.println(Vectors.print(nc.getOrigDocIds()));
+	}
+
 	protected Document[] docs;
 
 	protected int numTerms;
@@ -729,55 +751,6 @@ public class NumCorpus implements ICorpus, ITermCorpus, ISplitCorpus {
 	}
 
 	/**
-	 * check the consistency of the corpus, basically checking for array sizes
-	 * in conjunction with the index values contained.
-	 * 
-	 * @param resolver whether to include the resolver class
-	 * @return error report or null if ok.
-	 */
-	public String checkConsistency(boolean resolver) {
-		StringBuffer sb = new StringBuffer();
-
-		// check terms
-		int W = 0;
-		for (int m = 0; m < numDocs; m++) {
-			if (docs[m] == null) {
-				sb.append(String.format("docs[%d] = null\n", m));
-			} else {
-				W += docs[m].numWords;
-			}
-			String docstatus = docs[m].checkConsistency();
-			if (docstatus != null) {
-				sb.append(String.format("docs[%d] = null:\n%s", m, docstatus));
-			}
-		}
-		int[] df = calcDocFreqs();
-		int V = df.length;
-		if (numTerms != V) {
-			// sums of terms equal to what is extracted from docs?
-			sb.append(String.format("numTerms = %d != V %d\n", numTerms, V));
-		} else {
-			// do all terms appear in the corpus
-			for (int term = 0; term < numTerms; term++) {
-				if (df[term] == 0) {
-					sb.append(String.format("term = %d df = 0\n", term));
-				}
-			}
-		}
-		// check documents
-		if (numDocs != docs.length) {
-			sb.append(String.format("numDocs = %d != docs.length = %d\n",
-					numDocs, docs.length));
-		}
-		// check resolver
-		if (resolver) {
-			getResolver().checkConsistency(this);
-		}
-
-		return sb.length() != 0 ? sb.toString() : null;
-	}
-
-	/**
 	 * return the training corpus split
 	 */
 	public ICorpus getTrainCorpus() {
@@ -854,33 +827,59 @@ public class NumCorpus implements ICorpus, ITermCorpus, ISplitCorpus {
 		return resolver;
 	}
 
-	/**
-	 * test corpus reading and splitting
-	 * 
-	 * @param args
-	 */
-	public static void main(String[] args) {
-		NumCorpus nc = new NumCorpus("berry95/berry95.corpus");
-		nc.split(10, 0, new Random());
-		System.out.println("train");
-		ICorpus ncc = nc.getTrainCorpus();
-		System.out.println(ncc);
-		int[][] x = ncc.getDocWords(new Random());
-		System.out.println(Vectors.print(x));
-		System.out.println("test");
-		ncc = nc.getTestCorpus();
-		System.out.println(ncc);
-		x = ncc.getDocWords(new Random());
-		System.out.println(Vectors.print(x));
-		System.out.println("document mapping");
-		System.out.println(Vectors.print(nc.getOrigDocIds()));
-	}
-
 	public String getDataFilebase() {
 		return dataFilebase;
 	}
 
 	public void setDataFilebase(String dataFilebase) {
 		this.dataFilebase = dataFilebase;
+	}
+
+	/**
+	 * check the consistency of the corpus, basically checking for array sizes
+	 * in conjunction with the index values contained.
+	 * 
+	 * @param resolver whether to include the resolver class
+	 * @return error report or null if ok.
+	 */
+	public String check(boolean resolver) {
+		StringBuffer sb = new StringBuffer();
+
+		// check terms
+		int W = 0;
+		for (int m = 0; m < numDocs; m++) {
+			if (docs[m] == null) {
+				sb.append(String.format("docs[%d] = null\n", m));
+			} else {
+				W += docs[m].numWords;
+			}
+			String docstatus = docs[m].checkConsistency();
+			if (docstatus != null) {
+				sb.append(String.format("docs[%d] = null:\n%s", m, docstatus));
+			}
+		}
+		int[] df = calcDocFreqs();
+		int V = df.length;
+		if (numTerms != V) {
+			// sums of terms equal to what is extracted from docs?
+			sb.append(String.format("numTerms = %d != V %d\n", numTerms, V));
+		} else {
+			// do all terms appear in the corpus
+			for (int term = 0; term < numTerms; term++) {
+				if (df[term] == 0) {
+					sb.append(String.format("term = %d df = 0\n", term));
+				}
+			}
+		}
+		// check documents
+		if (numDocs != docs.length) {
+			sb.append(String.format("numDocs = %d != docs.length = %d\n",
+					numDocs, docs.length));
+		}
+		// check resolver
+		if (resolver) {
+			getResolver().check(this);
+		}
+		return sb.length() != 0 ? sb.toString() : null;
 	}
 }
