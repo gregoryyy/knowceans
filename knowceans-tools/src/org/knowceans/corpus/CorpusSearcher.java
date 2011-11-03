@@ -9,6 +9,7 @@ import java.io.InputStreamReader;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -49,6 +50,7 @@ public class CorpusSearcher {
 	private int[] docFreqs;
 	private Map<Integer, Set<Integer>> authorIndex;
 	private Map<Integer, Set<Integer>> labelIndex;
+	private String[] termsList;
 
 	/**
 	 * inits the searcher with the given corpus, which needs to have a resolver
@@ -143,17 +145,77 @@ public class CorpusSearcher {
 	 */
 	public void interact() {
 		try {
-			System.out.println("Query (.q to quit):");
+			System.out
+					.println("Query (.q to quit, ENTER to page results, .d <rank> or .m <id> to view doc, .t <prefix> to view terms, .a <prefix> to view authors):");
 			BufferedReader br = new BufferedReader(new InputStreamReader(
 					System.in));
+			String lastQuery = "";
+			List<Result> results = null;
+			int termpos = -1;
+			int resultsPage = 0;
+			int pageSize = 10;
 			String line;
 			while ((line = br.readLine()) != null) {
-				if (line.equals(".q"))
+				line = line.trim();
+				if (line.equals(".q")) {
 					break;
-				List<Result> results = search(line);
-				printResults(line, results);
-				System.out.println("***********************************");
-				System.out.println("query:");
+				} else if (line.equals("")) {
+					// continue paging
+					if (results != null) {
+						resultsPage++;
+						printResults(lastQuery, results,
+								resultsPage * pageSize, pageSize);
+					} else if (termpos >= 0) {
+						resultsPage++;
+						for (int i = termpos + resultsPage * pageSize; i < termpos
+								+ (resultsPage + 1) * pageSize; i++) {
+							if (i < termsList.length) {
+								System.out.println(termsList[i]);
+							}
+						}
+					}
+				} else if (line.startsWith(".d")) {
+					int rank = Integer.parseInt(line.substring(2));
+					if (results != null && results.size() > rank) {
+						System.out.println("result rank " + rank + ":");
+						int id = results.get(rank).id;
+						printDoc(id);
+						System.out
+								.println("***********************************");
+					}
+				} else if (line.startsWith(".m")) {
+					int m = Integer.parseInt(line.substring(2));
+					System.out.println("document id " + m + ":");
+					printDoc(m);
+					System.out.println("***********************************");
+				} else if (line.startsWith(".t")) {
+					results = null;
+					resultsPage = 0;
+					String prefix = line.substring(2).trim();
+					if (termsList == null) {
+						termsList = resolver.getStrings(ICorpusResolver.KTERMS);
+						Arrays.sort(termsList);
+					}
+					// search for entry point
+					int pos = Arrays.binarySearch(termsList, prefix);
+					if (pos < 0) {
+						pos = -pos - 1;
+					}
+					for (termpos = pos; termpos < pos + pageSize; termpos++) {
+						if (termpos < termsList.length) {
+							System.out.println(termsList[termpos]);
+						}
+					}
+				} else {
+					termpos = -1;
+					results = search(line);
+					resultsPage = 0;
+					System.out.println(results.size() + " results: ");
+					printResults(line, results, 0, pageSize);
+					System.out.println("***********************************");
+					System.out.println("query:");
+					lastQuery = line;
+				}
 			}
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -162,17 +224,65 @@ public class CorpusSearcher {
 	}
 
 	/**
+	 * print the document
+	 * 
+	 * @param id
+	 */
+	protected void printDoc(int id) {
+		String title = resolver.resolveDocRef(id);
+		String content = resolver.resolveDocContent(id);
+		System.out.println(wordWrap(title, 80));
+		System.out.println(wordWrap(content, 80));
+	}
+
+	/**
+	 * word wrap the document before column
+	 * 
+	 * @param content
+	 * @param i
+	 * @return
+	 */
+	private String wordWrap(String content, int columns) {
+		// word wrap line
+		StringBuffer sb = new StringBuffer();
+		int prevword = 0;
+		int curword = 0;
+		int curline = 0;
+		int lastspace = content.lastIndexOf(' ');
+		if (lastspace == -1) {
+			return content;
+		}
+		while (curword < lastspace) {
+			prevword = curword;
+			curword = content.indexOf(' ', curword + 1);
+			if (curword - curline > columns) {
+				sb.append(content.substring(curline, prevword).trim()).append(
+						'\n');
+				curline = prevword;
+			}
+		}
+		sb.append(content.substring(curline).trim());
+		return sb.toString();
+	}
+
+	/**
 	 * print query and search result
 	 * 
 	 * @param query
 	 * @param results
+	 * @param start
+	 * @param count
 	 */
-	private void printResults(String query, List<Result> results) {
-		int i = 0;
+	private void printResults(String query, List<Result> results, int start,
+			int count) {
 		System.out.println("results for query \"" + query + "\":");
-		for (Result result : results) {
-			System.out.println(++i //
-					+ ". score = " + result.score + ", id = " + result.id);
+		for (int i = start; i < start + count; i++) {
+			if (i >= results.size()) {
+				return;
+			}
+			Result result = results.get(i);
+			System.out.println(i + ". score = " + result.score + ", id = "
+					+ result.id);
 			System.out.println("\t" + resolver.resolveDocRef(result.id));
 		}
 	}

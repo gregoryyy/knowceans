@@ -244,6 +244,16 @@ public class CorpusResolver implements ICorpusResolver {
 		}
 		return id;
 	}
+	
+	/**
+	 * get string content for all keys
+	 * @param K-constant
+	 * @return
+	 */
+	public String[] getStrings(int type) {
+		return data[KTERMS];
+	}
+
 
 	/*
 	 * (non-Javadoc)
