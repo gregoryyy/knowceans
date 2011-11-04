@@ -156,8 +156,8 @@ public class CorpusSearcher {
 					System.in));
 			String lastQuery = "";
 			List<Result> results = null;
-			int listpos = -1;
 			int listtype = -1;
+			int listpos = -1;
 			int resultsPage = 0;
 			int pageSize = 10;
 			String line;
@@ -173,14 +173,10 @@ public class CorpusSearcher {
 								resultsPage * pageSize, pageSize);
 					} else if (listpos >= 0) {
 						resultsPage++;
-						for (int i = listpos + resultsPage * pageSize; i < listpos
-								+ (resultsPage + 1) * pageSize; i++) {
-							if (i < keyLists[listtype].length) {
-								System.out.println(keyLists[listtype][i]);
-							}
-						}
+						printListPage(listtype, listpos + resultsPage
+								* pageSize, pageSize);
 					}
-				} else if (line.startsWith(".d")) {
+				} else if (line.startsWith(".d") && line.length() > 2) {
 					int rank = Integer.parseInt(line.substring(2));
 					if (results != null && results.size() > rank) {
 						System.out.println("result rank " + rank + ":");
@@ -195,9 +191,10 @@ public class CorpusSearcher {
 					printDoc(lastQuery, m);
 					System.out.println("***********************************");
 				} else if (line.startsWith(".t") || line.startsWith(".a")
-						|| line.startsWith(".c")) {
+						|| line.startsWith(".c") || line.startsWith(".d")) {
 					results = null;
 					resultsPage = 0;
+					listpos = 0;
 					String prefix = line.substring(2).trim();
 					if (line.charAt(1) == 't') {
 						listtype = ICorpusResolver.KTERMS;
@@ -205,17 +202,20 @@ public class CorpusSearcher {
 						listtype = ICorpusResolver.KAUTHORS;
 					} else if (line.charAt(1) == 'c') {
 						listtype = ICorpusResolver.KCATEGORIES;
+					} else if (line.charAt(1) == 'd') {
+						listtype = ICorpusResolver.KDOCREF;
 					} else {
 						// error
 					}
 					loadList(listtype);
-					listpos = searchList(listtype, prefix, pageSize);
+					listpos = searchList(listtype, prefix);
+					printListPage(listtype, listpos, pageSize);
 				} else if (line.startsWith(".h") || line.startsWith("?")) {
 					System.out.println(help);
 				} else {
-					listpos = -1;
 					results = search(line);
 					resultsPage = 0;
+					listpos = -1;
 					System.out.println(results.size() + " results: ");
 					printResults(line, results, 0, pageSize);
 					System.out.println("***********************************");
@@ -246,16 +246,15 @@ public class CorpusSearcher {
 	 * 
 	 * @param type
 	 * @param prefix
-	 * @param pageSize
 	 * @return
 	 */
-	protected int searchList(int type, String prefix, int pageSize) {
+	protected int searchList(int type, String prefix) {
 		// search for entry point
 		int pos = Arrays.binarySearch(keyLists[type], prefix);
 		if (pos < 0) {
 			pos = -pos - 1;
 		}
-		return printListPage(type, pos, pageSize);
+		return pos;
 	}
 
 	/**
@@ -333,6 +332,9 @@ public class CorpusSearcher {
 	 * @return
 	 */
 	private String highlight(String content, String query) {
+		if (query == null || query.equals("")) {
+			return content;
+		}
 		String[] terms = query.split(" ");
 		for (String term : terms) {
 			content = content.replaceAll("\\s(?i)" + term + "\\s", " ***"
