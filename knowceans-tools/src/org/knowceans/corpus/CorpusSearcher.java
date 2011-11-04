@@ -45,7 +45,8 @@ public class CorpusSearcher {
 
 	private LabelNumCorpus corpus;
 	private CorpusResolver resolver;
-	private String help = "Query (.q to quit, ENTER to page results, .d <rank> or .m <id> to view doc, .t <prefix> to view terms, .a <prefix> to view authors):";
+	private String help = "Query (.q to quit, ENTER to page results, .d <rank> or .m <id> to view doc, .t <prefix> to view terms,\n"
+			+ "       .a, .c <prefix> to view authors, categories list, .A, .C <prefix> to view particular item):";
 
 	/**
 	 * inverted index
@@ -177,7 +178,11 @@ public class CorpusSearcher {
 								* pageSize, pageSize);
 					}
 				} else if (line.startsWith(".d") && line.length() > 2) {
-					int rank = Integer.parseInt(line.substring(2));
+					String arg = line.substring(2);
+					if (!arg.matches("[0-9]+")) {
+						continue;
+					}
+					int rank = Integer.parseInt(arg);
 					if (results != null && results.size() > rank) {
 						System.out.println("result rank " + rank + ":");
 						int id = results.get(rank).id;
@@ -185,11 +190,29 @@ public class CorpusSearcher {
 						System.out
 								.println("***********************************");
 					}
-				} else if (line.startsWith(".m")) {
-					int m = Integer.parseInt(line.substring(2));
+				} else if (line.startsWith(".m") && line.length() > 2) {
+					String arg = line.substring(2);
+					if (!arg.matches("[0-9]+")) {
+						continue;
+					}
+					int m = Integer.parseInt(arg);
 					System.out.println("document id " + m + ":");
 					printDoc(lastQuery, m);
 					System.out.println("***********************************");
+				} else if (line.startsWith(".A") && line.length() > 2) {
+					String prefix = line.substring(2).trim();
+					System.out.println("author prefix " + prefix + ":");
+					int pos = searchList(ICorpusResolver.KAUTHORS, prefix);
+					printAuthor(pos);
+					System.out.println("***********************************");
+
+				} else if (line.startsWith(".C") && line.length() > 2) {
+					String prefix = line.substring(2).trim();
+					System.out.println("category prefix " + prefix + ":");
+					int pos = searchList(ICorpusResolver.KCATEGORIES, prefix);
+					printCategory(pos);
+					System.out.println("***********************************");
+
 				} else if (line.startsWith(".t") || line.startsWith(".a")
 						|| line.startsWith(".c") || line.startsWith(".d")) {
 					results = null;
@@ -207,7 +230,6 @@ public class CorpusSearcher {
 					} else {
 						// error
 					}
-					loadList(listtype);
 					listpos = searchList(listtype, prefix);
 					printListPage(listtype, listpos, pageSize);
 				} else if (line.startsWith(".h") || line.startsWith("?")) {
@@ -249,6 +271,7 @@ public class CorpusSearcher {
 	 * @return
 	 */
 	protected int searchList(int type, String prefix) {
+		loadList(type);
 		// search for entry point
 		int pos = Arrays.binarySearch(keyLists[type], prefix);
 		if (pos < 0) {
@@ -321,6 +344,53 @@ public class CorpusSearcher {
 						+ docFreqs[termid] + " tf = "
 						+ termDocFreqIndex.get(termid).get(id));
 			}
+		}
+	}
+
+	/**
+	 * prints the given author
+	 * 
+	 * @param prefix
+	 */
+	private void printAuthor(int id) {
+		System.out.println("Author #" + id + ": " + resolver.resolveAuthor(id));
+		System.out.println("Documents: ");
+		Set<Integer> docs = authorIndex.get(id);
+
+		for (int doc : docs) {
+			System.out.println(resolver.resolveDocRef(doc));
+		}
+		if (corpus.hasLabels(LabelNumCorpus.LMENTIONS) == 2) {
+			int[][] ment = corpus.getDocLabels(LabelNumCorpus.LMENTIONS);
+			Set<Integer> ments = new HashSet<Integer>();
+			for (int m = 0; m < ment.length; m++) {
+				for (int i = 0; i < ment[m].length; i++) {
+					if (ment[m][i] == id && !authorIndex.get(id).contains(m)) {
+						ments.add(m);
+					}
+				}
+			}
+			if (ments.size() > 0) {
+				System.out.println("Mentions:");
+				for (int m : ments) {
+					System.out.println(resolver.resolveDocRef(m));
+				}
+			}
+		}
+	}
+
+	/**
+	 * prints the given category
+	 * 
+	 * @param prefix
+	 */
+	private void printCategory(int id) {
+		System.out.println("Category #" + id + ": "
+				+ resolver.resolveCategory(id));
+		System.out.println("Documents: ");
+		Set<Integer> docs = labelIndex.get(id);
+		for (int doc : docs) {
+			System.out.println(resolver.resolveDocRef(doc));
 		}
 	}
 
@@ -459,6 +529,7 @@ public class CorpusSearcher {
 				Set<Integer> docs = index.get(lab[i]);
 				if (docs == null) {
 					docs = new HashSet<Integer>();
+					index.put(lab[i], docs);
 				}
 				docs.add(m);
 			}
