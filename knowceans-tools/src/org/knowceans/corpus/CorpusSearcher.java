@@ -12,10 +12,12 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
@@ -36,12 +38,14 @@ public class CorpusSearcher {
 	public static void main(String[] args) throws Exception {
 		String filebase = "corpus-example/nips";
 		LabelNumCorpus corpus = new LabelNumCorpus(filebase);
+		corpus.loadAllLabels();
 		CorpusSearcher cs = new CorpusSearcher(corpus);
 		cs.interact();
 	}
 
 	private LabelNumCorpus corpus;
 	private CorpusResolver resolver;
+	private String help = "Query (.q to quit, ENTER to page results, .d <rank> or .m <id> to view doc, .t <prefix> to view terms, .a <prefix> to view authors):";
 
 	/**
 	 * inverted index
@@ -50,7 +54,7 @@ public class CorpusSearcher {
 	private int[] docFreqs;
 	private Map<Integer, Set<Integer>> authorIndex;
 	private Map<Integer, Set<Integer>> labelIndex;
-	private String[] termsList;
+	private String[][] keyLists;
 
 	/**
 	 * inits the searcher with the given corpus, which needs to have a resolver
@@ -65,6 +69,7 @@ public class CorpusSearcher {
 			ClassNotFoundException {
 		this.corpus = corpus;
 		this.resolver = corpus.getResolver();
+		keyLists = new String[CorpusResolver.keyExtensions.length][];
 		if (!loadIndex()) {
 			System.out.println("indexing");
 			createIndex();
@@ -95,6 +100,7 @@ public class CorpusSearcher {
 				if (object.equals("terms")) {
 					termDocFreqIndex = (Map<Integer, Map<Integer, Integer>>) ois
 							.readObject();
+					docFreqs = (int[]) ois.readObject();
 				} else if (object.equals("authors")) {
 					authorIndex = (Map<Integer, Set<Integer>>) ois.readObject();
 				} else if (object.equals("labels")) {
@@ -145,13 +151,13 @@ public class CorpusSearcher {
 	 */
 	public void interact() {
 		try {
-			System.out
-					.println("Query (.q to quit, ENTER to page results, .d <rank> or .m <id> to view doc, .t <prefix> to view terms, .a <prefix> to view authors):");
+			System.out.println(help);
 			BufferedReader br = new BufferedReader(new InputStreamReader(
 					System.in));
 			String lastQuery = "";
 			List<Result> results = null;
-			int termpos = -1;
+			int listpos = -1;
+			int listtype = -1;
 			int resultsPage = 0;
 			int pageSize = 10;
 			String line;
@@ -165,12 +171,12 @@ public class CorpusSearcher {
 						resultsPage++;
 						printResults(lastQuery, results,
 								resultsPage * pageSize, pageSize);
-					} else if (termpos >= 0) {
+					} else if (listpos >= 0) {
 						resultsPage++;
-						for (int i = termpos + resultsPage * pageSize; i < termpos
+						for (int i = listpos + resultsPage * pageSize; i < listpos
 								+ (resultsPage + 1) * pageSize; i++) {
-							if (i < termsList.length) {
-								System.out.println(termsList[i]);
+							if (i < keyLists[listtype].length) {
+								System.out.println(keyLists[listtype][i]);
 							}
 						}
 					}
@@ -179,35 +185,35 @@ public class CorpusSearcher {
 					if (results != null && results.size() > rank) {
 						System.out.println("result rank " + rank + ":");
 						int id = results.get(rank).id;
-						printDoc(id);
+						printDoc(lastQuery, id);
 						System.out
 								.println("***********************************");
 					}
 				} else if (line.startsWith(".m")) {
 					int m = Integer.parseInt(line.substring(2));
 					System.out.println("document id " + m + ":");
-					printDoc(m);
+					printDoc(lastQuery, m);
 					System.out.println("***********************************");
-				} else if (line.startsWith(".t")) {
+				} else if (line.startsWith(".t") || line.startsWith(".a")
+						|| line.startsWith(".c")) {
 					results = null;
 					resultsPage = 0;
 					String prefix = line.substring(2).trim();
-					if (termsList == null) {
-						termsList = resolver.getStrings(ICorpusResolver.KTERMS);
-						Arrays.sort(termsList);
+					if (line.charAt(1) == 't') {
+						listtype = ICorpusResolver.KTERMS;
+					} else if (line.charAt(1) == 'a') {
+						listtype = ICorpusResolver.KAUTHORS;
+					} else if (line.charAt(1) == 'c') {
+						listtype = ICorpusResolver.KCATEGORIES;
+					} else {
+						// error
 					}
-					// search for entry point
-					int pos = Arrays.binarySearch(termsList, prefix);
-					if (pos < 0) {
-						pos = -pos - 1;
-					}
-					for (termpos = pos; termpos < pos + pageSize; termpos++) {
-						if (termpos < termsList.length) {
-							System.out.println(termsList[termpos]);
-						}
-					}
+					loadList(listtype);
+					listpos = searchList(listtype, prefix, pageSize);
+				} else if (line.startsWith(".h") || line.startsWith("?")) {
+					System.out.println(help);
 				} else {
-					termpos = -1;
+					listpos = -1;
 					results = search(line);
 					resultsPage = 0;
 					System.out.println(results.size() + " results: ");
@@ -224,15 +230,116 @@ public class CorpusSearcher {
 	}
 
 	/**
+	 * load list of a given type
+	 * 
+	 * @param type
+	 */
+	protected void loadList(int type) {
+		if (keyLists[type] == null) {
+			keyLists[type] = resolver.getStrings(type);
+			Arrays.sort(keyLists[type]);
+		}
+	}
+
+	/**
+	 * search the list of the type, printing pageSize results
+	 * 
+	 * @param type
+	 * @param prefix
+	 * @param pageSize
+	 * @return
+	 */
+	protected int searchList(int type, String prefix, int pageSize) {
+		// search for entry point
+		int pos = Arrays.binarySearch(keyLists[type], prefix);
+		if (pos < 0) {
+			pos = -pos - 1;
+		}
+		return printListPage(type, pos, pageSize);
+	}
+
+	/**
+	 * print one page of the list starting at start
+	 * 
+	 * @param type
+	 * @param start
+	 * @param pageSize
+	 * @return new start position
+	 */
+	protected int printListPage(int type, int start, int pageSize) {
+		int listpos;
+		for (listpos = start; listpos < start + pageSize; listpos++) {
+			if (listpos < keyLists[type].length) {
+				System.out.println(keyLists[type][listpos]);
+			}
+		}
+		return listpos;
+	}
+
+	/**
 	 * print the document
 	 * 
 	 * @param id
 	 */
-	protected void printDoc(int id) {
+	protected void printDoc(String query, int id) {
 		String title = resolver.resolveDocRef(id);
 		String content = resolver.resolveDocContent(id);
+		title = highlight(title, query);
+		content = highlight(content, query);
 		System.out.println(wordWrap(title, 80));
 		System.out.println(wordWrap(content, 80));
+		if (corpus.hasLabels(LabelNumCorpus.LREFERENCES) == 2) {
+			int[] refs = corpus.getDocLabels(LabelNumCorpus.LREFERENCES, id);
+			if (refs.length > 0) {
+				System.out.println("References:");
+				for (int ref : refs) {
+					System.out.println(resolver.resolveDocRef(ref));
+				}
+			}
+		}
+		// TODO: this is repeated overkill
+		int[][] allrefs = corpus.getDocLabels(LabelNumCorpus.LREFERENCES);
+		Set<Integer> inrefs = new TreeSet<Integer>();
+		for (int m = 0; m < corpus.numDocs; m++) {
+			for (int i = 0; i < allrefs[m].length; i++) {
+				if (allrefs[m][i] == id) {
+					inrefs.add(m);
+				}
+			}
+		}
+		if (inrefs.size() > 0) {
+			System.out.println("Citations:");
+			for (int m : inrefs) {
+				System.out.println(resolver.resolveDocRef(m));
+			}
+		}
+		String[] terms = query.split(" ");
+		for (String term : terms) {
+			// TODO: this is redundant with the actual search
+			int termid = resolver.getTermId(term);
+			if (termid >= 0) {
+				System.out.println(term + " " + termid + " df = "
+						+ docFreqs[termid] + " tf = "
+						+ termDocFreqIndex.get(termid).get(id));
+			}
+		}
+	}
+
+	/**
+	 * highlight query terms in content
+	 * 
+	 * @param content
+	 * @param query
+	 * @return
+	 */
+	private String highlight(String content, String query) {
+		String[] terms = query.split(" ");
+		for (String term : terms) {
+			content = content.replaceAll("\\s(?i)" + term + "\\s", " ***"
+					+ term + "*** ");
+		}
+
+		return content;
 	}
 
 	/**
@@ -243,6 +350,9 @@ public class CorpusSearcher {
 	 * @return
 	 */
 	private String wordWrap(String content, int columns) {
+		if (content == null) {
+			return null;
+		}
 		// word wrap line
 		StringBuffer sb = new StringBuffer();
 		int prevword = 0;
@@ -317,6 +427,7 @@ public class CorpusSearcher {
 	private void createIndex() {
 		termDocFreqIndex = new HashMap<Integer, Map<Integer, Integer>>();
 		docFreqs = new int[corpus.getNumTerms()];
+
 		for (int m = 0; m < corpus.getNumDocs(); m++) {
 			Document document = corpus.docs[m];
 			// tokenize document
@@ -324,6 +435,33 @@ public class CorpusSearcher {
 				addTermDoc(m, document.getTerm(i), document.getCount(i));
 			}
 		}
+		if (corpus.hasLabels(LabelNumCorpus.LAUTHORS) == 2) {
+			authorIndex = indexLabels(LabelNumCorpus.LAUTHORS);
+		}
+		if (corpus.hasLabels(LabelNumCorpus.LCATEGORIES) == 2) {
+			labelIndex = indexLabels(LabelNumCorpus.LCATEGORIES);
+		}
+	}
+
+	/**
+	 * index the label type by creating an inverted index to lookup documents
+	 * 
+	 * @param type
+	 * @return
+	 */
+	protected HashMap<Integer, Set<Integer>> indexLabels(int type) {
+		HashMap<Integer, Set<Integer>> index = new HashMap<Integer, Set<Integer>>();
+		for (int m = 0; m < corpus.getNumDocs(); m++) {
+			int[] lab = corpus.labels[type][m];
+			for (int i = 0; i < lab.length; i++) {
+				Set<Integer> docs = index.get(lab[i]);
+				if (docs == null) {
+					docs = new HashSet<Integer>();
+				}
+				docs.add(m);
+			}
+		}
+		return index;
 	}
 
 	/**
@@ -361,9 +499,6 @@ public class CorpusSearcher {
 		}
 		return results;
 	}
-
-	// ////// multi-term queries require merging of scores
-	// ///////
 
 	/**
 	 * search for a set of words in the corpus

@@ -251,7 +251,7 @@ public class CorpusResolver implements ICorpusResolver {
 	 * @return
 	 */
 	public String[] getStrings(int type) {
-		return data[KTERMS];
+		return data[type];
 	}
 
 
