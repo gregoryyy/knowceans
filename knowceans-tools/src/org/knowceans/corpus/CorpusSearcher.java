@@ -42,6 +42,14 @@ public class CorpusSearcher {
 		CorpusResolver cr = corpus.getResolver();
 		System.out.println(cr.getTermId("test"));
 		System.out.println(corpus.check(true));
+		System.out.println("reduce corpus to 20 docs");
+		
+		// this can be used to test the corpus interactively
+		corpus.reduce(20, null);
+		
+		// 
+		System.out.println(cr.getTermId("test"));
+		System.out.println(corpus.check(true));
 		CorpusSearcher cs = new CorpusSearcher(corpus);
 		cs.interact();
 	}
@@ -71,14 +79,32 @@ public class CorpusSearcher {
 	 */
 	public CorpusSearcher(LabelNumCorpus corpus) throws IOException,
 			ClassNotFoundException {
+		this(corpus, false);
+	}
+
+	/**
+	 * create corpus but reindex
+	 * 
+	 * @param corpus
+	 * @param reindex false to load index or index and save, true to create
+	 *        index temporarily
+	 * @throws IOException
+	 * @throws ClassNotFoundException
+	 */
+	public CorpusSearcher(LabelNumCorpus corpus, boolean reindex)
+			throws IOException, ClassNotFoundException {
 		this.corpus = corpus;
 		this.resolver = corpus.getResolver();
 		keyLists = new String[CorpusResolver.keyExtensions.length][];
-		if (!loadIndex()) {
+		if (!reindex && !loadIndex()) {
 			System.out.println("indexing");
 			createIndex();
 			System.out.println("saving to " + corpus.dataFilebase + ".idx");
 			saveIndex();
+		} else {
+			// load a fresh index
+			System.out.println("indexing");
+			createIndex();
 		}
 	}
 

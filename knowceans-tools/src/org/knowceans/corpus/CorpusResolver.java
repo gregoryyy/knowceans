@@ -178,7 +178,7 @@ public class CorpusResolver implements ICorpusResolver {
 		String[][] newData = new String[data.length][];
 		for (int type = 0; type < data.length; type++) {
 			if (data[type] != null) {
-				if (Arrays.binarySearch(docRelatedKeys, type) > 0) {
+				if (Arrays.binarySearch(docRelatedKeys, type) >= 0) {
 					newData[type] = new String[newM];
 					for (int m = 0; m < old2new.length; m++) {
 						if (old2new[m] >= 0) {
