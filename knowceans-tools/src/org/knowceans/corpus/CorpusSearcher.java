@@ -39,14 +39,17 @@ public class CorpusSearcher {
 		String filebase = "corpus-example/nips";
 		LabelNumCorpus corpus = new LabelNumCorpus(filebase);
 		corpus.loadAllLabels();
+		CorpusResolver cr = corpus.getResolver();
+		System.out.println(cr.getTermId("test"));
+		System.out.println(corpus.check(true));
 		CorpusSearcher cs = new CorpusSearcher(corpus);
 		cs.interact();
 	}
 
 	private LabelNumCorpus corpus;
 	private CorpusResolver resolver;
-	private String help = "Query (.q to quit, ENTER to page results, .d <rank> or .m <id> to view doc, .t <prefix> to view terms,\n"
-			+ "       .a, .c <prefix> to view authors, categories list, .A, .C <prefix> to view particular item):";
+	private String help = "Query (or .q to quit, ENTER to page results, .d <rank> or .m <id> to view doc, .t <prefix> to view terms list,\n"
+			+ "       .a, .c <prefix> to view authors, categories list, .A, .C <prefix> to view particular item, .h, ? for this message):";
 
 	/**
 	 * inverted index
@@ -248,7 +251,6 @@ public class CorpusSearcher {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-
 	}
 
 	/**
@@ -258,7 +260,9 @@ public class CorpusSearcher {
 	 */
 	protected void loadList(int type) {
 		if (keyLists[type] == null) {
-			keyLists[type] = resolver.getStrings(type);
+			String[] aa = resolver.getStrings(type);
+			keyLists[type] = new String[aa.length];
+			System.arraycopy(aa, 0, keyLists[type], 0, aa.length);
 			Arrays.sort(keyLists[type]);
 		}
 	}
@@ -340,8 +344,8 @@ public class CorpusSearcher {
 			// TODO: this is redundant with the actual search
 			int termid = resolver.getTermId(term);
 			if (termid >= 0) {
-				System.out.println(term + " " + termid + " df = "
-						+ docFreqs[termid] + " tf = "
+				System.out.println(term + ", " + termid + " df = "
+						+ docFreqs[termid] + ", tf = "
 						+ termDocFreqIndex.get(termid).get(id));
 			}
 		}
@@ -350,21 +354,25 @@ public class CorpusSearcher {
 	/**
 	 * prints the given author
 	 * 
-	 * @param prefix
+	 * @param pos position in author list
 	 */
-	private void printAuthor(int id) {
-		System.out.println("Author #" + id + ": " + resolver.resolveAuthor(id));
+	private void printAuthor(int pos) {
+		int id = getIdForPos(CorpusResolver.KAUTHORS, pos);
+		System.out.println("Author #" + pos + ", id = " + id + ": "
+				+ resolver.resolveAuthor(id) + ":");
 		System.out.println("Documents: ");
 		Set<Integer> docs = authorIndex.get(id);
 
+		int i = 0;
 		for (int doc : docs) {
-			System.out.println(resolver.resolveDocRef(doc));
+			i++;
+			System.out.println(i + ". " + resolver.resolveDocRef(doc));
 		}
 		if (corpus.hasLabels(LabelNumCorpus.LMENTIONS) == 2) {
 			int[][] ment = corpus.getDocLabels(LabelNumCorpus.LMENTIONS);
 			Set<Integer> ments = new HashSet<Integer>();
 			for (int m = 0; m < ment.length; m++) {
-				for (int i = 0; i < ment[m].length; i++) {
+				for (i = 0; i < ment[m].length; i++) {
 					if (ment[m][i] == id && !authorIndex.get(id).contains(m)) {
 						ments.add(m);
 					}
@@ -382,16 +390,35 @@ public class CorpusSearcher {
 	/**
 	 * prints the given category
 	 * 
-	 * @param prefix
+	 * @param pos position in label list displayed
 	 */
-	private void printCategory(int id) {
-		System.out.println("Category #" + id + ": "
+	private void printCategory(int pos) {
+		int id = getIdForPos(CorpusResolver.KCATEGORIES, pos);
+		System.out.println("Category #" + pos + ", id = " + id + ": "
 				+ resolver.resolveCategory(id));
 		System.out.println("Documents: ");
 		Set<Integer> docs = labelIndex.get(id);
-		for (int doc : docs) {
-			System.out.println(resolver.resolveDocRef(doc));
+		if (docs == null) {
+			System.out.println("[empty]");
+			return;
 		}
+		int i = 0;
+		for (int doc : docs) {
+			i++;
+			System.out.println(i + ". " + resolver.resolveDocRef(doc));
+		}
+	}
+
+	protected int getIdForPos(int type, int pos) {
+		String[] labels = resolver.getStrings(type);
+		int id = -1;
+		// TODO: more efficient than repeated linear search
+		for (id = 0; id < labels.length; id++) {
+			if (labels[id].equals(keyLists[type][pos])) {
+				break;
+			}
+		}
+		return id;
 	}
 
 	/**

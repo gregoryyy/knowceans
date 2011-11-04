@@ -81,6 +81,20 @@ public class CorpusResolver implements ICorpusResolver {
 				data[i] = load(f);
 			}
 		}
+		// set up terms
+		setupTermIndex();
+	}
+
+	/**
+	 * create a list to lookup terms
+	 */
+	protected void setupTermIndex() {
+		if (termids == null && data[KTERMS] != null) {
+			termids = new HashMap<String, Integer>();
+			for (int i = 0; i < data[KTERMS].length; i++) {
+				termids.put(data[KTERMS][i], i);
+			}
+		}
 	}
 
 	/*
@@ -232,28 +246,22 @@ public class CorpusResolver implements ICorpusResolver {
 	 */
 	@Override
 	public int getTermId(String term) {
-		if (termids == null) {
-			termids = new HashMap<String, Integer>();
-			for (int i = 0; i < data[KTERMS].length; i++) {
-				termids.put(data[KTERMS][i], i);
-			}
-		}
 		Integer id = termids.get(term);
 		if (id == null) {
 			id = -1;
 		}
 		return id;
 	}
-	
+
 	/**
 	 * get string content for all keys
+	 * 
 	 * @param K-constant
 	 * @return
 	 */
 	public String[] getStrings(int type) {
 		return data[type];
 	}
-
 
 	/*
 	 * (non-Javadoc)
@@ -477,12 +485,15 @@ public class CorpusResolver implements ICorpusResolver {
 			// for all key types, compare with labels
 			for (int keyType = 0; keyType < keyExt2labelId.length; keyType++) {
 				if (data[keyType] != null) {
-					if (data[keyType].length != lc
-							.getLabelsV(keyExt2labelId[keyType])) {
+					int labid = keyExt2labelId[keyType];
+					if (labid < 0) {
+						// documents and terms are handled by the superclass
+						continue;
+					}
+					if (data[keyType].length != lc.getLabelsV(labid)) {
 						sb.append(String.format(
-								"keys %s length = %d != corpus %s V = %d",
+								"keys %s length = %d != corpus V = %d\n",
 								keyNames[keyType], data[keyType].length,
-								keyExt2labelId[keyType],
 								lc.getLabelsV(keyExt2labelId[keyType])));
 					}
 				}

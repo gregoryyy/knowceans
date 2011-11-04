@@ -878,7 +878,10 @@ public class NumCorpus implements ICorpus, ITermCorpus, ISplitCorpus {
 		}
 		// check resolver
 		if (resolver) {
-			getResolver().check(this);
+			String st = getResolver().check(this);
+			if (st != null) {
+				sb.append(st);
+			}
 		}
 		return sb.length() != 0 ? sb.toString() : null;
 	}
