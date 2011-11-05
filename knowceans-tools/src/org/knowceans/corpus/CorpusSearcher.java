@@ -22,8 +22,14 @@ import java.util.TreeSet;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
+import org.knowceans.util.IndexQuickSort;
+
 /**
- * Searches an ICorpus using its resolver using inverted indices
+ * Searches an ICorpus using its resolver using inverted indices. This class is
+ * especially useful to debug corpora using the statistics feature before and
+ * after filtering and performing random sanity checks via queries. The class
+ * provides searching of terms (full text) but also to list terms, authors,
+ * categories etc.
  * 
  * @author gregor
  * 
@@ -37,28 +43,25 @@ public class CorpusSearcher {
 	 * @throws Exception
 	 */
 	public static void main(String[] args) throws Exception {
-		//String filebase = "corpus-example/berry95";
+		// String filebase = "corpus-example/berry95";
 		String filebase = "corpus-example/nips";
 		LabelNumCorpus corpus = new LabelNumCorpus(filebase);
 		corpus.loadAllLabels();
 		CorpusResolver cr = corpus.getResolver();
 		System.out.println(cr.getTermId("test"));
-		System.out.println(corpus.check(true));
-		System.out.println("reduce corpus to 20 docs");
-
 		// reduce the documents without both references and citations
 		// corpus.reduceUnlinkedDocs(true, true);
 
-		// choose the first 20 documents
-		corpus.reduce(6, new Random());
+		// choose a random set of 100 documents
+		corpus.reduce(100, new Random());
 		// corpus.reduce(6, null);
 		// adjust the vocabulary
-		corpus.filterTermsDf(2, 10);
+		System.out.println(cr.getTermId("test"));
+		corpus.filterTermsDf(2, 50);
 		System.out.println(corpus.check(true));
 		corpus.filterLabels();
 
 		//
-		System.out.println(cr.getTermId("test"));
 		System.out.println(corpus.check(true));
 		CorpusSearcher cs = new CorpusSearcher(corpus);
 		cs.interact();
@@ -66,8 +69,8 @@ public class CorpusSearcher {
 
 	private LabelNumCorpus corpus;
 	private CorpusResolver resolver;
-	private String help = "Query (or .q to quit, ENTER to page results, .d <rank> or .m <id> to view doc, .t <prefix> to view terms list,\n"
-			+ "       .a, .c <prefix> to view authors, categories list, .A, .C <prefix> to view particular item, .h, ? for this message):";
+	private String help = "Query or .q to quit, .s for stats, Enter to page results, .d<rank> or .m<id> to view doc, .t<prefix> to view terms list,\n"
+			+ "       .a, .c<prefix> to view authors, categories list, .A, .C<prefix> to view particular item, .h, ? for this message:";
 
 	/**
 	 * inverted index
@@ -77,6 +80,7 @@ public class CorpusSearcher {
 	private Map<Integer, Set<Integer>> authorIndex;
 	private Map<Integer, Set<Integer>> labelIndex;
 	private String[][] keyLists;
+	private int[][] keyList2id;
 
 	/**
 	 * inits the searcher with the given corpus, which needs to have a resolver
@@ -106,6 +110,7 @@ public class CorpusSearcher {
 		this.corpus = corpus;
 		this.resolver = corpus.getResolver();
 		keyLists = new String[CorpusResolver.keyExtensions.length][];
+		keyList2id = new int[CorpusResolver.keyExtensions.length][];
 		if (!reindex && !loadIndex()) {
 			System.out.println("indexing");
 			createIndex();
@@ -309,7 +314,8 @@ public class CorpusSearcher {
 					}
 				}
 				System.arraycopy(aa, 0, keyLists[type], 0, aa.length);
-				Arrays.sort(keyLists[type]);
+				keyList2id[type] = IndexQuickSort.sort(keyLists[type]);
+				IndexQuickSort.reorder(keyLists[type], keyList2id[type]);
 			}
 		}
 	}
@@ -343,7 +349,9 @@ public class CorpusSearcher {
 		int listpos;
 		for (listpos = start; listpos < start + pageSize; listpos++) {
 			if (listpos < keyLists[type].length) {
-				System.out.println(keyLists[type][listpos]);
+				int id = keyList2id[type][listpos];
+				System.out.println(keyLists[type][listpos] + " id = " + id
+						+ " df = " + docFreqs[id]);
 			}
 		}
 		return listpos;
@@ -355,6 +363,10 @@ public class CorpusSearcher {
 	 * @param id
 	 */
 	protected void printDoc(String query, int id) {
+		if (id >= corpus.numDocs) {
+			System.out.println("invalid id");
+			return;
+		}
 		String title = resolver.resolveDocRef(id);
 		String content = resolver.resolveDocContent(id);
 		if (title != null) {
@@ -410,7 +422,7 @@ public class CorpusSearcher {
 	 * @param pos position in author list
 	 */
 	private void printAuthor(int pos) {
-		int id = getIdForPos(CorpusResolver.KAUTHORS, pos);
+		int id = keyList2id[ICorpusResolver.KAUTHORS][pos];
 		System.out.println("Author #" + pos + ", id = " + id + ": "
 				+ resolver.resolveAuthor(id) + ":");
 		System.out.println("Documents: ");
@@ -446,7 +458,7 @@ public class CorpusSearcher {
 	 * @param pos position in label list displayed
 	 */
 	private void printCategory(int pos) {
-		int id = getIdForPos(CorpusResolver.KCATEGORIES, pos);
+		int id = keyList2id[ICorpusResolver.KCATEGORIES][pos];
 		System.out.println("Category #" + pos + ", id = " + id + ": "
 				+ resolver.resolveCategory(id));
 		System.out.println("Documents: ");
@@ -460,18 +472,6 @@ public class CorpusSearcher {
 			i++;
 			System.out.println(i + ". " + resolver.resolveDocRef(doc));
 		}
-	}
-
-	protected int getIdForPos(int type, int pos) {
-		String[] labels = resolver.getStrings(type);
-		int id = -1;
-		// TODO: more efficient than repeated linear search
-		for (id = 0; id < labels.length; id++) {
-			if (labels[id].equals(keyLists[type][pos])) {
-				break;
-			}
-		}
-		return id;
 	}
 
 	/**
