@@ -52,8 +52,9 @@ public class CorpusSearcher {
 
 		// either incoming or outgoing links
 		corpus.reduceUnlinkedDocs();
-		// choose a random subset of 100 documents
-		//corpus.reduce(100, new Random());
+		// choose a random subset of 100 documents (removes then-outside
+		// references)
+		corpus.reduce(200, new Random());
 		// adjust the vocabulary
 		corpus.filterTermsDf(2, 100);
 		// require a single instance of each label in the corpus

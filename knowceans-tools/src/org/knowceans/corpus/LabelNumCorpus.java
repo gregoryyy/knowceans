@@ -418,7 +418,9 @@ public class LabelNumCorpus extends NumCorpus implements ILabelCorpus {
 	 * filter documents. Also updates the resolver. Vocabulary must be rebuilt
 	 * separately because frequencies change: use filterTermsDf(). Because
 	 * citations are directly affected, this label type is updated here, as
-	 * well.
+	 * well. Removes the pureRelational flag because then-outside references are
+	 * being .q
+	 * removed.
 	 * 
 	 * @param filter predicate to keep documents in list
 	 * @param rand random number generator to be used generate a random
@@ -458,6 +460,7 @@ public class LabelNumCorpus extends NumCorpus implements ILabelCorpus {
 			// gaps allowed...
 			labelsV[LREFERENCES] = numDocs;
 		}
+		pureRelational = false;
 		return old2new;
 	}
 
@@ -809,8 +812,9 @@ public class LabelNumCorpus extends NumCorpus implements ILabelCorpus {
 							if (references[m].length == 0
 									&& citations[m].length == 0) {
 								sb.append(String
-										.format("label type %s : doc %d relations = 0\n",
-												labelNames[type], m));
+										.format("label type %s : doc %d relations = 0 (reference count = %d)\n",
+												labelNames[type], m,
+												references[m].length));
 							}
 						}
 					}
