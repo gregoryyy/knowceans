@@ -491,7 +491,6 @@ public class IndexQuickSort {
 				if (inv[i] > inv[i + 1]) {
 					swap(inv, i, i + 1);
 					swap(x, i, i + 1);
-					Print.arrays(x);
 				}
 			}
 		}
