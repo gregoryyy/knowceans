@@ -43,8 +43,8 @@ public class CorpusSearcher {
 	 * @throws Exception
 	 */
 	public static void main(String[] args) throws Exception {
-		// String filebase = "corpus-example/berry95";
-		String filebase = "corpus-example/nips";
+		String filebase = "corpus-example/berry95";
+		// String filebase = "corpus-example/nips";
 		LabelNumCorpus corpus = new LabelNumCorpus(filebase);
 		corpus.loadAllLabels();
 		CorpusResolver cr = corpus.getResolver();
@@ -53,16 +53,16 @@ public class CorpusSearcher {
 		// corpus.reduceUnlinkedDocs(true, true);
 
 		// choose a random set of 100 documents
-		corpus.reduce(100, new Random());
-		// corpus.reduce(6, null);
+		// corpus.reduce(100, new Random());
+		corpus.reduce(8, new Random());
 		// adjust the vocabulary
 		System.out.println(cr.getTermId("test"));
 		corpus.filterTermsDf(2, 50);
-		System.out.println(corpus.check(true));
+		// System.out.println(corpus.check(true));
 		corpus.filterLabels();
 
 		//
-		System.out.println(corpus.check(true));
+		System.out.println("Error report: \n" + corpus.check(true));
 		CorpusSearcher cs = new CorpusSearcher(corpus);
 		cs.interact();
 	}
@@ -240,6 +240,7 @@ public class CorpusSearcher {
 					if (!arg.matches("[0-9]+")) {
 						continue;
 					}
+					lastQuery = null;
 					int m = Integer.parseInt(arg);
 					System.out.println("document id " + m + ":");
 					printDoc(lastQuery, m);
@@ -404,14 +405,16 @@ public class CorpusSearcher {
 				}
 			}
 		}
-		String[] terms = query.split(" ");
-		for (String term : terms) {
-			// TODO: this is redundant with the actual search
-			int termid = resolver.getTermId(term);
-			if (termid >= 0) {
-				System.out.println(term + ", " + termid + " df = "
-						+ docFreqs[termid] + ", tf = "
-						+ termDocFreqIndex.get(termid).get(id));
+		if (query != null) {
+			String[] terms = query.split(" ");
+			for (String term : terms) {
+				// TODO: this is redundant with the actual search
+				int termid = resolver.getTermId(term);
+				if (termid >= 0) {
+					System.out.println(term + ", " + termid + " df = "
+							+ docFreqs[termid] + ", tf = "
+							+ termDocFreqIndex.get(termid).get(id));
+				}
 			}
 		}
 	}

@@ -223,7 +223,8 @@ public class LabelNumCorpus extends NumCorpus implements ILabelCorpus {
 	public void loadAllLabels() {
 		for (int i = 0; i < LabelNumCorpus.labelExtensions.length; i++) {
 			if (hasLabels(i) == 1) {
-				System.out.println("loading " + LabelNumCorpus.labelNames[i]);
+				// System.out.println("loading " +
+				// LabelNumCorpus.labelNames[i]);
 				getDocLabels(i);
 			}
 		}
@@ -345,7 +346,8 @@ public class LabelNumCorpus extends NumCorpus implements ILabelCorpus {
 		labels[kind] = data.toArray(new int[0][0]);
 		labelsW[kind] = W;
 		labelsV[kind] = V;
-		Print.fln("labels loaded: %s: V = %d, W = %d", labelNames[kind], V, W);
+		// Print.fln("labels loaded: %s: V = %d, W = %d", labelNames[kind], V,
+		// W);
 	}
 
 	// document filtering
@@ -433,15 +435,15 @@ public class LabelNumCorpus extends NumCorpus implements ILabelCorpus {
 		int[][][] newLabels = new int[labelExtensions.length][][];
 		int[] newLabelsW = new int[labelExtensions.length];
 		for (int type = 0; type < labelExtensions.length; type++) {
-			System.out.println("label type " + labelNames[type] + "...");
+			// System.out.println("label type " + labelNames[type] + "...");
 			if (labels[type] != null) {
 				// numDocs is the new size
 				newLabels[type] = new int[numDocs][];
 				for (int m = 0; m < labels[type].length; m++) {
 					if (old2new[m] >= 0) {
-						System.out.println(String.format(
-								"label m = %d, old2new[] = %d: %s", m,
-								old2new[m], Vectors.print(labels[type][m])));
+						// System.out.println(String.format(
+						// "label m = %d, old2new[] = %d: %s", m,
+						// old2new[m], Vectors.print(labels[type][m])));
 						newLabels[type][old2new[m]] = labels[type][m];
 						newLabelsW[type] += labels[type][m].length;
 					}
@@ -451,7 +453,6 @@ public class LabelNumCorpus extends NumCorpus implements ILabelCorpus {
 		labels = newLabels;
 		labelsW = newLabelsW;
 		if (labels[LREFERENCES] != null) {
-			System.out.println("filter references");
 			// filter citations here, otherwise old2new is awkward to handle
 			labelsW[LREFERENCES] = rewriteLabels(LREFERENCES, old2new);
 			// determine number of unique cited documents
@@ -506,7 +507,7 @@ public class LabelNumCorpus extends NumCorpus implements ILabelCorpus {
 				// skip relations
 				continue;
 			}
-			System.out.println("reduce labels type " + labelNames[type]);
+			// System.out.println("reduce labels type " + labelNames[type]);
 			filterLabelsDf(type, 1);
 		}
 	}
@@ -549,7 +550,7 @@ public class LabelNumCorpus extends NumCorpus implements ILabelCorpus {
 		labelsV[type] = newIndex;
 
 		if (type == LAUTHORS && labels[LMENTIONS] != null) {
-			System.out.println("filter mentioned authors");
+			// filter mentioned authors
 			// if mentionings, we should rewrite with authors' old2new
 			labelsW[LMENTIONS] = rewriteLabels(LMENTIONS, old2new);
 			// labelsV[LMENTIONS] = getVocabSize(labels[LMENTIONS]);
@@ -558,11 +559,6 @@ public class LabelNumCorpus extends NumCorpus implements ILabelCorpus {
 		}
 
 		// map to novel label indices (need to translate type)
-		int keytype = CorpusResolver.labelId2keyExt[type];
-		System.out.println(String.format(
-				"label type = %s, id = %d --> key type = %s, id = %d ",
-				labelNames[type], type, CorpusResolver.keyNames[keytype],
-				keytype));
 		getResolver()
 				.filterLabels(CorpusResolver.labelId2keyExt[type], old2new);
 		return old2new;
@@ -581,15 +577,17 @@ public class LabelNumCorpus extends NumCorpus implements ILabelCorpus {
 		for (int m = 0; m < numDocs; m++) {
 			List<Integer> tt = new ArrayList<Integer>();
 			int[] ll = labels[type][m];
-			System.out.println("*** doc " + m);
+			// System.out.println("*** doc " + m);
 			for (int i = 0; i < ll.length; i++) {
 				int label = ll[i];
 				if (old2new[label] >= 0) {
 					tt.add(old2new[label]);
 					W++;
-					System.out.println("add " + label + "->" + old2new[label]);
+					// System.out.println("add " + label + "->" +
+					// old2new[label]);
 				} else {
-					System.out.println("dump " + label + "->" + old2new[label]);
+					// System.out.println("dump " + label + "->" +
+					// old2new[label]);
 				}
 			}
 			labels[type][m] = (int[]) ArrayUtils

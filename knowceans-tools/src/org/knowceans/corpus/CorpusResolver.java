@@ -38,7 +38,7 @@ public class CorpusResolver implements ICorpusResolver {
 			KDOCCONTENT };
 	// TODO: add abstracts
 	public static final int[] keyExt2labelId = { -2, -1, 0, 1, 2, 3, 4 };
-	public static final int[] labelId2keyExt = { 2, 3, 3, 4, 5, -1, -1 };
+	public static final int[] labelId2keyExt = { 2, 3, 4, 5, 6, -1, -1 };
 
 	public static void main(String[] args) {
 		CorpusResolver cr = new CorpusResolver("corpus-example/nips");
@@ -174,7 +174,7 @@ public class CorpusResolver implements ICorpusResolver {
 		// replace term ids.
 		for (int i = 0; i < old2new.length; i++) {
 			if (old2new[i] >= 0) {
-				System.out.println("add key " + i + "->" + old2new[i]);
+				// System.out.println("add key " + i + "->" + old2new[i]);
 				// overwrite old string content at new index
 				labels.add(old2new[i], resolveLabel(type, i));
 			}

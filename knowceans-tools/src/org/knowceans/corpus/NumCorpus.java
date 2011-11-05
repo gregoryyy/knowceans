@@ -651,8 +651,8 @@ public class NumCorpus implements ICorpus, ITermCorpus, ISplitCorpus {
 		for (int m = 0; m < numDocs; m++) {
 			int mperm = perm[m];
 			if (filter.doesApply(this, mperm)) {
-				System.out.println(String.format("doc %d -> %d", mperm,
-						newDocsList.size()));
+				// System.out.println(String.format("doc %d -> %d", mperm,
+				// newDocsList.size()));
 				// add to new list
 				old2new[mperm] = newDocsList.size();
 				newDocsList.add(mperm);
