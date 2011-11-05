@@ -98,6 +98,7 @@ public class Document {
 			if (counts.length != terms.length)
 				throw new Exception("Document inconsistent.");
 			numTerms = counts.length;
+			numWords = 0;
 			for (int c : counts)
 				numWords += c;
 		} catch (Exception e) {
@@ -327,8 +328,8 @@ public class Document {
 		if (counts.length != numTerms || Vectors.sum(counts) != numWords) {
 			sb.append(String
 					.format("terms|counts.length = %d != terms = %d, sum(counts) = %d != words = %d, \n",
-							counts.length, numTerms,
-							Vectors.sum(counts) != numWords));
+							counts.length, numTerms, Vectors.sum(counts),
+							numWords));
 		}
 		return sb.length() != 0 ? sb.toString() : null;
 	}

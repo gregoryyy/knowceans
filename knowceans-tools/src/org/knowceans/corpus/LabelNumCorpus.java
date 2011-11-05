@@ -37,8 +37,13 @@ import java.util.List;
 import java.util.Random;
 import java.util.Set;
 
+import org.knowceans.map.HashMultiMap;
+import org.knowceans.map.IMultiMap;
+import org.knowceans.util.ArrayUtils;
 import org.knowceans.util.Print;
 import org.knowceans.util.Vectors;
+
+import sun.security.jgss.LoginConfigImpl;
 
 /**
  * Represents a corpus of documents, using numerical data only.
@@ -111,6 +116,11 @@ public class LabelNumCorpus extends NumCorpus implements ILabelCorpus {
 	// authors without mentions, categories without instance)
 	public static final int[] allowEmptyLabels = { LREFERENCES, LMENTIONS,
 			LCATEGORIES };
+
+	// these are relational metadata without key information that need to be
+	// handled directly after filtering
+	public static final int[] relationalLabels = { LREFERENCES, LMENTIONS };
+
 	/**
 	 * array of labels. Elements are filled as soon as readlabels is called.
 	 */
@@ -341,62 +351,6 @@ public class LabelNumCorpus extends NumCorpus implements ILabelCorpus {
 		Print.fln("labels loaded: %s: V = %d, W = %d", labelNames[kind], V, W);
 	}
 
-	/**
-	 * split corpus so that the test labels are guaranteed to be in the training
-	 * set. This constraint will be
-	 * 
-	 * @param order the split order, see split()
-	 * @param labelConstraints the labels that should be completely contained in
-	 *        the training set
-	 */
-	public void splitTestLabels(int order, Set<Integer> labelConstraints,
-			Random rand) {
-		// TODO: implement
-		System.out.println("splitTestLabels not implemented");
-		// IInvertibleMultiMap<Integer, Integer>[] labels2docs = new
-		// InvertibleHashMultiMap[labelConstraints
-		// .size()];
-		// int i = 0;
-		// for (int label : labelConstraints) {
-		// labels2docs[i] = new InvertibleHashMultiMap<Integer, Integer>();
-		// int[][] ll = getDocLabels(label);
-		// for (int m = 0; m < numDocs; m++) {
-		// for (int j = 0; j < ll[m].length; j++) {
-		// labels2docs[i].add(ll[m][j], m);
-		// }
-		// }
-		// }
-		//
-		// // from the label-document association, sample documents and check
-		// // whether they fulfill our requirements
-		// List<Integer> testDocs = new ArrayList<Integer>();
-		// RandomSamplers rs = new RandomSamplers(rand);
-		// int[] perm = rs.randPerm(numDocs);
-		// for (int j = 0; j < perm.length; j++) {
-		// int m = perm[j];
-		// // we try to remove the document from the labels2docs set and
-		// // see if there are docs left with the same labels
-		// boolean ok = true;
-		// for (int label : labelConstraints) {
-		// for (int lab : this.labels[label][m]) {
-		// // how many documents for the label?
-		// if (labels2docs[label].get(lab).size() <= 1) {
-		// ok = false;
-		// break;
-		// }
-		// }
-		// }
-		// if (ok) {
-		// testDocs.add(m);
-		// for (int label : labelConstraints) {
-		// // TODO: remove from
-		// labels2docs[label].rem
-		// }
-		// }
-		// }
-
-	}
-
 	// document filtering
 
 	/**
@@ -465,7 +419,9 @@ public class LabelNumCorpus extends NumCorpus implements ILabelCorpus {
 
 	/**
 	 * filter documents. Also updates the resolver. Vocabulary must be rebuilt
-	 * separately because frequencies change: use filterTermsDf().
+	 * separately because frequencies change: use filterTermsDf(). Because
+	 * citations are directly affected, this label type is updated here, as
+	 * well.
 	 * 
 	 * @param filter predicate to keep documents in list
 	 * @param rand random number generator to be used generate a random
@@ -490,9 +446,130 @@ public class LabelNumCorpus extends NumCorpus implements ILabelCorpus {
 				}
 			}
 		}
-		CorpusResolver cr = getResolver();
-		cr.filterDocs(old2new);
+		labels = newLabels;
+		labelsW = newLabelsW;
+		if (labels[LREFERENCES] != null) {
+			System.out.println("filter references");
+			// filter citations here, otherwise old2new is awkward to handle
+			rewriteLabels(LREFERENCES, old2new);
+		}
 		return old2new;
+	}
+
+	/**
+	 * calculates the document frequencies of the labels
+	 * 
+	 * @param label type
+	 * @return
+	 */
+	public int[] calcLabelDocFreqs(int type) {
+		// we construct term frequencies manually even if there may
+		// be another source
+		int[] df = new int[labelsV[type]];
+		for (int m = 0; m < numDocs; m++) {
+			for (int t = 0; t < labels[type][m].length; t++) {
+				df[labels[type][m][t]]++;
+			}
+		}
+		return df;
+	}
+
+	/**
+	 * filter labels (of all types) that do not exist in the corpus
+	 */
+	public void filterLabels() {
+		for (int type = 0; type < labelExtensions.length; type++) {
+			if (Arrays.binarySearch(relationalLabels, type) >= 0) {
+				// skip relations
+				continue;
+			}
+			System.out.println("reduce labels type " + labelNames[type]);
+			filterLabelsDf(type, 1);
+		}
+	}
+
+	/**
+	 * filter labels by frequency. The corpus resolver obtained by getResolver()
+	 * is updated to the new label mapping. Note that this does not apply to the
+	 * relational label type references and mentions. Instead, filterDocs
+	 * directly updates references and filterLabelsDf(type=LAUTHORS, ... )
+	 * updates mentions, so there's no need to manage old2new indices
+	 * separately.
+	 * 
+	 * @param minDf all more scarce terms are excluded
+	 * @param maxDf all more frequent terms are excluded
+	 * @return array with new indices in old index elements or null if nothing
+	 *         was changed.
+	 */
+	public int[] filterLabelsDf(int type, int minDf) {
+		if (labels[type] == null) {
+			return null;
+		}
+		// skip relational labels
+		if (Arrays.binarySearch(relationalLabels, type) >= 0) {
+			return null;
+		}
+		int[] df = calcLabelDocFreqs(type);
+		// rewrite indices
+		int[] old2new = new int[labelsV[type]];
+		int newIndex = 0;
+		for (int t = 0; t < labelsV[type]; t++) {
+			if (df[t] < minDf) {
+				old2new[t] = -1;
+			} else {
+				old2new[t] = newIndex;
+				newIndex++;
+			}
+		}
+		// rewrite corpus
+		rewriteLabels(type, old2new);
+		labelsV[type] = newIndex;
+		int W = 0;
+		for (int m = 0; m < numDocs; m++) {
+			W += labels[type][m].length;
+		}
+		labelsW[type] = W;
+
+		if (type == LAUTHORS && labels[LMENTIONS] != null) {
+			System.out.println("filter mentioned authors");
+			// if mentionings, we should rewrite with authors' old2new
+			rewriteLabels(LMENTIONS, old2new);
+		}
+
+		// map to novel label indices (need to translate type)
+		int keytype = CorpusResolver.labelId2keyExt[type];
+		System.out.println(String.format(
+				"label type = %s, id = %d --> key type = %s, id = %d ",
+				labelNames[type], type, CorpusResolver.keyNames[keytype],
+				keytype));
+		getResolver()
+				.filterLabels(CorpusResolver.labelId2keyExt[type], old2new);
+		return old2new;
+	}
+
+	/**
+	 * rewrite the labels of given type throughout the corpus, using mapping
+	 * old2new
+	 * 
+	 * @param type
+	 * @param old2new
+	 */
+	protected void rewriteLabels(int type, int[] old2new) {
+		for (int m = 0; m < numDocs; m++) {
+			List<Integer> tt = new ArrayList<Integer>();
+			int[] ll = labels[type][m];
+			System.out.println("*** doc " + m);
+			for (int i = 0; i < ll.length; i++) {
+				int label = ll[i];
+				if (old2new[label] >= 0) {
+					tt.add(old2new[label]);
+					System.out.println("add " + label + "->" + old2new[label]);
+				} else {
+					System.out.println("dump " + label + "->" + old2new[label]);
+				}
+			}
+			labels[type][m] = (int[]) ArrayUtils.asPrimitiveArray(tt);
+		}
 	}
 
 	// end document filtering
@@ -672,5 +749,4 @@ public class LabelNumCorpus extends NumCorpus implements ILabelCorpus {
 		}
 		return sb.length() != 0 ? sb.toString() : null;
 	}
-
 }

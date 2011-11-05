@@ -559,7 +559,7 @@ public class NumCorpus implements ICorpus, ITermCorpus, ISplitCorpus {
 	public int[] filterTermsDf(int minDf, int maxDf) {
 		int[] df = calcDocFreqs();
 		// rewrite indices
-		int[] indices = Vectors.range(0, numTerms - 1);
+		int[] indices = new int[numTerms];
 		int newIndex = 0;
 		for (int t = 0; t < numTerms; t++) {
 			if (df[t] < minDf || df[t] > maxDf) {

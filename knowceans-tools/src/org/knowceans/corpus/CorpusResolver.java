@@ -154,12 +154,32 @@ public class CorpusResolver implements ICorpusResolver {
 		// replace term ids.
 		for (int i = 0; i < old2new.length; i++) {
 			if (old2new[i] >= 0) {
+				// update term index
 				newids.put(resolveTerm(i), old2new[i]);
 				terms.add(old2new[i], resolveTerm(i));
 			}
 		}
 		data[KTERMS] = (String[]) terms.toArray(new String[0]);
 		termids = newids;
+	}
+
+	/**
+	 * filter labels
+	 * 
+	 * @param type key type
+	 * @param old2new
+	 */
+	public void filterLabels(int type, int[] old2new) {
+		List<String> labels = new ArrayList<String>();
+		// replace term ids.
+		for (int i = 0; i < old2new.length; i++) {
+			if (old2new[i] >= 0) {
+				System.out.println("add key " + i + "->" + old2new[i]);
+				// overwrite old string content at new index
+				labels.add(old2new[i], resolveLabel(type, i));
+			}
+		}
+		data[type] = (String[]) labels.toArray(new String[0]);
 	}
 
 	/**
@@ -191,6 +211,7 @@ public class CorpusResolver implements ICorpusResolver {
 				}
 			}
 		}
+		System.out.println("resolver docs = " + newData[KDOCS].length);
 		data = newData;
 	}
 

@@ -43,11 +43,18 @@ public class CorpusSearcher {
 		System.out.println(cr.getTermId("test"));
 		System.out.println(corpus.check(true));
 		System.out.println("reduce corpus to 20 docs");
-		
-		// this can be used to test the corpus interactively
+
+		// reduce the documents without both references and citations
+		// corpus.reduceUnlinkedDocs(true, true);
+
+		// choose the first 20 documents
 		corpus.reduce(20, null);
-		
-		// 
+		// adjust the vocabulary
+		corpus.filterTermsDf(2, 10);
+		System.out.println(corpus.check(true));		
+		corpus.filterLabels();
+
+		//
 		System.out.println(cr.getTermId("test"));
 		System.out.println(corpus.check(true));
 		CorpusSearcher cs = new CorpusSearcher(corpus);
@@ -263,6 +270,9 @@ public class CorpusSearcher {
 					printListPage(listtype, listpos, pageSize);
 				} else if (line.startsWith(".h") || line.startsWith("?")) {
 					System.out.println(help);
+				} else if (line.startsWith(".s")) {
+					// print statistics
+					System.out.println(corpus);
 				} else {
 					results = search(line);
 					resultsPage = 0;
