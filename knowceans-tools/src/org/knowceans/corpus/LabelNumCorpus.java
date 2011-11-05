@@ -33,17 +33,14 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
 import java.util.Set;
 
-import org.knowceans.map.HashMultiMap;
-import org.knowceans.map.IMultiMap;
 import org.knowceans.util.ArrayUtils;
 import org.knowceans.util.Print;
 import org.knowceans.util.Vectors;
-
-import sun.security.jgss.LoginConfigImpl;
 
 /**
  * Represents a corpus of documents, using numerical data only.
@@ -436,10 +433,15 @@ public class LabelNumCorpus extends NumCorpus implements ILabelCorpus {
 		int[][][] newLabels = new int[labelExtensions.length][][];
 		int[] newLabelsW = new int[labelExtensions.length];
 		for (int type = 0; type < labelExtensions.length; type++) {
+			System.out.println("label type " + labelNames[type] + "...");
 			if (labels[type] != null) {
+				// numDocs is the new size
 				newLabels[type] = new int[numDocs][];
-				for (int m = 0; m < numDocs; m++) {
+				for (int m = 0; m < labels[type].length; m++) {
 					if (old2new[m] >= 0) {
+						System.out.println(String.format(
+								"label m = %d, old2new[] = %d: %s", m,
+								old2new[m], Vectors.print(labels[type][m])));
 						newLabels[type][old2new[m]] = labels[type][m];
 						newLabelsW[type] += labels[type][m].length;
 					}
@@ -451,9 +453,30 @@ public class LabelNumCorpus extends NumCorpus implements ILabelCorpus {
 		if (labels[LREFERENCES] != null) {
 			System.out.println("filter references");
 			// filter citations here, otherwise old2new is awkward to handle
-			rewriteLabels(LREFERENCES, old2new);
+			labelsW[LREFERENCES] = rewriteLabels(LREFERENCES, old2new);
+			// determine number of unique cited documents
+			// labelsV[LREFERENCES] = getVocabSize(labels[LREFERENCES]);
+			// gaps allowed...
+			labelsV[LREFERENCES] = numDocs;
 		}
 		return old2new;
+	}
+
+	/**
+	 * count the number of distinct values in x
+	 * 
+	 * @param x
+	 * @return
+	 */
+	protected int getVocabSize(int[][] x) {
+		Set<Integer> refV = new HashSet<Integer>();
+		for (int m = 0; m < x.length; m++) {
+			for (int i = 0; i < x[m].length; i++) {
+				refV.add(x[m][i]);
+			}
+		}
+		int y = refV.size();
+		return y;
 	}
 
 	/**
@@ -522,18 +545,16 @@ public class LabelNumCorpus extends NumCorpus implements ILabelCorpus {
 			}
 		}
 		// rewrite corpus
-		rewriteLabels(type, old2new);
+		labelsW[type] = rewriteLabels(type, old2new);
 		labelsV[type] = newIndex;
-		int W = 0;
-		for (int m = 0; m < numDocs; m++) {
-			W += labels[type][m].length;
-		}
-		labelsW[type] = W;
 
 		if (type == LAUTHORS && labels[LMENTIONS] != null) {
 			System.out.println("filter mentioned authors");
 			// if mentionings, we should rewrite with authors' old2new
-			rewriteLabels(LMENTIONS, old2new);
+			labelsW[LMENTIONS] = rewriteLabels(LMENTIONS, old2new);
+			// labelsV[LMENTIONS] = getVocabSize(labels[LMENTIONS]);
+			// gaps allowed...
+			labelsV[LMENTIONS] = labelsV[LAUTHORS];
 		}
 
 		// map to novel label indices (need to translate type)
@@ -553,8 +574,10 @@ public class LabelNumCorpus extends NumCorpus implements ILabelCorpus {
 	 * 
 	 * @param type
 	 * @param old2new
+	 * @param return number of label instances (words) in corpus
 	 */
-	protected void rewriteLabels(int type, int[] old2new) {
+	protected int rewriteLabels(int type, int[] old2new) {
+		int W = 0;
 		for (int m = 0; m < numDocs; m++) {
 			List<Integer> tt = new ArrayList<Integer>();
 			int[] ll = labels[type][m];
@@ -563,13 +586,16 @@ public class LabelNumCorpus extends NumCorpus implements ILabelCorpus {
 				int label = ll[i];
 				if (old2new[label] >= 0) {
 					tt.add(old2new[label]);
+					W++;
 					System.out.println("add " + label + "->" + old2new[label]);
 				} else {
 					System.out.println("dump " + label + "->" + old2new[label]);
 				}
 			}
-			labels[type][m] = (int[]) ArrayUtils.asPrimitiveArray(tt);
+			labels[type][m] = (int[]) ArrayUtils
+					.asPrimitiveArray(tt, int.class);
 		}
+		return W;
 	}
 
 	// end document filtering
@@ -715,6 +741,12 @@ public class LabelNumCorpus extends NumCorpus implements ILabelCorpus {
 					// check W and availability of all labels
 					for (int m = 0; m < numDocs; m++) {
 						int[] row = labels[type][m];
+						if (row == null) {
+							sb.append(String.format(
+									"label type %s document %d = null\n",
+									labelNames[type], m));
+							continue;
+						}
 						for (int n = 0; n < row.length; n++) {
 							if (row[n] < labelsV[type]) {
 								ll[row[n]]++;

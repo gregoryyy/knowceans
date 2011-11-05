@@ -445,7 +445,7 @@ public class NumCorpus implements ICorpus, ITermCorpus, ISplitCorpus {
 				// no shuffling
 				// Collections.shuffle(document);
 			}
-			int[] a = (int[]) ArrayUtils.asPrimitiveArray(document);
+			int[] a = (int[]) ArrayUtils.asPrimitiveArray(document, int.class);
 			return a;
 		} else {
 			if (wordparbounds == null) {
@@ -582,8 +582,8 @@ public class NumCorpus implements ICorpus, ITermCorpus, ISplitCorpus {
 					W += docs[m].counts[i];
 				}
 			}
-			docs[m].terms = (int[]) ArrayUtils.asPrimitiveArray(tt);
-			docs[m].counts = (int[]) ArrayUtils.asPrimitiveArray(ff);
+			docs[m].terms = (int[]) ArrayUtils.asPrimitiveArray(tt, int.class);
+			docs[m].counts = (int[]) ArrayUtils.asPrimitiveArray(ff, int.class);
 			docs[m].compile();
 		}
 		numTerms = newIndex;
@@ -618,12 +618,13 @@ public class NumCorpus implements ICorpus, ITermCorpus, ISplitCorpus {
 	 * @param rand scramble documents, if null use the first ndocs
 	 * @return old2new indices
 	 */
-	public int[] reduce(int ndocs, Random rand) {
-		final int nndocs = ndocs;
+	public int[] reduce(final int ndocs, Random rand) {
 		DocPredicate filter = new DocPredicate() {
+			int M = ndocs;
+
 			@Override
 			public boolean doesApply(NumCorpus self, int m) {
-				return (m < nndocs);
+				return M-- > 0;
 			}
 		};
 		return filterDocs(filter, rand);
@@ -650,6 +651,8 @@ public class NumCorpus implements ICorpus, ITermCorpus, ISplitCorpus {
 		for (int m = 0; m < numDocs; m++) {
 			int mperm = perm[m];
 			if (filter.doesApply(this, mperm)) {
+				System.out.println(String.format("doc %d -> %d", mperm,
+						newDocsList.size()));
 				// add to new list
 				old2new[mperm] = newDocsList.size();
 				newDocsList.add(mperm);
@@ -853,7 +856,7 @@ public class NumCorpus implements ICorpus, ITermCorpus, ISplitCorpus {
 			} else {
 				W += docs[m].numWords;
 			}
-			String docstatus = docs[m].checkConsistency();
+			String docstatus = docs[m].check();
 			if (docstatus != null) {
 				sb.append(String.format("docs[%d] = null:\n%s", m, docstatus));
 			}

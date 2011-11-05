@@ -318,7 +318,13 @@ public class Document {
 		return b.toString();
 	}
 
-	public String checkConsistency() {
+	/**
+	 * check internal consistency of the document, comparing array sizes and
+	 * counts
+	 * 
+	 * @return
+	 */
+	public String check() {
 		StringBuffer sb = new StringBuffer();
 		if (counts.length != terms.length) {
 			sb.append(String.format(

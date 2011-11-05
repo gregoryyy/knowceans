@@ -16,6 +16,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Random;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.zip.GZIPInputStream;
@@ -36,6 +37,7 @@ public class CorpusSearcher {
 	 * @throws Exception
 	 */
 	public static void main(String[] args) throws Exception {
+		//String filebase = "corpus-example/berry95";
 		String filebase = "corpus-example/nips";
 		LabelNumCorpus corpus = new LabelNumCorpus(filebase);
 		corpus.loadAllLabels();
@@ -48,10 +50,11 @@ public class CorpusSearcher {
 		// corpus.reduceUnlinkedDocs(true, true);
 
 		// choose the first 20 documents
-		corpus.reduce(20, null);
+		corpus.reduce(6, new Random());
+		// corpus.reduce(6, null);
 		// adjust the vocabulary
 		corpus.filterTermsDf(2, 10);
-		System.out.println(corpus.check(true));		
+		System.out.println(corpus.check(true));
 		corpus.filterLabels();
 
 		//
@@ -155,6 +158,7 @@ public class CorpusSearcher {
 	 * @throws IOException
 	 */
 	private void saveIndex() throws IOException {
+		// INFO: inefficient but avoids deps. to e.g. Prevayler
 		File index = new File(corpus.dataFilebase + ".idx");
 		ObjectOutputStream oos = new ObjectOutputStream(new GZIPOutputStream(
 				new FileOutputStream(index)));
@@ -297,9 +301,16 @@ public class CorpusSearcher {
 	protected void loadList(int type) {
 		if (keyLists[type] == null) {
 			String[] aa = resolver.getStrings(type);
-			keyLists[type] = new String[aa.length];
-			System.arraycopy(aa, 0, keyLists[type], 0, aa.length);
-			Arrays.sort(keyLists[type]);
+			if (aa != null) {
+				keyLists[type] = new String[aa.length];
+				for (int i = 0; i < aa.length; i++) {
+					if (aa[i] == null) {
+						aa[i] = CorpusResolver.keyNames[type] + i;
+					}
+				}
+				System.arraycopy(aa, 0, keyLists[type], 0, aa.length);
+				Arrays.sort(keyLists[type]);
+			}
 		}
 	}
 
@@ -346,10 +357,14 @@ public class CorpusSearcher {
 	protected void printDoc(String query, int id) {
 		String title = resolver.resolveDocRef(id);
 		String content = resolver.resolveDocContent(id);
-		title = highlight(title, query);
-		content = highlight(content, query);
-		System.out.println(wordWrap(title, 80));
-		System.out.println(wordWrap(content, 80));
+		if (title != null) {
+			title = highlight(title, query);
+			System.out.println(wordWrap(title, 80));
+		}
+		if (content != null) {
+			content = highlight(content, query);
+			System.out.println(wordWrap(content, 80));
+		}
 		if (corpus.hasLabels(LabelNumCorpus.LREFERENCES) == 2) {
 			int[] refs = corpus.getDocLabels(LabelNumCorpus.LREFERENCES, id);
 			if (refs.length > 0) {
@@ -361,18 +376,20 @@ public class CorpusSearcher {
 		}
 		// TODO: this is repeated overkill
 		int[][] allrefs = corpus.getDocLabels(LabelNumCorpus.LREFERENCES);
-		Set<Integer> inrefs = new TreeSet<Integer>();
-		for (int m = 0; m < corpus.numDocs; m++) {
-			for (int i = 0; i < allrefs[m].length; i++) {
-				if (allrefs[m][i] == id) {
-					inrefs.add(m);
+		if (allrefs != null) {
+			Set<Integer> inrefs = new TreeSet<Integer>();
+			for (int m = 0; m < corpus.numDocs; m++) {
+				for (int i = 0; i < allrefs[m].length; i++) {
+					if (allrefs[m][i] == id) {
+						inrefs.add(m);
+					}
 				}
 			}
-		}
-		if (inrefs.size() > 0) {
-			System.out.println("Citations:");
-			for (int m : inrefs) {
-				System.out.println(resolver.resolveDocRef(m));
+			if (inrefs.size() > 0) {
+				System.out.println("Citations:");
+				for (int m : inrefs) {
+					System.out.println(resolver.resolveDocRef(m));
+				}
 			}
 		}
 		String[] terms = query.split(" ");
