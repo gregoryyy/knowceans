@@ -73,6 +73,24 @@ public class IndexQuickSort {
 		reorder(xx, order);
 		System.out.println(Vectors.print(xx));
 
+		String[] a = new String[] { "one4", "two9", "three8", "four2", "five1",
+				"six6", "seven5", "eight0", "nine3", "ten7" };
+		Integer[] c = new Integer[] { 8, 5, 3, 5, 0, 2, 3 };
+		System.out.println(Vectors.print(a));
+		// int[] b = IndexQuickSort.sort(a);
+		int[] b = IndexQuickSort.sort(a);
+		System.out.println(Vectors.print(b));
+		System.out.println(Vectors.print(IndexQuickSort.inverse(b)));
+		reorder(a, b);
+		System.out.println(Vectors.print(a));
+
+		System.out.println(Vectors.print(c));
+		int[] d = IndexQuickSort.sort(c);
+		System.out.println(Vectors.print(d));
+		System.out.println(Vectors.print(IndexQuickSort.inverse(d)));
+		reorder(c, d);
+		System.out.println(Vectors.print(c));
+
 	}
 
 	/**
@@ -227,10 +245,21 @@ public class IndexQuickSort {
 	@SuppressWarnings("unchecked")
 	public static <T> int[] sort(List<T> fixedList) {
 		T[] array = (T[]) fixedList.toArray();
-		return sort(array, new Comparator<T>() {
+		return sort(array);
+	}
+
+	/**
+	 * 
+	 * @param <T>
+	 * @param fixedArray
+	 * @return
+	 */
+	public static <T> int[] sort(T[] fixedArray) {
+		return sort(fixedArray, new Comparator<T>() {
+			@SuppressWarnings("unchecked")
 			@Override
 			public int compare(T o1, T o2) {
-				return ((Comparable) o1).compareTo(o2);
+				return ((Comparable<T>) o1).compareTo(o2);
 			}
 		});
 	}
@@ -307,9 +336,9 @@ public class IndexQuickSort {
 		int i = left - 1;
 		int j = right;
 		while (true) {
-			while (cmp.compare(a[index[++i]], a[index[right]]) == -1)
+			while (cmp.compare(a[index[++i]], a[index[right]]) < 0)
 				;
-			while (cmp.compare(a[index[right]], a[index[--j]]) == -1)
+			while (cmp.compare(a[index[right]], a[index[--j]]) < 0)
 				if (j == left)
 					break;
 			if (i >= j)
@@ -462,6 +491,7 @@ public class IndexQuickSort {
 				if (inv[i] > inv[i + 1]) {
 					swap(inv, i, i + 1);
 					swap(x, i, i + 1);
+					Print.arrays(x);
 				}
 			}
 		}
