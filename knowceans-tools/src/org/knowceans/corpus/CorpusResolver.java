@@ -211,7 +211,7 @@ public class CorpusResolver implements ICorpusResolver {
 				}
 			}
 		}
-		System.out.println("resolver docs = " + newData[KDOCS].length);
+		// System.out.println("resolver docs = " + newData[KDOCS].length);
 		data = newData;
 	}
 
@@ -484,7 +484,7 @@ public class CorpusResolver implements ICorpusResolver {
 	 * to be checked need to be loaded beforehand.
 	 * 
 	 * @param corpus the corpus to be used
-	 * @return error report or null if ok.
+	 * @return error report or "" if ok.
 	 */
 	public String check(NumCorpus corpus) {
 		StringBuffer sb = new StringBuffer();
@@ -530,6 +530,6 @@ public class CorpusResolver implements ICorpusResolver {
 				}
 			}
 		}
-		return sb.length() != 0 ? sb.toString() : null;
+		return sb.toString();
 	}
 }

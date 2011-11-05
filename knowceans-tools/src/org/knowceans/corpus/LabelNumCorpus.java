@@ -37,9 +37,9 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
 import java.util.Set;
+import java.util.TreeSet;
 
 import org.knowceans.util.ArrayUtils;
-import org.knowceans.util.Print;
 import org.knowceans.util.Vectors;
 
 /**
@@ -117,6 +117,11 @@ public class LabelNumCorpus extends NumCorpus implements ILabelCorpus {
 	// these are relational metadata without key information that need to be
 	// handled directly after filtering
 	public static final int[] relationalLabels = { LREFERENCES, LMENTIONS };
+
+	/**
+	 * there are only documents with links
+	 */
+	public boolean pureRelational = false;
 
 	/**
 	 * array of labels. Elements are filled as soon as readlabels is called.
@@ -374,13 +379,13 @@ public class LabelNumCorpus extends NumCorpus implements ILabelCorpus {
 	}
 
 	/**
-	 * removes documents that have no inlinks and/or no outlinks.
+	 * filter all documents that don't have links, considering any inlinks or
+	 * outlinks.
 	 * 
 	 * @return
 	 */
 	// , TODO: boolean usementions
-	public int[] reduceUnlinkedDocs(final boolean in, final boolean out) {
-
+	public int[] reduceUnlinkedDocs() {
 		// first create a list of incoming links by transposing the relation
 		@SuppressWarnings("unchecked")
 		final List<Integer>[] inlinks = new List[numDocs];
@@ -402,17 +407,10 @@ public class LabelNumCorpus extends NumCorpus implements ILabelCorpus {
 		DocPredicate filter = new DocPredicate() {
 			@Override
 			public boolean doesApply(NumCorpus self, int m) {
-				if (in && out) {
-					return inlinks[m].size() > 0 && citations[m].length > 0;
-				} else if (!out) {
-					return inlinks[m].size() > 0;
-				} else if (!in) {
-					return citations[m].length > 0;
-				} else {
-					return false;
-				}
+				return inlinks[m].size() > 0 || citations[m].length > 0;
 			}
 		};
+		pureRelational = true;
 		return filterDocs(filter, null);
 	}
 
@@ -469,7 +467,7 @@ public class LabelNumCorpus extends NumCorpus implements ILabelCorpus {
 	 * @param x
 	 * @return
 	 */
-	protected int getVocabSize(int[][] x) {
+	public static int getVocabSize(int[][] x) {
 		Set<Integer> refV = new HashSet<Integer>();
 		for (int m = 0; m < x.length; m++) {
 			for (int i = 0; i < x[m].length; i++) {
@@ -478,6 +476,34 @@ public class LabelNumCorpus extends NumCorpus implements ILabelCorpus {
 		}
 		int y = refV.size();
 		return y;
+	}
+
+	/**
+	 * transpose the sparse matrix with unit elements at positions (m, x[m][n]),
+	 * as used to represent an adjacency matrix. Correspondingly the sparse
+	 * transpose creates a set of inlinks from outlinks and vice versa.
+	 * 
+	 * @param x
+	 * @return
+	 */
+	public static int[][] getSparseTranspose(int[][] x) {
+
+		@SuppressWarnings("unchecked")
+		List<Integer>[] inrefs = new List[x.length];
+		for (int m = 0; m < x.length; m++) {
+			inrefs[m] = new ArrayList<Integer>();
+		}
+		for (int m = 0; m < x.length; m++) {
+			for (int i = 0; i < x[m].length; i++) {
+				inrefs[x[m][i]].add(m);
+			}
+		}
+		int[][] xtransp = new int[x.length][];
+		for (int m = 0; m < x.length; m++) {
+			xtransp[m] = (int[]) ArrayUtils.asPrimitiveArray(inrefs[m],
+					int.class);
+		}
+		return xtransp;
 	}
 
 	/**
@@ -643,6 +669,7 @@ public class LabelNumCorpus extends NumCorpus implements ILabelCorpus {
 		train.labels = trainLabels;
 		train.labelsV = labelsV;
 		train.labelsW = trainLabelsW;
+		train.pureRelational = false;
 		// readonly corpus we can copy this for split corpora, so the resolver
 		// can be created directly from train (and test, below)
 		train.dataFilebase = dataFilebase;
@@ -650,7 +677,9 @@ public class LabelNumCorpus extends NumCorpus implements ILabelCorpus {
 		test.labels = testLabels;
 		test.labelsV = labelsV;
 		test.labelsW = testLabelsW;
+		test.pureRelational = false;
 		test.dataFilebase = dataFilebase;
+
 	}
 
 	@Override
@@ -708,15 +737,14 @@ public class LabelNumCorpus extends NumCorpus implements ILabelCorpus {
 	 * check the consistency of the corpus, basically checking for array sizes
 	 * in conjunction with the index values contained.
 	 * 
-	 * @param resolver whether to include the resolver class
-	 * @return error report or null if ok.
+	 * @param resolve whether to include the resolver class
+	 * @return error report or empty string "" if ok.
 	 */
-	public String check(boolean resolver) {
+	public String check(boolean resolve) {
 		StringBuffer sb = new StringBuffer();
 		// TODO: we have the resolver (including labels) checked before the
 		// numerical labels... suboptimal but ok for a consistency check but.
-		String st = super.check(resolver);
-		sb.append(st == null ? "" : st);
+		sb.append(super.check(resolve));
 
 		for (int type = 0; type < labelExtensions.length; type++) {
 			if (labels[type] != null) {
@@ -774,9 +802,21 @@ public class LabelNumCorpus extends NumCorpus implements ILabelCorpus {
 							}
 						}
 					}
+					if (pureRelational && type == LREFERENCES) {
+						int[][] references = labels[type];
+						int[][] citations = getSparseTranspose(references);
+						for (int m = 0; m < numDocs; m++) {
+							if (references[m].length == 0
+									&& citations[m].length == 0) {
+								sb.append(String
+										.format("label type %s : doc %d relations = 0\n",
+												labelNames[type], m));
+							}
+						}
+					}
 				}
 			}
 		}
-		return sb.length() != 0 ? sb.toString() : null;
+		return sb.toString();
 	}
 }

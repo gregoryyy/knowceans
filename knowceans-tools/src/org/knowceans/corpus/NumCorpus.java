@@ -842,10 +842,10 @@ public class NumCorpus implements ICorpus, ITermCorpus, ISplitCorpus {
 	 * check the consistency of the corpus, basically checking for array sizes
 	 * in conjunction with the index values contained.
 	 * 
-	 * @param resolver whether to include the resolver class
-	 * @return error report or null if ok.
+	 * @param resolve whether to include the resolver class
+	 * @return error report or "" if ok.
 	 */
-	public String check(boolean resolver) {
+	public String check(boolean resolve) {
 		StringBuffer sb = new StringBuffer();
 
 		// check terms
@@ -880,12 +880,9 @@ public class NumCorpus implements ICorpus, ITermCorpus, ISplitCorpus {
 					numDocs, docs.length));
 		}
 		// check resolver
-		if (resolver) {
-			String st = getResolver().check(this);
-			if (st != null) {
-				sb.append(st);
-			}
+		if (resolve) {
+			sb.append(getResolver().check(this));
 		}
-		return sb.length() != 0 ? sb.toString() : null;
+		return sb.toString();
 	}
 }
