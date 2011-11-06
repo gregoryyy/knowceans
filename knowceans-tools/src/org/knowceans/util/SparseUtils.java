@@ -11,10 +11,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import org.knowceans.util.IndexQuickSort;
-import org.knowceans.util.Print;
-import org.knowceans.util.Vectors;
-
 /**
  * Sparse utilities used to manipulate sparse (i.e., svmlight) data, represented
  * by two matrices: int[][][] {int[][] {[indices]}, int[][] {[frequencies]}}
@@ -116,8 +112,9 @@ public class SparseUtils {
 					int a = aw != null ? aw[m][i] : 1;
 					int b = bw != null ? bw[m][j] : 1;
 					if (ii >= c.length || bx[m][j] >= c[ii].length) {
-						Print.fln("m = %d i = %d j = %d ii = %d bxmj = %d", m,
-								i, j, ii, bx[m][j]);
+						// Print.fln("m = %d i = %d j = %d ii = %d bxmj = %d",
+						// m,
+						// i, j, ii, bx[m][j]);
 					} else {
 						c[ii][bx[m][j]] += a * b;
 					}
@@ -220,6 +217,36 @@ public class SparseUtils {
 	}
 
 	/**
+	 * sort sparse matrix
+	 * 
+	 * @param as
+	 * @param sort 0 no, 1 by index, 2 by frequency, negative = reverse
+	 */
+	public static void sort(int[][][] as, int sort) {
+		int asort = sort > 0 ? sort : -sort;
+		for (int m = 0; m < as[0].length; m++) {
+
+			if (as[1][m] == null) {
+				System.out.println("0\n");
+				continue;
+			}
+
+			int[] s = null;
+			// sort by index/frequency
+			if (as[1][m].length > 0) {
+				if (asort == 1 || asort <= 2) {
+					s = IndexQuickSort.sort(as[asort - 1][m]);
+					if (sort < 0) {
+						IndexQuickSort.reverse(s);
+					}
+					IndexQuickSort.reorder(as[0][m], s);
+					IndexQuickSort.reorder(as[1][m], s);
+				}
+			}
+		}
+	}
+
+	/**
 	 * write array to file in svmlight format
 	 * 
 	 * @param as
@@ -318,6 +345,31 @@ public class SparseUtils {
 			}
 			System.out.print("\n");
 		}
+	}
 
+	/**
+	 * threshold the matrix
+	 * 
+	 * @param xs
+	 * @param bound
+	 */
+	public static void threshold(int[][][] xs, int bound) {
+		for (int i = 0; i < xs[0].length; i++) {
+			List<Integer> rx = new ArrayList<Integer>();
+			List<Integer> rw = new ArrayList<Integer>();
+			for (int j = 0; j < xs[0][i].length; j++) {
+				if (xs[1][i][j] >= bound) {
+					rx.add(xs[0][i][j]);
+					rw.add(xs[1][i][j]);
+				}
+			}
+			// replace row
+			xs[0][i] = (int[]) ArrayUtils.asPrimitiveArray(rx);
+			xs[1][i] = (int[]) ArrayUtils.asPrimitiveArray(rw);
+			if (xs[0][i] == null) {
+				xs[0][i] = new int[0];
+				xs[1][i] = new int[0];
+			}
+		}
 	}
 }

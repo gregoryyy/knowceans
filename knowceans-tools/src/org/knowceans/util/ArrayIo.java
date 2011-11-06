@@ -565,7 +565,7 @@ public class ArrayIo {
 				for (col = 0; col < a[0].length; col++) {
 					if (col > 0)
 						bw.write(' ');
-					bw.write(a[row][col]);
+					bw.write(Integer.toString(a[row][col]));
 				}
 				bw.newLine();
 			}
