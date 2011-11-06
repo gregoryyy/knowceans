@@ -37,7 +37,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
 import java.util.Set;
-import java.util.TreeSet;
 
 import org.knowceans.util.ArrayUtils;
 import org.knowceans.util.Vectors;
@@ -464,6 +463,16 @@ public class LabelNumCorpus extends NumCorpus implements ILabelCorpus {
 	}
 
 	/**
+	 * filtering without changing the document sequence
+	 * 
+	 * @param filter
+	 * @return
+	 */
+	public int[] filterDocs(DocPredicate filter) {
+		return filterDocs(filter, null);
+	}
+
+	/**
 	 * count the number of distinct values in x
 	 * 
 	 * @param x
@@ -784,8 +793,9 @@ public class LabelNumCorpus extends NumCorpus implements ILabelCorpus {
 						if (((exactlyOne || needOne) && labels[type][m].length == 0)
 								|| (exactlyOne && labels[type][m].length > 1)) {
 							sb.append(String
-									.format("label type %s : %d cardinality constraint broken: m = %d\n",
-											labelNames[type], m));
+									.format("label type %s: cardinality constraint broken: m = %d: %d\n",
+											labelNames[type], m,
+											labels[type][m].length));
 						}
 						W += labels[type][m].length;
 					}

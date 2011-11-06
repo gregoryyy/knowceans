@@ -186,7 +186,8 @@ public class NumCorpus implements ICorpus, ITermCorpus, ISplitCorpus {
 			while ((line = br.readLine()) != null) {
 				// one document per line
 				String[] fields = line.trim().split("\\s+");
-				if (fields[0].equals("") || fields[0].equals("0"))
+				// empty documents start with a 0 but are used in corpus
+				if (fields[0].equals(""))
 					continue;
 				length = Integer.parseInt(fields[0]);
 				// if single paragraph
@@ -261,6 +262,7 @@ public class NumCorpus implements ICorpus, ITermCorpus, ISplitCorpus {
 				}
 			}
 			numDocs = nd;
+
 			numTerms = nt;
 			numWords = nw;
 			docs = cdocs.toArray(new Document[] {});
