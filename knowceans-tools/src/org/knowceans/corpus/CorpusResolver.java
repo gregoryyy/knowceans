@@ -15,8 +15,6 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 
-import org.knowceans.util.Print;
-
 /**
  * CorpusResolver resolves indices into names. To live-check for available data,
  * use LabelNumCorpus
@@ -295,6 +293,17 @@ public class CorpusResolver implements ICorpusResolver {
 		}
 	}
 
+	/**
+	 * resolve the term source term sources (stemming etc.)
+	 */
+	public String resolveTermSource(int t) {
+		if (data[KTERMSOURCE] != null) {
+			return data[KTERMSOURCE][t];
+		} else {
+			return null;
+		}
+	}
+
 	/*
 	 * (non-Javadoc)
 	 * 
@@ -440,6 +449,8 @@ public class CorpusResolver implements ICorpusResolver {
 			return resolveDocTitle(id);
 		} else if (type == KDOCNAME) {
 			return resolveDocName(id);
+		} else if (type == KTERMSOURCE) {
+			return resolveTermSource(id);
 		}
 		return null;
 	}
@@ -467,6 +478,8 @@ public class CorpusResolver implements ICorpusResolver {
 			return "document title";
 		} else if (type == KDOCNAME) {
 			return "document name";
+		} else if (type == KTERMSOURCE) {
+			return "term source";
 		}
 		return null;
 	}

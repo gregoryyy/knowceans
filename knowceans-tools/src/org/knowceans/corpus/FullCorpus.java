@@ -15,6 +15,8 @@ import org.knowceans.util.Vectors;
  * <p>
  * TODO: harmonise the usage of label keys.
  * 
+ * @deprecated use LabelNumCorpus (more thoroughly debugged)
+ * 
  * @author gregor
  * 
  */

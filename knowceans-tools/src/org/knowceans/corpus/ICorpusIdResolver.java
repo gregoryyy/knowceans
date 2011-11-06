@@ -1,5 +1,9 @@
 package org.knowceans.corpus;
 
+/**
+ * @author gregor
+ * 
+ */
 public interface ICorpusIdResolver {
 
 	/**

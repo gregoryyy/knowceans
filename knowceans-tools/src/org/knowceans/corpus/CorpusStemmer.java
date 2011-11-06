@@ -8,59 +8,103 @@ import java.util.Set;
 
 import org.knowceans.map.IMultiMap;
 import org.knowceans.map.InvertibleHashMultiMap;
-import org.knowceans.util.Print;
-import org.knowceans.util.Vectors;
 import org.tartarus.snowball.SnowballStemmer;
-import org.tartarus.snowball.ext.porterStemmer;
 
 /**
- * uses Snowball to stem the given vocabulary.
+ * Uses Snowball to stem a numeric corpus via its resolver.
  * 
  * @author gregor
  * 
  */
-public class EnglishStemmer {
+public class CorpusStemmer implements ICorpusStemmer {
 
 	public static void main(String[] args) throws Throwable {
 		String filebase = "corpus-example/nips";
 		LabelNumCorpus corpus = new LabelNumCorpus(filebase);
 
+		int V = corpus.getNumTerms();
 		String[] terms = corpus.getResolver().data[CorpusResolver.KTERMS];
 		int[] df = corpus.calcDocFreqs();
 		for (int i = 0; i < terms.length; i++) {
-			System.out.println(terms[i] + " " + df[i]);
+			System.out.println(terms[i] + ", df = " + df[i]);
 		}
 
-		EnglishStemmer es = new EnglishStemmer();
+		ICorpusStemmer es = new CorpusStemmer.English();
 		es.stem(corpus);
 
-		terms = corpus.getResolver().data[CorpusResolver.KTERMS];
+		System.out.println("**************************************");
+
+		terms = corpus.getResolver().data[CorpusResolver.KTERMSOURCE];
 		df = corpus.calcDocFreqs();
 		for (int i = 0; i < terms.length; i++) {
-			System.out.println(terms[i] + " " + df[i]);
+			System.out.println(terms[i] + ", df = " + df[i]);
 		}
+		System.out.println(String.format("V = %d --> %d", V,
+				corpus.getNumTerms()));
+
 	}
 
 	private SnowballStemmer stemmer;
 
+	// / nested convenience subclasses for different languages
+
 	/**
-	 * apply stemming to the corpus, updating both the tokens and term index in
-	 * its resolver.
-	 * 
-	 * @param corpus a corpus with a resolver
-	 * @return the old2new mapping applied to the corpus
+	 * "Classical" Porter2 stemmer
 	 */
+	public static class Porter extends CorpusStemmer {
+		public Porter() throws Exception {
+			super("porter");
+		}
+	}
+
+	/**
+	 * English stemmer
+	 */
+	public static class English extends CorpusStemmer {
+		public English() throws Exception {
+			super("english");
+		}
+	}
+
+	/**
+	 * German stemmer
+	 */
+	public static class German extends CorpusStemmer {
+		public German() throws Exception {
+			super("german");
+		}
+	}
+
+	// / end language stemmers //////
+
+	/**
+	 * create the stemmer
+	 * 
+	 * @param language the language of the stemmer
+	 * @throws Exception
+	 */
+	public CorpusStemmer(String language) throws Exception {
+		@SuppressWarnings("rawtypes")
+		Class stemClass = Class.forName("org.tartarus.snowball.ext." + language
+				+ "Stemmer");
+		stemmer = (SnowballStemmer) stemClass.newInstance();
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see org.knowceans.corpus.IStemmer#stem(org.knowceans.corpus.NumCorpus)
+	 */
+	@Override
 	public int[] stem(NumCorpus corpus) {
 		int[] old2new = null;
 		try {
 			String[] terms = corpus.getResolver().getStrings(
 					CorpusResolver.KTERMS);
 			int[] df = corpus.calcDocFreqs();
-			EnglishStemmer es = new EnglishStemmer();
 			String[] stemmed = stemTerms(terms);
 			old2new = new int[terms.length];
-			String[] newIndex = es.createTermMapping(terms, df, stemmed,
-					old2new);
+			String[] newIndex = createTermMapping(terms, df, stemmed, old2new);
 			corpus.mergeTerms(old2new, newIndex);
 		} catch (Throwable e) {
 			e.printStackTrace();
@@ -139,29 +183,26 @@ public class EnglishStemmer {
 		return newIndex;
 	}
 
-	/**
-	 * stem
+	/*
+	 * (non-Javadoc)
 	 * 
-	 * @param terms
-	 * @return stemmed terms
-	 * @throws Throwable
+	 * @see org.knowceans.corpus.IStemmer#stemTerms(java.lang.String[])
 	 */
-	public String[] stemTerms(String[] terms) throws Throwable {
+	@Override
+	public String[] stemTerms(String[] terms) {
 		String[] newTerms = new String[terms.length];
-		stemmer = new porterStemmer();
 		for (int i = 0; i < terms.length; i++) {
 			newTerms[i] = stem(terms[i]);
 		}
 		return newTerms;
 	}
 
-	/**
-	 * stem the current term. This method is synchronised because the stemmer is
-	 * not thread-safe.
+	/*
+	 * (non-Javadoc)
 	 * 
-	 * @param word
-	 * @return
+	 * @see org.knowceans.corpus.IStemmer#stem(java.lang.String)
 	 */
+	@Override
 	public synchronized String stem(String word) {
 		stemmer.setCurrent(word);
 		stemmer.stem();

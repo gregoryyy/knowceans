@@ -16,7 +16,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Random;
 import java.util.Set;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
@@ -52,7 +51,7 @@ public class CorpusSearcher {
 
 		// stemming of vocabulary
 		System.out.println("stemming");
-		EnglishStemmer es = new EnglishStemmer();
+		ICorpusStemmer es = new CorpusStemmer.English();
 		int Vold = corpus.getNumTerms();
 		es.stem(corpus);
 		System.out.println(String.format("V = %d --> %d", Vold,
@@ -74,7 +73,7 @@ public class CorpusSearcher {
 
 		// /////// end preparing corpus /////////
 
-		corpus.write(outpath, true);
+		// corpus.write(outpath, true);
 		CorpusSearcher cs = new CorpusSearcher(corpus, true);
 		cs.setStemmer(es);
 		cs.interact();
@@ -82,7 +81,7 @@ public class CorpusSearcher {
 
 	private LabelNumCorpus corpus;
 	private CorpusResolver resolver;
-	private EnglishStemmer stemmer;
+	private ICorpusStemmer stemmer;
 	private String help = "Query or .q to quit, .s for stats, Enter to page results, .d<rank> or .m<id> to view doc, .t<prefix> to view terms list,\n"
 			+ "       .a, .c<prefix> to view authors, categories list, .A, .C<prefix> to view particular item, .h, ? for this message:";
 
@@ -144,7 +143,7 @@ public class CorpusSearcher {
 	 * 
 	 * @param es
 	 */
-	public void setStemmer(EnglishStemmer stemmer) {
+	public void setStemmer(ICorpusStemmer stemmer) {
 		this.stemmer = stemmer;
 	}
 
