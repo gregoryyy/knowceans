@@ -16,6 +16,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Random;
 import java.util.Set;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
@@ -51,39 +52,55 @@ public class CorpusSearcher {
 
 		// stemming of vocabulary
 		System.out.println("stemming");
-		ICorpusStemmer es = new CorpusStemmer.English();
-		int Vold = corpus.getNumTerms();
-		es.stem(corpus);
-		System.out.println(String.format("V = %d --> %d", Vold,
+		ICorpusStemmer cse = new CorpusStemmer.English();
+		int V = corpus.getNumTerms();
+		cse.stem(corpus);
+		System.out.println(String.format("V = %d -> %d", V,
 				corpus.getNumTerms()));
 
 		// we want to have 100 linked documents
 
 		// either incoming or outgoing links
+		System.out.println("removing unlinked documents");
+		int M = corpus.getNumDocs();
 		corpus.reduceUnlinkedDocs();
+		System.out
+				.println(String.format("M = %d -> %d", M, corpus.getNumDocs()));
+
 		// choose a random subset of 100 documents (removes then-outside
 		// references)
-		// corpus.reduce(200, new Random());
+		System.out.println("reducing documents");
+		M = corpus.getNumDocs();
+		corpus.reduce(200, new Random());
+		System.out
+				.println(String.format("M = %d -> %d", M, corpus.getNumDocs()));
+
 		// adjust the vocabulary
+		System.out.println("filtering terms");
+		V = corpus.getNumTerms();
 		corpus.filterTermsDf(2, 2000);
+		System.out.println(String.format("V = %d -> %d", V,
+				corpus.getNumTerms()));
+
 		// require a single instance of each label in the corpus
+		System.out.println("filtering labels");
 		corpus.filterLabels();
-		System.out.print("Corpus check\n" + corpus.check(true));
+		System.out.print("checking corpus\n" + corpus.check(true));
 		System.out.println("writing to " + outpath);
 
 		// /////// end preparing corpus /////////
 
 		// corpus.write(outpath, true);
 		CorpusSearcher cs = new CorpusSearcher(corpus, true);
-		cs.setStemmer(es);
+		cs.setStemmer(cse);
 		cs.interact();
 	}
 
 	private LabelNumCorpus corpus;
 	private CorpusResolver resolver;
 	private ICorpusStemmer stemmer;
-	private String help = "Query or .q to quit, .s for stats, Enter to page results, .d<rank> or .m<id> to view doc, .t<prefix> to view terms list,\n"
-			+ "       .a, .c<prefix> to view authors, categories list, .A, .C<prefix> to view particular item, .h, ? for this message:";
+	private String help = "Query or .q to quit, .h, ? for this message, .s for stats, Enter to page results, .d<rank> or .m<id> to view doc, \n"
+			+ "       .t, .a, .c<prefix> to view terms, authors, categories list, .T, .A, .C<prefix> to view particular item:";
 
 	/**
 	 * inverted index
@@ -277,20 +294,22 @@ public class CorpusSearcher {
 					System.out.println("document id = " + m + ":");
 					printDoc(lastQuery, m);
 					System.out.println("***********************************");
-				} else if (line.startsWith(".A") && line.length() > 2) {
+				} else if ((line.startsWith(".A") || line.startsWith(".C") || line
+						.startsWith(".T")) && line.length() > 2) {
 					String prefix = line.substring(2).trim();
-					System.out.println("author prefix " + prefix + ":");
-					int pos = searchList(ICorpusResolver.KAUTHORS, prefix);
-					printAuthor(pos);
-					System.out.println("***********************************");
+					System.out.println("prefix " + prefix + ":");
+					int type = 0;
+					if (line.charAt(1) == 'A') {
+						printAuthor(searchList(ICorpusResolver.KAUTHORS, prefix));
+					} else if (line.charAt(1) == 'C') {
+						printCategory(searchList(ICorpusResolver.KCATEGORIES,
+								prefix));
+					} else if (line.charAt(1) == 'T') {
+						printTerm(searchList(ICorpusResolver.KTERMSOURCE,
+								prefix));
+					}
 
-				} else if (line.startsWith(".C") && line.length() > 2) {
-					String prefix = line.substring(2).trim();
-					System.out.println("category prefix " + prefix + ":");
-					int pos = searchList(ICorpusResolver.KCATEGORIES, prefix);
-					printCategory(pos);
 					System.out.println("***********************************");
-
 				} else if (line.startsWith(".t") || line.startsWith(".a")
 						|| line.startsWith(".c") || line.startsWith(".d")
 						|| line.startsWith(".m")) {
@@ -349,6 +368,8 @@ public class CorpusSearcher {
 				for (int i = 0; i < aa.length; i++) {
 					if (aa[i] == null) {
 						aa[i] = CorpusResolver.keyNames[type] + i;
+					} else {
+						keyLists[type][i] = aa[i];
 					}
 				}
 				keyList2id[type] = IndexQuickSort.sort(keyLists[type]);
@@ -398,13 +419,23 @@ public class CorpusSearcher {
 				int df = 0;
 				if (type == ICorpusResolver.KTERMS) {
 					df = docFreqs[id];
-				} else if (type == ICorpusResolver.KAUTHORS) {
-					df = authorIndex.get(id).size();
-				} else if (type == ICorpusResolver.KCATEGORIES) {
-					df = labelIndex.get(id).size();
+					String source = "";
+					if (stemmer != null) {
+						source = resolver.resolveTermSource(id);
+						source = " < "
+								+ source.substring(source.indexOf("<-") + 2);
+					}
+					System.out.println(keyLists[type][listpos] + ", id = " + id
+							+ ", df = " + df + " " + source);
+				} else {
+					if (type == ICorpusResolver.KAUTHORS) {
+						df = authorIndex.get(id).size();
+					} else if (type == ICorpusResolver.KCATEGORIES) {
+						df = labelIndex.get(id).size();
+					}
+					System.out.println(keyLists[type][listpos] + ", id = " + id
+							+ ", df = " + df);
 				}
-				System.out.println(keyLists[type][listpos] + ", id = " + id
-						+ ", df = " + df);
 			}
 		}
 		return listpos;
@@ -565,6 +596,16 @@ public class CorpusSearcher {
 			i++;
 			System.out.println(i + ". " + resolver.resolveDocRef(doc));
 		}
+	}
+
+	/**
+	 * print the term information
+	 * 
+	 * @param pos
+	 */
+	private void printTerm(int pos) {
+		int id = keyList2id[ICorpusResolver.KTERMS][pos];
+		System.out.println(resolver.resolveTermSource(id));
 	}
 
 	/**
