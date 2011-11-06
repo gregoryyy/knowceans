@@ -16,8 +16,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Random;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
@@ -69,11 +69,11 @@ public class CorpusSearcher {
 
 		// choose a random subset of 100 documents (removes then-outside
 		// references)
-		System.out.println("reducing documents");
-		M = corpus.getNumDocs();
-		corpus.reduce(200, new Random());
-		System.out
-				.println(String.format("M = %d -> %d", M, corpus.getNumDocs()));
+		// System.out.println("reducing documents");
+		// M = corpus.getNumDocs();
+		// corpus.reduce(100, new Random());
+		// System.out
+		// .println(String.format("M = %d -> %d", M, corpus.getNumDocs()));
 
 		// adjust the vocabulary
 		System.out.println("filtering terms");
@@ -298,7 +298,6 @@ public class CorpusSearcher {
 						.startsWith(".T")) && line.length() > 2) {
 					String prefix = line.substring(2).trim();
 					System.out.println("prefix " + prefix + ":");
-					int type = 0;
 					if (line.charAt(1) == 'A') {
 						printAuthor(searchList(ICorpusResolver.KAUTHORS, prefix));
 					} else if (line.charAt(1) == 'C') {
@@ -425,16 +424,16 @@ public class CorpusSearcher {
 						source = " < "
 								+ source.substring(source.indexOf("<-") + 2);
 					}
-					System.out.println(sortedKeyLists[type][listpos] + ", id = " + id
-							+ ", df = " + df + " " + source);
+					System.out.println(sortedKeyLists[type][listpos]
+							+ ", id = " + id + ", df = " + df + " " + source);
 				} else {
 					if (type == ICorpusResolver.KAUTHORS) {
 						df = authorIndex.get(id).size();
 					} else if (type == ICorpusResolver.KCATEGORIES) {
 						df = labelIndex.get(id).size();
 					}
-					System.out.println(sortedKeyLists[type][listpos] + ", id = " + id
-							+ ", df = " + df);
+					System.out.println(sortedKeyLists[type][listpos]
+							+ ", id = " + id + ", df = " + df);
 				}
 			}
 		}
@@ -607,10 +606,20 @@ public class CorpusSearcher {
 		loadList(ICorpusResolver.KTERMS);
 		int id = keyList2id[ICorpusResolver.KTERMS][pos];
 		String source = resolver.resolveTermSource(id);
+		System.out.print("Term id = " + id + ": ");
 		System.out.println(source != null ? source
 				: sortedKeyLists[ICorpusResolver.KTERMS][pos]);
+		Map<Integer, Integer> termDocs = termDocFreqIndex.get(id);
+		// calculate sum
+		int tf = 0;
+		for (int i : termDocs.values()) {
+			tf += i;
+		}
+		System.out.println("Global frequences: df = " + docFreqs[id]
+				+ ", tf = " + tf);
 		System.out.println("Documents (id=tf):\n"
-				+ wordWrap(termDocFreqIndex.get(id).toString(), 120));
+				+ wordWrap(new TreeMap<Integer, Integer>(termDocs).toString(),
+						120));
 	}
 
 	/**
