@@ -418,9 +418,8 @@ public class LabelNumCorpus extends NumCorpus implements ILabelCorpus {
 	 * filter documents. Also updates the resolver. Vocabulary must be rebuilt
 	 * separately because frequencies change: use filterTermsDf(). Because
 	 * citations are directly affected, this label type is updated here, as
-	 * well. Removes the pureRelational flag because then-outside references are
-	 * being .q
-	 * removed.
+	 * well. Removes the pureRelational flag because then-outside references
+	 * are removed.
 	 * 
 	 * @param filter predicate to keep documents in list
 	 * @param rand random number generator to be used generate a random

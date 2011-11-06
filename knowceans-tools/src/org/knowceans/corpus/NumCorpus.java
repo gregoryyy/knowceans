@@ -32,18 +32,16 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 import java.util.Set;
+import java.util.TreeSet;
 
-import org.knowceans.map.BijectiveHashMap;
-import org.knowceans.map.CategoryMap;
-import org.knowceans.map.RankingMap;
 import org.knowceans.util.ArrayUtils;
 import org.knowceans.util.RandomSamplers;
 import org.knowceans.util.Vectors;
-
-import sun.tools.tree.LengthExpression;
 
 /**
  * Represents a corpus of documents, using numerical data only.
@@ -591,6 +589,50 @@ public class NumCorpus implements ICorpus, ITermCorpus, ISplitCorpus {
 		// map to novel term indices
 		getResolver().filterTerms(indices);
 		return indices;
+	}
+
+	/**
+	 * merge terms by index, for instance to create a stemmed version of the
+	 * corpus or to transform indices. TODO: paragraph support. The corpus
+	 * resolver obtained by getResolver() must be updated using setTerms() if
+	 * second argument null. The frequencies of merged terms add up.
+	 * 
+	 * @param old2new mapping from old to new indices, numbering must correspond
+	 *        to terms, but not all terms need to be represented in old2new.
+	 * @param terms new vocabulary, will be updated in resolver if != null
+	 */
+	public void mergeTerms(int[] old2new, String[] terms) {
+		// rewrite corpus
+		for (int m = 0; m < numDocs; m++) {
+			Map<Integer, Integer> term2freq = new HashMap<Integer, Integer>();
+			for (int i = 0; i < docs[m].numTerms; i++) {
+				int term = old2new[docs[m].terms[i]];
+				Integer freq = term2freq.get(term);
+				if (freq == null) {
+					freq = docs[m].counts[i];
+				} else {
+					freq += docs[m].counts[i];
+				}
+				term2freq.put(term, freq);
+			}
+			Set<Integer> keys = new TreeSet<Integer>(term2freq.keySet());
+			docs[m].terms = new int[keys.size()];
+			docs[m].counts = new int[keys.size()];
+			int i = 0;
+			for (int key : keys) {
+				docs[m].terms[i] = key;
+				docs[m].counts[i] = term2freq.get(key);
+			}
+			docs[m].compile();
+		}
+		if (terms != null) {
+			numTerms = terms.length;
+		} else {
+			numTerms = Vectors.max(old2new) + 1;
+		}
+		if (terms != null) {
+			getResolver().data[CorpusResolver.KTERMS] = terms;
+		}
 	}
 
 	/**

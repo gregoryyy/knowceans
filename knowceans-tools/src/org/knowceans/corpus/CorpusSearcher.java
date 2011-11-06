@@ -44,22 +44,33 @@ public class CorpusSearcher {
 	public static void main(String[] args) throws Exception {
 		// String filebase = "corpus-example/berry95";
 		String filebase = "corpus-example/nips";
+		String outpath = "corpus-example/nips-out";
 		LabelNumCorpus corpus = new LabelNumCorpus(filebase);
 		corpus.loadAllLabels();
 
-		// //// adjust corpus //////////////////
+		// ////// start preparing corpus ////////
+
+		// stemming of vocabulary
+		EnglishStemmer es = new EnglishStemmer();
+		es.stem(corpus);
+
 		// we want to have 100 linked documents
 
 		// either incoming or outgoing links
 		corpus.reduceUnlinkedDocs();
 		// choose a random subset of 100 documents (removes then-outside
 		// references)
-		corpus.reduce(200, new Random());
+		corpus.reduce(1200, new Random());
 		// adjust the vocabulary
 		corpus.filterTermsDf(2, 100);
 		// require a single instance of each label in the corpus
 		corpus.filterLabels();
 		System.out.print("Corpus check\n" + corpus.check(true));
+		System.out.println("writing to " + outpath);
+
+		// /////// end preparing corpus /////////
+
+		corpus.write(outpath);
 		CorpusSearcher cs = new CorpusSearcher(corpus);
 		cs.interact();
 	}
@@ -391,6 +402,17 @@ public class CorpusSearcher {
 		}
 		System.out.println("Document id = " + id);
 		String title = resolver.resolveDocRef(id);
+		if (title == null) {
+			String auth = "";
+			for (int a : corpus.getDocLabels(LabelNumCorpus.LAUTHORS, id)) {
+				String author = resolver.resolveAuthor(a);
+				auth += " " + author != null ? author : "author" + a;
+			}
+			String name = resolver.resolveDocTitle(id);
+			if (auth != null && name != null) {
+				title = auth + ": " + name;
+			}
+		}
 		String content = resolver.resolveDocContent(id);
 		if (title != null) {
 			title = highlight(title, query);
