@@ -36,7 +36,7 @@ public class CorpusTest {
 
 		// filter terms by document frequency
 		int[] index = corpus.filterTermsDf(10, 500);
-		corpus.write("testcorpus");
+		corpus.write("testcorpus", true);
 		corpus.getResolver().filterTerms(index);
 		// corpus.getResolver().filterDocuments(index);
 		corpus.getResolver().write("testcorpus", ICorpusResolver.KTERMS);

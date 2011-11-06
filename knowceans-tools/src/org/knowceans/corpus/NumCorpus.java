@@ -510,6 +510,58 @@ public class NumCorpus implements ICorpus, ITermCorpus, ISplitCorpus {
 	}
 
 	/**
+	 * return the minimum number of words in any document
+	 * 
+	 * @return
+	 */
+	public int getMinDocWords() {
+		int min = Integer.MAX_VALUE;
+		for (int m = 0; m < numDocs; m++) {
+			min = min < docs[m].numWords ? min : docs[m].numWords;
+		}
+		return min;
+	}
+
+	/**
+	 * return the maximum number of words in any document
+	 * 
+	 * @return
+	 */
+	public int getMaxDocWords() {
+		int max = 0;
+		for (int m = 0; m < numDocs; m++) {
+			max = max > docs[m].numWords ? max : docs[m].numWords;
+		}
+		return max;
+	}
+
+	/**
+	 * return the minimum number of terms in any document
+	 * 
+	 * @return
+	 */
+	public int getMinDocTerms() {
+		int min = Integer.MAX_VALUE;
+		for (int m = 0; m < numDocs; m++) {
+			min = min < docs[m].numTerms ? min : docs[m].numTerms;
+		}
+		return min;
+	}
+
+	/**
+	 * return the maximum number of terms in any document
+	 * 
+	 * @return
+	 */
+	public int getMaxDocTerms() {
+		int max = 0;
+		for (int m = 0; m < numDocs; m++) {
+			max = max > docs[m].numTerms ? max : docs[m].numTerms;
+		}
+		return max;
+	}
+
+	/**
 	 * Get the document ids for a current term. This method uses linear
 	 * iteration through the corpus and is intended only for debug purposes.
 	 * 
@@ -541,9 +593,17 @@ public class NumCorpus implements ICorpus, ITermCorpus, ISplitCorpus {
 	 * @see java.lang.Object#toString()
 	 */
 	public String toString() {
-		StringBuffer b = new StringBuffer();
-		b.append("Corpus {numDocs=" + numDocs + " numTerms=" + numTerms + "}");
-		return b.toString();
+		StringBuffer sb = new StringBuffer();
+		sb.append(String.format("%s instance:\n", this.getClass()
+				.getSimpleName()));
+		sb.append(String.format("file base: %s\n", dataFilebase));
+		sb.append(String
+				.format("docs: M = %d, V = %d, W = %d, N[m] = [%d, %d], T[m] = [%d, %d]\n",
+						getNumDocs(), getNumTerms(), getNumWords(),
+						getMinDocWords(), getMaxDocWords(), getMinDocTerms(),
+						getMaxDocTerms()));
+
+		return sb.toString();
 	}
 
 	/**
@@ -622,6 +682,7 @@ public class NumCorpus implements ICorpus, ITermCorpus, ISplitCorpus {
 			for (int key : keys) {
 				docs[m].terms[i] = key;
 				docs[m].counts[i] = term2freq.get(key);
+				i++;
 			}
 			docs[m].compile();
 		}
@@ -631,7 +692,8 @@ public class NumCorpus implements ICorpus, ITermCorpus, ISplitCorpus {
 			numTerms = Vectors.max(old2new) + 1;
 		}
 		if (terms != null) {
-			getResolver().data[CorpusResolver.KTERMS] = terms;
+			// TODO: source separator as parameter
+			getResolver().setTerms(terms, "<");
 		}
 	}
 
@@ -820,13 +882,13 @@ public class NumCorpus implements ICorpus, ITermCorpus, ISplitCorpus {
 	}
 
 	/**
-	 * write the corpus to to a file. TODO: write also document titles and
-	 * labels (in subclass)
+	 * write the corpus to to a file.
 	 * 
 	 * @param pathbase
+	 * @param resolve also write resolver
 	 * @throws IOException
 	 */
-	public void write(String pathbase) throws IOException {
+	public void write(String pathbase, boolean resolve) throws IOException {
 		BufferedWriter bwcorp = new BufferedWriter(new FileWriter(pathbase
 				+ ".corpus"));
 		for (int m = 0; m < docs.length; m++) {
@@ -857,6 +919,9 @@ public class NumCorpus implements ICorpus, ITermCorpus, ISplitCorpus {
 			}
 		}
 		bwcorp.close();
+		if (resolve) {
+			getResolver().write(pathbase);
+		}
 	}
 
 	/**

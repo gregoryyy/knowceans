@@ -265,7 +265,7 @@ public class LabelNumCorpus extends NumCorpus implements ILabelCorpus {
 	}
 
 	/**
-	 * return the maximum number of labels in any document
+	 * return the minimum number of labels in any document
 	 * 
 	 * @param kind
 	 * @return
@@ -418,8 +418,8 @@ public class LabelNumCorpus extends NumCorpus implements ILabelCorpus {
 	 * filter documents. Also updates the resolver. Vocabulary must be rebuilt
 	 * separately because frequencies change: use filterTermsDf(). Because
 	 * citations are directly affected, this label type is updated here, as
-	 * well. Removes the pureRelational flag because then-outside references
-	 * are removed.
+	 * well. Removes the pureRelational flag because then-outside references are
+	 * removed.
 	 * 
 	 * @param filter predicate to keep documents in list
 	 * @param rand random number generator to be used generate a random
@@ -685,9 +685,8 @@ public class LabelNumCorpus extends NumCorpus implements ILabelCorpus {
 	}
 
 	@Override
-	public void write(String pathbase) throws IOException {
-		// TODO: fully test
-		super.write(pathbase);
+	public void write(String pathbase, boolean resolve) throws IOException {
+		super.write(pathbase, resolve);
 		// write the stuff that labels add to the plain NumCorpus
 		for (int type = 0; type < labelExtensions.length; type++) {
 			if (labels[type] == null) {
@@ -716,10 +715,7 @@ public class LabelNumCorpus extends NumCorpus implements ILabelCorpus {
 	public String toString() {
 		StringBuffer sb = new StringBuffer();
 		// corpus statistics
-		sb.append(String.format("LabelNumCorpus instance:\n"));
-		sb.append(String.format("file base: %s\n", dataFilebase));
-		sb.append(String.format("docs: M = %d, V = %d, W = %d\n", getNumDocs(),
-				getNumTerms(), getNumWords()));
+		sb.append(super.toString());
 		sb.append(String
 				.format("labels (0 = not available, 1 = available, 2 = loaded):\n"));
 		for (int i = 0; i < LabelNumCorpus.labelExtensions.length; i++) {

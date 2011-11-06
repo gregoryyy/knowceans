@@ -15,6 +15,8 @@ public interface ICorpusResolver extends ICorpusIdResolver {
 	public static final int KDOCREF = 8;
 	// allow to display abstract
 	public static final int KDOCCONTENT = 9;
+	// term source information (stem mappings etc.)
+	public static final int KTERMSOURCE = 10;
 
 	/**
 	 * resolve the numeric label id

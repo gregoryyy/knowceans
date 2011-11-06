@@ -51,8 +51,12 @@ public class CorpusSearcher {
 		// ////// start preparing corpus ////////
 
 		// stemming of vocabulary
+		System.out.println("stemming");
 		EnglishStemmer es = new EnglishStemmer();
+		int Vold = corpus.getNumTerms();
 		es.stem(corpus);
+		System.out.println(String.format("V = %d --> %d", Vold,
+				corpus.getNumTerms()));
 
 		// we want to have 100 linked documents
 
@@ -60,9 +64,9 @@ public class CorpusSearcher {
 		corpus.reduceUnlinkedDocs();
 		// choose a random subset of 100 documents (removes then-outside
 		// references)
-		corpus.reduce(1200, new Random());
+		// corpus.reduce(200, new Random());
 		// adjust the vocabulary
-		corpus.filterTermsDf(2, 100);
+		corpus.filterTermsDf(2, 200);
 		// require a single instance of each label in the corpus
 		corpus.filterLabels();
 		System.out.print("Corpus check\n" + corpus.check(true));
@@ -70,13 +74,15 @@ public class CorpusSearcher {
 
 		// /////// end preparing corpus /////////
 
-		corpus.write(outpath);
-		CorpusSearcher cs = new CorpusSearcher(corpus);
+		corpus.write(outpath, true);
+		CorpusSearcher cs = new CorpusSearcher(corpus, true);
+		cs.setStemmer(es);
 		cs.interact();
 	}
 
 	private LabelNumCorpus corpus;
 	private CorpusResolver resolver;
+	private EnglishStemmer stemmer;
 	private String help = "Query or .q to quit, .s for stats, Enter to page results, .d<rank> or .m<id> to view doc, .t<prefix> to view terms list,\n"
 			+ "       .a, .c<prefix> to view authors, categories list, .A, .C<prefix> to view particular item, .h, ? for this message:";
 
@@ -131,6 +137,15 @@ public class CorpusSearcher {
 			System.out.println("indexing");
 			createIndex();
 		}
+	}
+
+	/**
+	 * set the stemmer for querying
+	 * 
+	 * @param es
+	 */
+	public void setStemmer(EnglishStemmer stemmer) {
+		this.stemmer = stemmer;
 	}
 
 	/**
@@ -203,6 +218,14 @@ public class CorpusSearcher {
 	}
 
 	/**
+	 * represents a preprocessed query
+	 */
+	public class Query {
+		String[] terms;
+		String raw;
+	}
+
+	/**
 	 * interactively search the index
 	 */
 	public void interact() {
@@ -210,7 +233,7 @@ public class CorpusSearcher {
 			System.out.println(help);
 			BufferedReader br = new BufferedReader(new InputStreamReader(
 					System.in));
-			String lastQuery = "";
+			Query lastQuery = null;
 			List<Result> results = null;
 			int listtype = -1;
 			int listpos = -1;
@@ -297,14 +320,15 @@ public class CorpusSearcher {
 					// print statistics
 					System.out.println(corpus);
 				} else {
-					results = search(line);
+					Query q = parseQuery(line);
+					results = search(q);
+					lastQuery = q;
 					resultsPage = 0;
 					listpos = -1;
 					System.out.println(results.size() + " results: ");
-					printResults(line, results, 0, pageSize);
+					printResults(q, results, 0, pageSize);
 					System.out.println("***********************************");
 					System.out.println("query:");
-					lastQuery = line;
 				}
 			}
 		} catch (IOException e) {
@@ -328,7 +352,6 @@ public class CorpusSearcher {
 						aa[i] = CorpusResolver.keyNames[type] + i;
 					}
 				}
-				System.arraycopy(aa, 0, keyLists[type], 0, aa.length);
 				keyList2id[type] = IndexQuickSort.sort(keyLists[type]);
 				IndexQuickSort.reorder(keyLists[type], keyList2id[type]);
 			} else {
@@ -393,7 +416,7 @@ public class CorpusSearcher {
 	 * 
 	 * @param id
 	 */
-	protected void printDoc(String query, int id) {
+	protected void printDoc(Query query, int id) {
 		boolean printStats = true;
 		int statsTerms = 32;
 		if (id >= corpus.numDocs) {
@@ -465,10 +488,7 @@ public class CorpusSearcher {
 			}
 		}
 		if (query != null) {
-			String[] terms = query.split(" ");
-			for (String term : terms) {
-				// TODO: this is redundant with the actual search --> build
-				// query representation
+			for (String term : query.terms) {
 				int termid = resolver.getTermId(term);
 				if (termid >= 0) {
 					System.out.println(term + ", id = " + termid + ", df = "
@@ -555,11 +575,11 @@ public class CorpusSearcher {
 	 * @param query
 	 * @return
 	 */
-	private String highlight(String content, String query) {
+	private String highlight(String content, Query query) {
 		if (query == null || query.equals("")) {
 			return content;
 		}
-		String[] terms = query.split(" ");
+		String[] terms = query.raw.split(" ");
 		for (String term : terms) {
 			content = content.replaceAll("\\s(?i)" + term + "\\s", " ***"
 					+ term + "*** ");
@@ -609,9 +629,9 @@ public class CorpusSearcher {
 	 * @param start
 	 * @param count
 	 */
-	private void printResults(String query, List<Result> results, int start,
+	private void printResults(Query query, List<Result> results, int start,
 			int count) {
-		System.out.println("results for query \"" + query + "\":");
+		System.out.println("results for query \"" + query.raw + "\":");
 		for (int i = start; i < start + count; i++) {
 			if (i >= results.size()) {
 				return;
@@ -708,10 +728,32 @@ public class CorpusSearcher {
 		docFreqs[term]++;
 	}
 
+	// ///// query stuff //////
+
+	/**
+	 * parse the query. Currently this tokenises the string and creates stemmed
+	 * versions of the elements if the stemmer is used for the corpus
+	 * 
+	 * @param string
+	 */
+	public Query parseQuery(String string) {
+		// tokenise query
+		String[] terms = string.split(" ");
+		Query q = new Query();
+		q.raw = string;
+		q.terms = new String[terms.length];
+		if (stemmer != null) {
+			for (int i = 0; i < terms.length; i++) {
+				q.terms[i] = stemmer.stem(terms[i]);
+			}
+		}
+		return q;
+	}
+
 	/**
 	 * search for a single term in the corpus
 	 * 
-	 * @param term
+	 * @param term (stemmed if stemmer is used)
 	 * @return
 	 */
 	public Map<Integer, Double> findTerm(String term) {
@@ -733,13 +775,11 @@ public class CorpusSearcher {
 	 * @param query
 	 * @return
 	 */
-	public List<Result> search(String query) {
+	public List<Result> search(Query query) {
 		Map<Integer, Double> scoreMap = new HashMap<Integer, Double>();
-		// tokenise query
-		String[] terms = query.split(" ");
 		// get individual results and merge scores
-		for (int i = 0; i < terms.length; i++) {
-			Map<Integer, Double> termRes = findTerm(terms[i]);
+		for (int i = 0; i < query.terms.length; i++) {
+			Map<Integer, Double> termRes = findTerm(query.terms[i]);
 			// intersection
 			scoreMap = (i == 0) ? termRes : mergeResults(scoreMap, termRes,
 					true);

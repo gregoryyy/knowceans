@@ -9,6 +9,7 @@ import java.util.Set;
 import org.knowceans.map.IMultiMap;
 import org.knowceans.map.InvertibleHashMultiMap;
 import org.knowceans.util.Print;
+import org.knowceans.util.Vectors;
 import org.tartarus.snowball.SnowballStemmer;
 import org.tartarus.snowball.ext.porterStemmer;
 
@@ -24,17 +25,20 @@ public class EnglishStemmer {
 		String filebase = "corpus-example/nips";
 		LabelNumCorpus corpus = new LabelNumCorpus(filebase);
 
-		String[] terms = corpus.getResolver().getStrings(CorpusResolver.KTERMS);
+		String[] terms = corpus.getResolver().data[CorpusResolver.KTERMS];
 		int[] df = corpus.calcDocFreqs();
-		EnglishStemmer es = new EnglishStemmer();
-		String[] newTerms = es.stemTerms(terms);
-
-		int[] old2new = new int[terms.length];
-		String[] newIndex = es.createTermMapping(terms, df, newTerms, old2new);
-		for (int i = 0; i < newIndex.length; i++) {
-			System.out.println(newIndex[i]);
+		for (int i = 0; i < terms.length; i++) {
+			System.out.println(terms[i] + " " + df[i]);
 		}
-		Print.arraysSep("\n", old2new);
+
+		EnglishStemmer es = new EnglishStemmer();
+		es.stem(corpus);
+
+		terms = corpus.getResolver().data[CorpusResolver.KTERMS];
+		df = corpus.calcDocFreqs();
+		for (int i = 0; i < terms.length; i++) {
+			System.out.println(terms[i] + " " + df[i]);
+		}
 	}
 
 	private SnowballStemmer stemmer;
@@ -53,8 +57,7 @@ public class EnglishStemmer {
 					CorpusResolver.KTERMS);
 			int[] df = corpus.calcDocFreqs();
 			EnglishStemmer es = new EnglishStemmer();
-			String[] stemmed;
-			stemmed = stemTerms(terms);
+			String[] stemmed = stemTerms(terms);
 			old2new = new int[terms.length];
 			String[] newIndex = es.createTermMapping(terms, df, stemmed,
 					old2new);
@@ -74,21 +77,6 @@ public class EnglishStemmer {
 			this.value = value;
 			this.id = id;
 			this.df = df;
-		}
-
-		@Override
-		public String toString() {
-			return value + ":" + id + ":" + df;
-		}
-
-		@Override
-		public int hashCode() {
-			return value.hashCode();
-		}
-
-		@Override
-		public boolean equals(Object obj) {
-			return value.equals(obj);
 		}
 	}
 

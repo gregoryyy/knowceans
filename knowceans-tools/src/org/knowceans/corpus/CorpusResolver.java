@@ -15,6 +15,8 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 
+import org.knowceans.util.Print;
+
 /**
  * CorpusResolver resolves indices into names. To live-check for available data,
  * use LabelNumCorpus
@@ -29,7 +31,7 @@ public class CorpusResolver implements ICorpusResolver {
 	 */
 	public static final String[] keyExtensions = { "docs", "vocab",
 			"authors.key", "labels.key", "tags.key", "vols.key", "years.key",
-			"docnames", "docs.key", "abstracts" };
+			"docnames", "docs.key", "abstracts", "vocab.key" };
 
 	public static final String[] keyNames = { "documents", "terms", "authors",
 			"labels", "tags", "volumes", "years" };
@@ -37,8 +39,8 @@ public class CorpusResolver implements ICorpusResolver {
 	public static final int[] docRelatedKeys = { KDOCS, KDOCNAME, KDOCREF,
 			KDOCCONTENT };
 	// TODO: add abstracts
-	public static final int[] keyExt2labelId = { -2, -1, 0, 1, 2, 3, 4 };
-	public static final int[] labelId2keyExt = { 2, 3, 4, 5, 6, -1, -1 };
+	public static final int[] keyExt2labelId = { -2, -1, 0, 1, 2, 3, 4, -3 };
+	public static final int[] labelId2keyExt = { 2, 3, 4, 5, 6, -1, -1, -1 };
 
 	public static void main(String[] args) {
 		CorpusResolver cr = new CorpusResolver("corpus-example/nips");
@@ -144,7 +146,8 @@ public class CorpusResolver implements ICorpusResolver {
 	}
 
 	/**
-	 * filter corpus with term subset with new indices.
+	 * filter corpus with term subset with new indices. Mapping must be
+	 * one-to-one-or-less, use mergeTerms for one-to-many mapping
 	 * 
 	 * @param old2new element (old index) contains new index
 	 */
@@ -223,11 +226,33 @@ public class CorpusResolver implements ICorpusResolver {
 	 * @throws IOException
 	 */
 	public void write(String filebase) throws IOException {
-		for (int type = 0; type < keyNames.length; type++) {
+		for (int type = 0; type < keyExtensions.length; type++) {
 			if (data[type] != null) {
 				write(filebase, type);
 			}
 		}
+	}
+
+	/**
+	 * set the terms of the corpus
+	 * 
+	 * @param terms
+	 * @param sourceSeparator separates the actual term from additional
+	 *        information that is handled as term source, or null
+	 */
+	public void setTerms(String[] terms, String sourceSeparator) {
+		if (sourceSeparator != null) {
+			data[KTERMSOURCE] = terms;
+			data[KTERMS] = new String[terms.length];
+			for (int i = 0; i < terms.length; i++) {
+				data[KTERMS][i] = terms[i].substring(0,
+						terms[i].indexOf(sourceSeparator)).trim();
+			}
+		} else {
+			data[KTERMS] = terms;
+			data[KTERMSOURCE] = null;
+		}
+		//Print.arrays("\n", data);
 	}
 
 	/**
@@ -240,7 +265,7 @@ public class CorpusResolver implements ICorpusResolver {
 	public void write(String filebase, int type) throws IOException {
 		BufferedWriter bw = new BufferedWriter(new FileWriter(filebase + "."
 				+ keyExtensions[type]));
-		for (String term : data[KTERMS]) {
+		for (String term : data[type]) {
 			bw.append(term).append('\n');
 		}
 		bw.close();
