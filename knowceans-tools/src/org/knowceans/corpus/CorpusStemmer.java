@@ -47,9 +47,12 @@ public class CorpusStemmer implements ICorpusStemmer {
 	private SnowballStemmer stemmer;
 
 	// / nested convenience subclasses for different languages
+	// NOTE: see the org.tartarus.snowball.ext package for more languages
 
 	/**
-	 * "Classical" Porter2 stemmer
+	 * "Classical" Porter stemmer, consider English for more recent algorithm
+	 * <p>
+	 * See http://snowball.tartarus.org/algorithms/porter/stemmer.html
 	 */
 	public static class Porter extends CorpusStemmer {
 		public Porter() throws Exception {
@@ -58,7 +61,9 @@ public class CorpusStemmer implements ICorpusStemmer {
 	}
 
 	/**
-	 * English stemmer
+	 * English (Porter2) stemmer
+	 * <p>
+	 * See http://snowball.tartarus.org/algorithms/english/stemmer.html
 	 */
 	public static class English extends CorpusStemmer {
 		public English() throws Exception {
@@ -68,6 +73,8 @@ public class CorpusStemmer implements ICorpusStemmer {
 
 	/**
 	 * German stemmer
+	 * <p>
+	 * See http://snowball.tartarus.org/algorithms/german2/stemmer.html
 	 */
 	public static class German extends CorpusStemmer {
 		public German() throws Exception {
