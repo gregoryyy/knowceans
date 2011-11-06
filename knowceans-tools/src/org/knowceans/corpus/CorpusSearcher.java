@@ -469,11 +469,11 @@ public class CorpusSearcher {
 		String content = resolver.resolveDocContent(id);
 		if (title != null) {
 			title = highlight(title, query);
-			System.out.println(wordWrap(title, 80));
+			System.out.println(wordWrap(title, 120));
 		}
 		if (content != null) {
 			content = highlight(content, query);
-			System.out.println(wordWrap(content, 80));
+			System.out.println(wordWrap(content, 120));
 		}
 		if (content == null || printStats) {
 			corpus.getDoc(id);
@@ -604,8 +604,11 @@ public class CorpusSearcher {
 	 * @param pos
 	 */
 	private void printTerm(int pos) {
+		loadList(ICorpusResolver.KTERMS);
 		int id = keyList2id[ICorpusResolver.KTERMS][pos];
 		System.out.println(resolver.resolveTermSource(id));
+		System.out.println("Documents (id=tf):\n"
+				+ wordWrap(termDocFreqIndex.get(id).toString(), 120));
 	}
 
 	/**
