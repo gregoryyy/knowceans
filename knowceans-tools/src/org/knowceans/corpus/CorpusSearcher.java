@@ -109,7 +109,7 @@ public class CorpusSearcher {
 	private int[] docFreqs;
 	private Map<Integer, Set<Integer>> authorIndex;
 	private Map<Integer, Set<Integer>> labelIndex;
-	private String[][] keyLists;
+	private String[][] sortedKeyLists;
 	private int[][] keyList2id;
 	// citations are the (sparse) transpose of references
 	private int[][] citations;
@@ -141,7 +141,7 @@ public class CorpusSearcher {
 			throws IOException, ClassNotFoundException {
 		this.corpus = corpus;
 		this.resolver = corpus.getResolver();
-		keyLists = new String[CorpusResolver.keyExtensions.length][];
+		sortedKeyLists = new String[CorpusResolver.keyExtensions.length][];
 		keyList2id = new int[CorpusResolver.keyExtensions.length][];
 		if (!reindex && !loadIndex()) {
 			System.out.println("indexing");
@@ -361,19 +361,19 @@ public class CorpusSearcher {
 	 * @returns true if list was loadedF
 	 */
 	protected boolean loadList(int type) {
-		if (keyLists[type] == null) {
+		if (sortedKeyLists[type] == null) {
 			String[] aa = resolver.getStrings(type);
 			if (aa != null) {
-				keyLists[type] = new String[aa.length];
+				sortedKeyLists[type] = new String[aa.length];
 				for (int i = 0; i < aa.length; i++) {
 					if (aa[i] == null) {
 						aa[i] = CorpusResolver.keyNames[type] + i;
 					} else {
-						keyLists[type][i] = aa[i];
+						sortedKeyLists[type][i] = aa[i];
 					}
 				}
-				keyList2id[type] = IndexQuickSort.sort(keyLists[type]);
-				IndexQuickSort.reorder(keyLists[type], keyList2id[type]);
+				keyList2id[type] = IndexQuickSort.sort(sortedKeyLists[type]);
+				IndexQuickSort.reorder(sortedKeyLists[type], keyList2id[type]);
 			} else {
 				return false;
 			}
@@ -393,7 +393,7 @@ public class CorpusSearcher {
 			return 0;
 		}
 		// search for entry point
-		int pos = Arrays.binarySearch(keyLists[type], prefix);
+		int pos = Arrays.binarySearch(sortedKeyLists[type], prefix);
 		if (pos < 0) {
 			pos = -pos - 1;
 		}
@@ -409,12 +409,12 @@ public class CorpusSearcher {
 	 * @return new start position
 	 */
 	protected int printListPage(int type, int start, int pageSize) {
-		if (keyLists[type] == null) {
+		if (sortedKeyLists[type] == null) {
 			return 0;
 		}
 		int listpos;
 		for (listpos = start; listpos < start + pageSize; listpos++) {
-			if (listpos < keyLists[type].length) {
+			if (listpos < sortedKeyLists[type].length) {
 				int id = keyList2id[type][listpos];
 				int df = 0;
 				if (type == ICorpusResolver.KTERMS) {
@@ -425,7 +425,7 @@ public class CorpusSearcher {
 						source = " < "
 								+ source.substring(source.indexOf("<-") + 2);
 					}
-					System.out.println(keyLists[type][listpos] + ", id = " + id
+					System.out.println(sortedKeyLists[type][listpos] + ", id = " + id
 							+ ", df = " + df + " " + source);
 				} else {
 					if (type == ICorpusResolver.KAUTHORS) {
@@ -433,7 +433,7 @@ public class CorpusSearcher {
 					} else if (type == ICorpusResolver.KCATEGORIES) {
 						df = labelIndex.get(id).size();
 					}
-					System.out.println(keyLists[type][listpos] + ", id = " + id
+					System.out.println(sortedKeyLists[type][listpos] + ", id = " + id
 							+ ", df = " + df);
 				}
 			}
@@ -606,7 +606,9 @@ public class CorpusSearcher {
 	private void printTerm(int pos) {
 		loadList(ICorpusResolver.KTERMS);
 		int id = keyList2id[ICorpusResolver.KTERMS][pos];
-		System.out.println(resolver.resolveTermSource(id));
+		String source = resolver.resolveTermSource(id);
+		System.out.println(source != null ? source
+				: sortedKeyLists[ICorpusResolver.KTERMS][pos]);
 		System.out.println("Documents (id=tf):\n"
 				+ wordWrap(termDocFreqIndex.get(id).toString(), 120));
 	}
