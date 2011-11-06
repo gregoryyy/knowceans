@@ -66,7 +66,7 @@ public class CorpusSearcher {
 		// references)
 		// corpus.reduce(200, new Random());
 		// adjust the vocabulary
-		corpus.filterTermsDf(2, 200);
+		corpus.filterTermsDf(2, 2000);
 		// require a single instance of each label in the corpus
 		corpus.filterLabels();
 		System.out.print("Corpus check\n" + corpus.check(true));

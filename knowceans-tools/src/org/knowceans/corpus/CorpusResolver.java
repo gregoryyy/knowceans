@@ -147,7 +147,7 @@ public class CorpusResolver implements ICorpusResolver {
 
 	/**
 	 * filter corpus with term subset with new indices. Mapping must be
-	 * one-to-one-or-less, use mergeTerms for one-to-many mapping
+	 * one-to-one-or-less, use mergeTerms for one-to-many mapping.
 	 * 
 	 * @param old2new element (old index) contains new index
 	 */
@@ -164,6 +164,16 @@ public class CorpusResolver implements ICorpusResolver {
 		}
 		data[KTERMS] = (String[]) terms.toArray(new String[0]);
 		termids = newids;
+		if (data[KTERMSOURCE] != null) {
+			// remap term sources
+			String[] termSources = new String[terms.size()];
+			for (int i = 0; i < old2new.length; i++) {
+				if (old2new[i] >= 0) {
+					termSources[old2new[i]] = data[KTERMSOURCE][i];
+				}
+			}
+			data[KTERMSOURCE] = termSources;
+		}
 	}
 
 	/**
@@ -252,7 +262,7 @@ public class CorpusResolver implements ICorpusResolver {
 			data[KTERMS] = terms;
 			data[KTERMSOURCE] = null;
 		}
-		//Print.arrays("\n", data);
+		// Print.arrays("\n", data);
 	}
 
 	/**
