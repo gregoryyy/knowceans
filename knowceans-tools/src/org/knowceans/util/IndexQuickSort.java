@@ -155,13 +155,41 @@ public class IndexQuickSort {
 	public static void sort(double[] a, int[] index, int left, int right) {
 		if (right <= left)
 			return;
-		int i = part(a, index, left, right);
-		sort(a, index, left, i - 1);
-		sort(a, index, i + 1, right);
+		// recursive version (fast but stack overflow problems):
+		// int i = part(a, index, left, right);
+		// sort(a, index, left, i - 1);
+		// sort(a, index, i + 1, right);
+		// iterative version
+		int[] range = new int[a.length + 1];
+		range[0] = a.length - 1;
+		int i, j, sortedCount = 0;
+		while (sortedCount < a.length) {
+			for (i = 0; i < a.length; i++) {
+				if (range[i] >= i) {
+					j = range[i];
+					for (; i <= j; i++) {
+						int p = part(a, index, i, j);
+						sortedCount++;
+						if (p > i)
+							range[i] = p - 1;
+						if (p < j)
+							range[p + 1] = j;
+						range[i = p] = -1; // sorted
+					}
+				} else {
+					// skip[i] += skip[i + skip[i]];
+					while ((j = range[i - range[i]]) < 0)
+						range[i] += j;
+					i += -range[i] - 1;
+				}
+			}
+		}
 	}
 
 	// partition a[left] to a[right], assumes left < right
 	private static int part(double[] a, int[] index, int left, int right) {
+		if (left == right)
+			return left;
 		int i = left - 1;
 		int j = right;
 		while (true) {
@@ -249,6 +277,7 @@ public class IndexQuickSort {
 	}
 
 	/**
+	 * find sort order of the array
 	 * 
 	 * @param <T>
 	 * @param fixedArray
@@ -268,13 +297,36 @@ public class IndexQuickSort {
 	public static void sort(int[] a, int[] index, int left, int right) {
 		if (right <= left)
 			return;
-		int i = part(a, index, left, right);
-		sort(a, index, left, i - 1);
-		sort(a, index, i + 1, right);
+		int[] range = new int[a.length + 1];
+		range[0] = a.length - 1;
+		int i, j, sortedCount = 0;
+		while (sortedCount < a.length) {
+			for (i = 0; i < a.length; i++) {
+				if (range[i] >= i) {
+					j = range[i];
+					for (; i <= j; i++) {
+						int p = part(a, index, i, j);
+						sortedCount++;
+						if (p > i)
+							range[i] = p - 1;
+						if (p < j)
+							range[p + 1] = j;
+						range[i = p] = -1; // sorted
+					}
+				} else {
+					// skip[i] += skip[i + skip[i]];
+					while ((j = range[i - range[i]]) < 0)
+						range[i] += j;
+					i += -range[i] - 1;
+				}
+			}
+		}
 	}
 
 	// partition a[left] to a[right], assumes left < right
 	private static int part(int[] a, int[] index, int left, int right) {
+		if (left == right)
+			return left;
 		int i = left - 1;
 		int j = right;
 		while (true) {
@@ -322,18 +374,71 @@ public class IndexQuickSort {
 		return index;
 	}
 
+	/**
+	 * non-recursive quicksort.
+	 * 
+	 * @param <T>
+	 * @param a
+	 * @param cmp
+	 * @param index
+	 * @param left
+	 * @param right
+	 */
 	public static <T> void sort(T[] a, Comparator<T> cmp, int[] index,
+			int left, int right) {
+		// iterative quicksort version 5 from
+		// http://kosbie.net/cmu/summer-08/15-100/handouts/IterativeQuickSort.java
+		int[] range = new int[a.length + 1];
+		range[0] = a.length - 1;
+		int i, j, sortedCount = 0;
+		while (sortedCount < a.length) {
+			for (i = 0; i < a.length; i++) {
+				if (range[i] >= i) {
+					j = range[i];
+					for (; i <= j; i++) {
+						int p = part(a, cmp, index, i, j);
+						sortedCount++;
+						if (p > i)
+							range[i] = p - 1;
+						if (p < j)
+							range[p + 1] = j;
+						range[i = p] = -1; // sorted
+					}
+				} else {
+					// skip[i] += skip[i + skip[i]];
+					while ((j = range[i - range[i]]) < 0)
+						range[i] += j;
+					i += -range[i] - 1;
+				}
+			}
+		}
+	}
+
+	/**
+	 * fully recursive version.
+	 * 
+	 * @param <T>
+	 * @param a
+	 * @param cmp
+	 * @param index
+	 * @param left
+	 * @param right
+	 */
+	public static <T> void sortrec(T[] a, Comparator<T> cmp, int[] index,
 			int left, int right) {
 		if (right <= left)
 			return;
 		int i = part(a, cmp, index, left, right);
-		sort(a, cmp, index, left, i - 1);
-		sort(a, cmp, index, i + 1, right);
+		sortrec(a, cmp, index, left, i - 1);
+		sortrec(a, cmp, index, i + 1, right);
 	}
 
 	private static <T> int part(T[] a, Comparator<T> cmp, int[] index,
 			int left, int right) {
+		if (left == right)
+			return left;
 		int i = left - 1;
+		// real qsort would use data[right]
 		int j = right;
 		while (true) {
 			while (cmp.compare(a[index[++i]], a[index[right]]) < 0)
