@@ -21,7 +21,9 @@ import java.util.TreeMap;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
+import org.knowceans.util.ArrayUtils;
 import org.knowceans.util.IndexQuickSort;
+import org.knowceans.util.Print;
 
 /**
  * Searches an ICorpus using its resolver using inverted indices. This class is
@@ -304,8 +306,7 @@ public class CorpusSearcher {
 						printCategory(searchList(ICorpusResolver.KCATEGORIES,
 								prefix));
 					} else if (line.charAt(1) == 'T') {
-						printTerm(searchList(ICorpusResolver.KTERMSOURCE,
-								prefix));
+						printTerm(searchList(ICorpusResolver.KTERMS, prefix));
 					}
 
 					System.out.println("***********************************");
@@ -371,6 +372,7 @@ public class CorpusSearcher {
 						sortedKeyLists[type][i] = aa[i];
 					}
 				}
+				// Print.arraysRowSep("\n", sortedKeyLists[type]);
 				keyList2id[type] = IndexQuickSort.sort(sortedKeyLists[type]);
 				IndexQuickSort.reorder(sortedKeyLists[type], keyList2id[type]);
 			} else {
@@ -531,7 +533,17 @@ public class CorpusSearcher {
 	protected String getDocName(int m) {
 		String refname = resolver.resolveDocRef(m);
 		if (refname == null) {
-			refname = "document" + m;
+			String auth = "";
+			for (int a : corpus.getDocLabels(LabelNumCorpus.LAUTHORS, m)) {
+				String author = resolver.resolveAuthor(a);
+				auth += " " + author != null ? author : "author" + a;
+			}
+			String name = resolver.resolveDocTitle(m);
+			if (auth != null && name != null) {
+				refname = auth + ": " + name;
+			} else {
+				refname = "document" + m;
+			}
 		}
 		return refname;
 	}
@@ -615,7 +627,7 @@ public class CorpusSearcher {
 		for (int i : termDocs.values()) {
 			tf += i;
 		}
-		System.out.println("Global frequences: df = " + docFreqs[id]
+		System.out.println("Global frequencies: df = " + docFreqs[id]
 				+ ", tf = " + tf);
 		System.out.println("Documents (id=tf):\n"
 				+ wordWrap(new TreeMap<Integer, Integer>(termDocs).toString(),
@@ -634,9 +646,28 @@ public class CorpusSearcher {
 			return content;
 		}
 		String[] terms = query.raw.split(" ");
-		for (String term : terms) {
-			content = content.replaceAll("\\s(?i)" + term + "\\s", " ***"
-					+ term + "*** ");
+		Arrays.sort(terms);
+		if (stemmer != null) {
+			// in the stemming case, we search for words whose stemmed version
+			// is in the set of stemmed query terms
+			StringBuffer sb = new StringBuffer();
+			String[] words = content.split(" ");
+			for (int i = 0; i < words.length; i++) {
+				if (Arrays.binarySearch(terms,
+						stemmer.stem(words[i].toLowerCase())) > -1) {
+					words[i] = "***" + words[i] + "***";
+				}
+				if (i > 0) {
+					sb.append(' ');
+				}
+				sb.append(words[i]);
+			}
+			content = sb.toString();
+		} else {
+			for (String term : terms) {
+				content = content.replaceAll("\\s(?i)" + term + "\\s", " ***"
+						+ term + "*** ");
+			}
 		}
 
 		return content;
@@ -800,6 +831,8 @@ public class CorpusSearcher {
 			for (int i = 0; i < terms.length; i++) {
 				q.terms[i] = stemmer.stem(terms[i]);
 			}
+		} else {
+			q.terms = string.split(" +");
 		}
 		return q;
 	}

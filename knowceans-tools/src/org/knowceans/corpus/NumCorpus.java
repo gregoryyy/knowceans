@@ -894,9 +894,9 @@ public class NumCorpus implements ICorpus, ITermCorpus, ISplitCorpus {
 		BufferedWriter bwcorp = new BufferedWriter(new FileWriter(pathbase
 				+ ".corpus"));
 		for (int m = 0; m < docs.length; m++) {
-			if (m % 100 == 0) {
-				System.out.println(m);
-			}
+			// if (m % 100 == 0) {
+			// System.out.println(m);
+			// }
 			Document doc = docs[m];
 			if (doc.getParBounds() == null) {
 				bwcorp.append(Integer.toString(doc.numTerms));
