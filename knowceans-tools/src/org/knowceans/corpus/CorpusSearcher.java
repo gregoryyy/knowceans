@@ -87,7 +87,7 @@ public class CorpusSearcher {
 		// require a single instance of each label in the corpus
 		System.out.println("filtering labels");
 		corpus.filterLabels();
-		System.out.print("checking corpus\n" + corpus.check(true));
+		System.out.print("checking corpus\n" + corpus.check(true, false));
 		System.out.println("writing to " + outpath);
 
 		// /////// end preparing corpus /////////

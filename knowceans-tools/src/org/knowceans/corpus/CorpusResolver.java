@@ -15,6 +15,8 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 
+import org.knowceans.util.Vectors;
+
 /**
  * CorpusResolver resolves indices into names. To live-check for available data,
  * use LabelNumCorpus
@@ -31,8 +33,10 @@ public class CorpusResolver implements ICorpusResolver {
 			"authors.key", "labels.key", "tags.key", "vols.key", "years.key",
 			"docnames", "docs.key", "abstracts", "vocab.key" };
 
-	public static final String[] keyNames = { "documents", "terms", "authors",
-			"labels", "tags", "volumes", "years" };
+	public static final String[] keyNames = { "document titles", "terms",
+			"authors", "labels", "tags", "volumes", "years",
+			"document names/files", "document ref/summaries",
+			"document content", "vocabulary explanations" };
 
 	public static final int[] docRelatedKeys = { KDOCS, KDOCNAME, KDOCREF,
 			KDOCCONTENT };
@@ -51,11 +55,20 @@ public class CorpusResolver implements ICorpusResolver {
 	}
 
 	HashMap<String, Integer> termids;
-	String[][] data = new String[keyExtensions.length][];
-	String filebase;
+	protected String[][] data = new String[keyExtensions.length][];
+	protected String filebase;
 
 	@SuppressWarnings("unused")
 	private boolean parmode;
+
+	/**
+	 * only subclass use
+	 * 
+	 * @param filebase
+	 */
+	protected CorpusResolver() {
+		//
+	}
 
 	public CorpusResolver(String filebase) {
 		this(filebase, false);
@@ -236,6 +249,9 @@ public class CorpusResolver implements ICorpusResolver {
 	public void write(String filebase) throws IOException {
 		for (int type = 0; type < keyExtensions.length; type++) {
 			if (data[type] != null) {
+				// System.out.println(String.format(
+				// "writing key type %d '%s' length = %d", type,
+				// keyNames[type], data[type].length));
 				write(filebase, type);
 			}
 		}
@@ -260,6 +276,7 @@ public class CorpusResolver implements ICorpusResolver {
 			data[KTERMS] = terms;
 			data[KTERMSOURCE] = null;
 		}
+		setupTermIndex();
 		// Print.arrays("\n", data);
 	}
 
@@ -274,6 +291,7 @@ public class CorpusResolver implements ICorpusResolver {
 		BufferedWriter bw = new BufferedWriter(new FileWriter(filebase + "."
 				+ keyExtensions[type]));
 		for (String term : data[type]) {
+			term = term.replaceAll("\n", " ");
 			bw.append(term).append('\n');
 		}
 		bw.close();
@@ -429,6 +447,20 @@ public class CorpusResolver implements ICorpusResolver {
 	/*
 	 * (non-Javadoc)
 	 * 
+	 * @see org.knowceans.corpus.IResolver#getVol(int)
+	 */
+	@Override
+	public String resolveYear(int i) {
+		if (data[KYEARS] != null) {
+			return data[KYEARS][i];
+		} else {
+			return null;
+		}
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * 
 	 * @see org.knowceans.corpus.IResolver#getLabel(int, int)
 	 */
 	@Override
@@ -441,6 +473,8 @@ public class CorpusResolver implements ICorpusResolver {
 			return resolveCategory(id);
 		} else if (type == KVOLS) {
 			return resolveVolume(id);
+		} else if (type == KYEARS) {
+			return resolveYear(id);
 		} else if (type == KDOCREF) {
 			return resolveDocRef(id);
 		} else if (type == KDOCCONTENT) {
@@ -470,6 +504,8 @@ public class CorpusResolver implements ICorpusResolver {
 			return "category";
 		} else if (type == KVOLS) {
 			return "volume";
+		} else if (type == KYEARS) {
+			return "year";
 		} else if (type == KDOCREF) {
 			return "document summary";
 		} else if (type == KDOCCONTENT) {
@@ -499,6 +535,8 @@ public class CorpusResolver implements ICorpusResolver {
 			return "category";
 		} else if (type == ILabelCorpus.LVOLS) {
 			return "volume";
+		} else if (type == ILabelCorpus.LYEARS) {
+			return "year";
 		} else if (type == ILabelCorpus.LTAGS) {
 			return "document tag";
 		} else if (type == ILabelCorpus.LMENTIONS) {
@@ -532,10 +570,12 @@ public class CorpusResolver implements ICorpusResolver {
 	 * to be checked need to be loaded beforehand.
 	 * 
 	 * @param corpus the corpus to be used
+	 * @param verbose
 	 * @return error report or "" if ok.
 	 */
-	public String check(NumCorpus corpus) {
+	public String check(NumCorpus corpus, boolean verbose) {
 		StringBuffer sb = new StringBuffer();
+		int[] keyNull = new int[keyExtensions.length];
 
 		// check documents and terms
 		if (termids.size() != corpus.getNumTerms()) {
@@ -560,24 +600,38 @@ public class CorpusResolver implements ICorpusResolver {
 						continue;
 					}
 					if (data[keyType].length != lc.getLabelsV(labid)) {
-						sb.append(String.format(
-								"keys %s length = %d != corpus V = %d\n",
-								keyNames[keyType], data[keyType].length,
-								lc.getLabelsV(keyExt2labelId[keyType])));
+						sb.append(String
+								.format("keys type %d '%s' length = %d != corpus V = %d\n",
+										keyType, keyNames[keyType],
+										data[keyType].length,
+										lc.getLabelsV(keyExt2labelId[keyType])));
+					}
+					for (int i = 0; i < data[keyType].length; i++) {
+						if (data[keyType][i] == null) {
+							if (verbose)
+								sb.append(String.format(
+										"keys type %d '%s' t = %d = null\n",
+										keyType, keyNames[keyType], i));
+							keyNull[keyType]++;
+						}
 					}
 				}
 			}
 			for (int keyType : docRelatedKeys) {
 				if (data[keyType] != null) {
 					if (data[keyType].length != corpus.getNumDocs()) {
-						sb.append(String.format(
-								"keys %s length = %d != corpus M = %d\n",
-								keyNames[keyType], data[keyType].length,
-								corpus.getNumDocs()));
+						sb.append(String
+								.format("keys type %d '%s' length = %d != corpus M = %d\n",
+										keyType, keyNames[keyType],
+										data[keyType].length,
+										corpus.getNumDocs()));
 					}
 				}
 			}
 		}
+		if (Vectors.sum(keyNull) > 0)
+			sb.append("labels with null keys (per type): "
+					+ Vectors.print(keyNull) + "\n");
 		return sb.toString();
 	}
 }

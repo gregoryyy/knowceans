@@ -745,13 +745,19 @@ public class LabelNumCorpus extends NumCorpus implements ILabelCorpus {
 	 * in conjunction with the index values contained.
 	 * 
 	 * @param resolve whether to include the resolver class
+	 * @param verbose whether to list all instances or count them
 	 * @return error report or empty string "" if ok.
 	 */
-	public String check(boolean resolve) {
+	public String check(boolean resolve, boolean verbose) {
 		StringBuffer sb = new StringBuffer();
 		// TODO: we have the resolver (including labels) checked before the
 		// numerical labels... suboptimal but ok for a consistency check but.
-		sb.append(super.check(resolve));
+		sb.append(super.check(resolve, verbose));
+		int[] numIdsGeV = new int[labelExtensions.length];
+		int[] numIdsLblDf0 = new int[labelExtensions.length];
+		int[] numDocsLblTf0 = new int[labelExtensions.length];
+		int[] numDocsLblNull = new int[labelExtensions.length];
+		int[] numDocsRef0 = new int[labelExtensions.length];
 
 		for (int type = 0; type < labelExtensions.length; type++) {
 			if (labels[type] != null) {
@@ -775,27 +781,36 @@ public class LabelNumCorpus extends NumCorpus implements ILabelCorpus {
 					for (int m = 0; m < numDocs; m++) {
 						int[] row = labels[type][m];
 						if (row == null) {
-							sb.append(String.format(
-									"label type %s document %d = null\n",
-									labelNames[type], m));
+							if (verbose) {
+								sb.append(String.format(
+										"label type %s document %d = null\n",
+										labelNames[type], m));
+							}
+							numDocsLblNull[type]++;
 							continue;
 						}
 						for (int n = 0; n < row.length; n++) {
 							if (row[n] < labelsV[type]) {
 								ll[row[n]]++;
 							} else {
-								sb.append(String
-										.format("label type %s [%d][%d]  %d > V = %d\n",
-												labelNames[type], m, n, row[n],
-												V));
+								if (verbose) {
+									sb.append(String
+											.format("label type %s [%d][%d]  %d > V = %d\n",
+													labelNames[type], m, n,
+													row[n], V));
+								}
+								numIdsGeV[type]++;
 							}
 						}
 						if (((exactlyOne || needOne) && labels[type][m].length == 0)
 								|| (exactlyOne && labels[type][m].length > 1)) {
-							sb.append(String
-									.format("label type %s: cardinality constraint broken: m = %d: %d\n",
-											labelNames[type], m,
-											labels[type][m].length));
+							if (verbose) {
+								sb.append(String
+										.format("label type %s: cardinality constraint broken: m = %d: %d\n",
+												labelNames[type], m,
+												labels[type][m].length));
+							}
+							numDocsLblTf0[type]++;
 						}
 						W += labels[type][m].length;
 					}
@@ -804,9 +819,12 @@ public class LabelNumCorpus extends NumCorpus implements ILabelCorpus {
 					if (cannotBeEmpty) {
 						for (int t = 0; t < ll.length; t++) {
 							if (ll[t] == 0) {
-								sb.append(String.format(
-										"label type %s : %d frequency = 0\n",
-										labelNames[type], t));
+								if (verbose) {
+									sb.append(String
+											.format("label type %s : %d frequency = 0\n",
+													labelNames[type], t));
+								}
+								numIdsLblDf0[type]++;
 							}
 						}
 					}
@@ -816,13 +834,32 @@ public class LabelNumCorpus extends NumCorpus implements ILabelCorpus {
 						for (int m = 0; m < numDocs; m++) {
 							if (references[m].length == 0
 									&& citations[m].length == 0) {
-								sb.append(String
-										.format("label type %s : doc %d relations = 0 (reference count = %d)\n",
-												labelNames[type], m,
-												references[m].length));
+								if (verbose) {
+									sb.append(String
+											.format("label type %s : doc %d relations = 0 (reference count = %d)\n",
+													labelNames[type], m,
+													references[m].length));
+								}
+								numDocsRef0[type]++;
 							}
 						}
 					}
+					// TODO: fix
+					// if (Vectors.sum(numIdsGeV) > 0)
+					// sb.append("labels with values > V  (per type): "
+					// + Vectors.print(numIdsGeV) + "\n");
+					// if (Vectors.sum(numIdsLblDf0) > 0)
+					// sb.append("labels with empty values df=0 (per type): "
+					// + Vectors.print(numIdsLblDf0) + "\n");
+					// if (Vectors.sum(numDocsLblTf0) > 0)
+					// sb.append("documents with empty labels (constrained cardinality, per type): "
+					// + Vectors.print(numDocsLblTf0) + "\n");
+					// if (Vectors.sum(numDocsLblNull) > 0)
+					// sb.append("number documents with null labels  (per type): "
+					// + Vectors.print(numDocsLblNull) + "\n");
+					// if (Vectors.sum(numDocsRef0) > 0)
+					// sb.append("number of documents with empty references (per type): "
+					// + Vectors.print(numDocsRef0) + "\n");
 				}
 			}
 		}

@@ -248,6 +248,11 @@ public class FullCorpus extends LabelNumCorpus implements ICorpusResolver {
 	}
 
 	@Override
+	public String resolveYear(int i) {
+		return resolver.resolveYear(i);
+	}
+
+	@Override
 	public String resolveLabel(int type, int id) {
 		return resolver.resolveLabel(type, id);
 	}

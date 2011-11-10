@@ -8,7 +8,7 @@ public interface ICorpusResolver extends ICorpusIdResolver {
 	public static final int KCATEGORIES = 3;
 	public static final int KTAGS = 4;
 	public static final int KVOLS = 5;
-	public static final int KYEAR = 6;
+	public static final int KYEARS = 6;
 	// document name
 	public static final int KDOCNAME = 7;
 	// full reference for easy lookup
@@ -74,4 +74,11 @@ public interface ICorpusResolver extends ICorpusIdResolver {
 	 */
 	public abstract String resolveVolume(int i);
 
+	/**
+	 * resolve the numeric year id
+	 * 
+	 * @param i
+	 * @return
+	 */
+	public abstract String resolveYear(int i);
 }

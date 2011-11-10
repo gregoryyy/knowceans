@@ -893,34 +893,37 @@ public class NumCorpus implements ICorpus, ITermCorpus, ISplitCorpus {
 	public void write(String pathbase, boolean resolve) throws IOException {
 		BufferedWriter bwcorp = new BufferedWriter(new FileWriter(pathbase
 				+ ".corpus"));
-		for (int m = 0; m < docs.length; m++) {
-			// if (m % 100 == 0) {
-			// System.out.println(m);
-			// }
-			Document doc = docs[m];
-			if (doc.getParBounds() == null) {
-				bwcorp.append(Integer.toString(doc.numTerms));
-				for (int n = 0; n < doc.numTerms; n++) {
-					bwcorp.append(" " + doc.terms[n] + ":" + doc.counts[n]);
-				}
-				bwcorp.append('\n');
-			} else {
-				// paragraph mode
-				int prevbound = 0;
-				for (int s = 0; s < doc.parBounds.length; s++) {
-					if (s > 0) {
-						bwcorp.append(" ");
-					}
+		if (docs != null) {
+			for (int m = 0; m < docs.length; m++) {
+				// if (m % 100 == 0) {
+				// System.out.println(m);
+				// }
+				Document doc = docs[m];
+				if (doc.getParBounds() == null) {
 					bwcorp.append(Integer.toString(doc.numTerms));
-					for (int n = prevbound; n < doc.parBounds[s]; n++) {
+					for (int n = 0; n < doc.numTerms; n++) {
 						bwcorp.append(" " + doc.terms[n] + ":" + doc.counts[n]);
 					}
-					prevbound = doc.parBounds[s];
+					bwcorp.append('\n');
+				} else {
+					// paragraph mode
+					int prevbound = 0;
+					for (int s = 0; s < doc.parBounds.length; s++) {
+						if (s > 0) {
+							bwcorp.append(" ");
+						}
+						bwcorp.append(Integer.toString(doc.numTerms));
+						for (int n = prevbound; n < doc.parBounds[s]; n++) {
+							bwcorp.append(" " + doc.terms[n] + ":"
+									+ doc.counts[n]);
+						}
+						prevbound = doc.parBounds[s];
+					}
+					bwcorp.append('\n');
 				}
-				bwcorp.append('\n');
 			}
+			bwcorp.close();
 		}
-		bwcorp.close();
 		if (resolve) {
 			getResolver().write(pathbase);
 		}
@@ -954,43 +957,75 @@ public class NumCorpus implements ICorpus, ITermCorpus, ISplitCorpus {
 	 * @param resolve whether to include the resolver class
 	 * @return error report or "" if ok.
 	 */
-	public String check(boolean resolve) {
+	public String check(boolean resolve, boolean verbose) {
 		StringBuffer sb = new StringBuffer();
+		int numDocsTf0 = 0;
+		int numDocsNull = 0;
+		int numTermsDf0 = 0;
+		int numDocsStatus = 0;
 
-		// check terms
-		int W = 0;
-		for (int m = 0; m < numDocs; m++) {
-			if (docs[m] == null) {
-				sb.append(String.format("docs[%d] = null\n", m));
-			} else {
-				W += docs[m].numWords;
-			}
-			String docstatus = docs[m].check();
-			if (docstatus != null) {
-				sb.append(String.format("docs[%d] = null:\n%s", m, docstatus));
-			}
-		}
-		int[] df = calcDocFreqs();
-		int V = df.length;
-		if (numTerms != V) {
-			// sums of terms equal to what is extracted from docs?
-			sb.append(String.format("numTerms = %d != V %d\n", numTerms, V));
-		} else {
-			// do all terms appear in the corpus
-			for (int term = 0; term < numTerms; term++) {
-				if (df[term] == 0) {
-					sb.append(String.format("term = %d df = 0\n", term));
+		if (docs != null) {
+			// check terms
+			int W = 0;
+			for (int m = 0; m < numDocs; m++) {
+				if (docs[m] == null) {
+					if (verbose)
+						sb.append(String.format("docs[%d] = null\n", m));
+					numDocsNull++;
+					continue;
+				} else {
+					W += docs[m].numWords;
+				}
+				String docstatus = docs[m].check();
+				if (docstatus != null) {
+					if (verbose)
+						sb.append(String.format("docs[%d] = null:\n%s", m,
+								docstatus));
+					numDocsStatus++;
+				}
+				if (docs[m].numWords == 0) {
+					if (verbose)
+						sb.append(String.format("docs[%d] = 0 length:\n%s", m));
+					numDocsTf0++;
 				}
 			}
+			int[] df = calcDocFreqs();
+			int V = df.length;
+			if (numTerms != V) {
+				// sums of terms equal to what is extracted from docs?
+				sb.append(String.format("numTerms = %d != V %d\n", numTerms, V));
+			} else {
+				// do all terms appear in the corpus
+				for (int term = 0; term < numTerms; term++) {
+					if (df[term] == 0) {
+						if (verbose)
+							sb.append(String.format("term = %d df = 0\n", term));
+						numTermsDf0++;
+					}
+				}
+			}
+			// check documents
+			if (numDocs != docs.length) {
+				sb.append(String.format("numDocs = %d != docs.length = %d\n",
+						numDocs, docs.length));
+			}
+		} else {
+			sb.append(String.format("docs = null, numDocs = %d\n", numDocs));
 		}
-		// check documents
-		if (numDocs != docs.length) {
-			sb.append(String.format("numDocs = %d != docs.length = %d\n",
-					numDocs, docs.length));
-		}
+		// TODO: fix
+		// if (numDocsNull > 0)
+		// sb.append("null documents" + Vectors.print(numDocsNull) + "\n");
+		// if (numDocsTf0 > 0)
+		// sb.append("empty document texts" + Vectors.print(numDocsTf0) + "\n");
+		// if (numDocsStatus > 0)
+		// sb.append("inconsistent documents" + Vectors.print(numDocsStatus)
+		// + "\n");
+		// if (numTermsDf0 > 0)
+		// sb.append("empty terms df=0" + Vectors.print(numTermsDf0) + "\n");
+
 		// check resolver
 		if (resolve) {
-			sb.append(getResolver().check(this));
+			sb.append(getResolver().check(this, verbose));
 		}
 		return sb.toString();
 	}
