@@ -7,53 +7,49 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map.Entry;
 import java.util.Set;
-import java.util.TreeMap;
+import java.util.StringTokenizer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.apache.lucene.analysis.Analyzer;
-import org.apache.lucene.document.Document;
-import org.apache.lucene.document.Field;
-import org.apache.lucene.document.Fieldable;
-import org.apache.lucene.index.CorruptIndexException;
-import org.apache.lucene.index.IndexReader;
-import org.apache.lucene.index.IndexWriter;
-import org.apache.lucene.index.IndexWriter.MaxFieldLength;
-import org.apache.lucene.index.Term;
-import org.apache.lucene.index.TermEnum;
-import org.apache.lucene.index.TermFreqVector;
-import org.apache.lucene.search.IndexSearcher;
-import org.apache.lucene.store.SimpleFSDirectory;
-import org.knowceans.corpus.CreateCorpusResolver;
-import org.knowceans.corpus.CreateLabelNumCorpus;
 import org.knowceans.map.BijectiveHashMap;
-import org.knowceans.map.BijectiveTreeMap;
 import org.knowceans.map.IMultiMap;
 import org.knowceans.map.InvertibleHashMultiMap;
+import org.knowceans.util.AccentRemover;
 import org.knowceans.util.Conf;
 import org.knowceans.util.StopWatch;
 import org.knowceans.util.UnHtml;
 
 /**
- * Driver for ACL Anthology extraction. Supersedes AanConverter and
- * AanConverter2. The difference is that all data are handled in a
- * LabelNumCorpus and its CreateCorpusResolver. Content is checked beforehand
- * and gaps in ids directly recognised.
+ * Driver for ACL Anthology Network extraction as example for Extraction.
+ * Content is checked beforehand and gaps in ids directly set up and recognised.
+ * <p>
+ * No external dependencies: see LuceneCorpusExtractor for Lucene-based version
+ * 3.0
+ * <p>
+ * Works on 2009 and 2011 version on http://clair.si.umich.edu/clair/anthology/
+ * (Caveat: 2011 version has redundant full text content)
+ * 
+ * @version 1.0 Supersedes AanConverter and AanConverter2. The difference is
+ *          that all data are handled in a LabelNumCorpus and its
+ *          CreateCorpusResolver.
  * 
  * @author gregor
  * 
  */
-public class SampleCorpusExtractor {
+public class SimpleCorpusExtractor {
 
 	public static void main(String[] args) {
 		Conf.setPropFile("conf/aanx.conf");
 		// LabelNumCorpus lnc = new LabelNumCorpus();
 		// lnc.setDataFilebase(dest);
 
-		SampleCorpusExtractor a = new SampleCorpusExtractor();
+		SimpleCorpusExtractor a = new SimpleCorpusExtractor();
 		// create svmlight-based corpus
 		a.run();
 	}
@@ -89,11 +85,10 @@ public class SampleCorpusExtractor {
 	private CreateLabelNumCorpus corpus;
 
 	private CreateCorpusResolver resolver;
-	private SimpleFSDirectory indexDirectory;
 	private int docSize;
-	private IndexWriter indexWriter;
+	private CorpusStemmer stemmer;
 
-	public SampleCorpusExtractor() {
+	public SimpleCorpusExtractor() {
 		srcbase = Conf.get("source.filebase");
 		destbase = Conf.get("corpus.filebase");
 		metadataFile = Conf.get("source.metadata.file");
@@ -104,12 +99,6 @@ public class SampleCorpusExtractor {
 		corpus = new CreateLabelNumCorpus(destbase);
 		resolver = new CreateCorpusResolver(destbase);
 		corpus.setResolver(resolver);
-		try {
-			indexDirectory = new SimpleFSDirectory(new File(
-					Conf.get("indexer.files")));
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
 
 		mid2doc = new BijectiveHashMap<Integer, AanDocument>();
 		aanid2mid = new BijectiveHashMap<String, Integer>();
@@ -134,13 +123,9 @@ public class SampleCorpusExtractor {
 			readCitations();
 			debug("setting up corpus");
 			createMetadata();
-			debug("reading and indexing content");
+			debug("reading and indexing content, creating corpus and vocabulary");
 			// save time: index = false
 			readAndIndexContent(aanid2mid, false);
-			debug("extracting terms from index");
-			createVocabulary();
-			debug("extracting corpus from index");
-			createCorpus();
 			debug("checking corpus ");
 			debug(corpus.check(true, false));
 			debug("writing to " + destbase);
@@ -401,18 +386,7 @@ public class SampleCorpusExtractor {
 	 * @throws FileNotFoundException
 	 */
 	private void startIndex() throws Exception {
-		// open Lucene index
-		String anaclz = Conf.get("indexer.analyzer.class");
-		debug("using analyzer " + anaclz);
-
-		@SuppressWarnings("unchecked")
-		Class<Analyzer> cana = (Class<Analyzer>) Class.forName(anaclz);
-		Analyzer ana = cana.newInstance();
-		indexWriter = new IndexWriter(indexDirectory, ana,
-				MaxFieldLength.UNLIMITED);
-		// 1GB of buffer
-		indexWriter.setRAMBufferSizeMB(1000);
-		indexWriter.deleteAll();
+		stemmer = new CorpusStemmer("english");
 	}
 
 	/**
@@ -427,13 +401,6 @@ public class SampleCorpusExtractor {
 		// TODO: That's somewhat overkill because in readWriteContent we could
 		// just save the file names. However, this is more flexible for other
 		// corpora.
-		Document doc = new Document();
-		Fieldable fmid = new Field("mid", Integer.toString(aandoc.mid),
-				Field.Store.YES, Field.Index.NOT_ANALYZED);
-		doc.add(fmid);
-		Fieldable faanid = new Field("aanid", aandoc.aanid, Field.Store.YES,
-				Field.Index.NOT_ANALYZED);
-		doc.add(faanid);
 		String s = "";
 		// only use a single field
 		if (content != null) {
@@ -443,23 +410,66 @@ public class SampleCorpusExtractor {
 			// title = escapeDb(title);
 			s += " " + aandoc.title;
 		}
-		Fieldable t = new Field("text", s, Field.Store.NO,
-				Field.Index.ANALYZED, Field.TermVector.YES);
-		doc.add(t);
-		indexWriter.addDocument(doc);
+
+		// tokenise text, remove stopwords, stem
+		StringTokenizer st = new StringTokenizer(s);
+		List<String> wordlist = new ArrayList<String>();
+		while (st.hasMoreTokens()) {
+			String token = st.nextToken();
+			String word = normalise(token);
+			if (word != null && !word.equals("")) {
+				wordlist.add(word);
+			}
+		}
+		corpus.setDocContent(aandoc.mid, wordlist.toArray(new String[0]));
+	}
+
+	String[][] termReplacements = new String[][] { { "3dim", "^3d$" },
+			{ "::num::", "^[\\d\\.\\,\\-/]+(st|rd|th)?$" },
+			{ "::numalphanum::", "^[\\d][\\w][\\d]+$" },
+			{ "::numalpha::", "^[\\d\\.\\,]+\\-[\\w]$" },
+			{ "mb", "^[\\d\\.\\,]+mb$" }, { "gb", "^[\\d\\.\\,]+gb$" },
+			{ "mhz", "^[\\d\\.\\,]+mhz$" }, { "ghz", "^[\\d\\.\\,]+ghz$" },
+			{ "kg", "^[\\d\\.\\,]+kg$" }, { "m", "^[\\d\\.\\,]+m$" },
+			{ "km", "^[\\d\\.\\,]+km$" }, { "byte", "^[\\d\\.\\,]+byte$" },
+			{ "bit", "^[\\d\\.\\,]+bit$" },
+			// HACK: to avoid noise: all terms containing a digit are regarded
+			// as numbers
+			{ "###", ".*\\d.*" } };
+
+	/**
+	 * normalise the string token
+	 * 
+	 * @param token
+	 * @return normalised token or "" for filtered one
+	 */
+	private String normalise(String token) {
+		// TODO: stoplist (now done by df filtering in corpus)
+		String[] stopList = { "the" };
+		// lower case filter
+		token = token.toLowerCase();
+		// stopwords
+		if (Arrays.binarySearch(stopList, token) >= 0) {
+			return "";
+		}
+		// num filter
+		for (int i = 0; i < termReplacements.length; i++) {
+			token = token.replaceAll(termReplacements[i][1],
+					termReplacements[i][0]);
+		}
+		AccentRemover.replaceAccents(token);
+		// remove punctuation
+		token = token.replaceAll("[^a-z0-9\\-]", "");
+		// perform stemming
+		token = stemmer.stem(token);
+		return token;
 	}
 
 	/**
 	 * close and optimise lucene index
-	 * 
-	 * @throws CorruptIndexException
-	 * @throws IOException
 	 */
-	private void finishIndex() throws CorruptIndexException, IOException {
-		// finish indexing
-		indexWriter.optimize();
-		indexWriter.commit();
-		indexWriter.close();
+	private void finishIndex() throws Exception {
+		// nothing done here
 	}
 
 	/**
@@ -511,114 +521,6 @@ public class SampleCorpusExtractor {
 				.append(doc.year).append("\n").toString();
 	}
 
-	/**
-	 * extracts the vocabulary from the index and creates a mapping to term
-	 * indices in the resolver
-	 * 
-	 * @throws IOException
-	 * @throws CorruptIndexException
-	 */
-	public void createVocabulary() throws IOException, CorruptIndexException {
-		BijectiveTreeMap<Integer, String> id2term = new BijectiveTreeMap<Integer, String>();
-		int tid = 0;
-
-		// now extract terms from index
-		IndexReader ir = IndexReader.open(indexDirectory);
-		// filter by minimum document frequency
-		int mindf = Conf.getInt("indexer.mindf");
-		// that's an alphabetical ordering
-		TermEnum terms = ir.terms();
-		while (terms.next()) {
-			Term term = terms.term();
-			int freq = terms.docFreq();
-			if (freq >= mindf) {
-				String t = term.text();
-				id2term.put(tid, t);
-				tid++;
-				if (tid % 500 == 0) {
-					// debug("term id = " + tid + " " + t);
-				}
-			}
-		}
-
-		debug("terms: V = " + tid + " id2term.size() = " + id2term.size());
-
-		// convert this to term list
-		String[] termlist = new String[id2term.size()];
-		for (int i : id2term.keySet()) {
-			termlist[i] = id2term.get(i);
-		}
-		// resolver is done by now
-		resolver.setTerms(termlist, null);
-		corpus.setNumTerms(termlist.length);
-		corpus.compile();
-		ir.close();
-	}
-
-	/**
-	 * extracts the corpus from the index using the mapping of term indices in
-	 * the resolver. Therefore these must be set up prior to calling
-	 * createCorpus().
-	 * 
-	 * @throws IOException
-	 * @throws CorruptIndexException
-	 */
-	public void createCorpus() throws IOException, CorruptIndexException {
-
-		IndexSearcher is = new IndexSearcher(indexDirectory);
-		IndexReader ir = is.getIndexReader();
-
-		int M = ir.numDocs();
-		System.out.println("index size M = " + M);
-		if (aanid2mid.size() != M) {
-			debug("warning: index inconsistent: document counts: metadata size = "
-					+ aanid2mid.size()
-					+ " vs. documents in index (content + metadata) = " + M);
-		}
-		corpus.allocContent(aanid2mid.size());
-		for (int m = 0; m < M; m++) {
-			if (m % 500 == 0) {
-				debug("m = " + m);
-			}
-
-			// Lucene Document
-			Document d = is.doc(m);
-			int mid = Integer.parseInt(d.get("mid"));
-			TermFreqVector[] tv = ir.getTermFreqVectors(m);
-			if (tv != null) {
-				TreeMap<Integer, Integer> terms = new TreeMap<Integer, Integer>();
-				for (int field = 0; field < tv.length; field++) {
-					String[] dterms = tv[field].getTerms();
-					int[] freqs = tv[field].getTermFrequencies();
-					for (int term = 0; term < dterms.length; term++) {
-						int tid = resolver.getTermId(dterms[term]);
-						if (tid >= 0) {
-							Integer freq = terms.get(tid);
-							if (freq == null) {
-								freq = 0;
-							}
-							terms.put(tid, freq + freqs[term]);
-						} else {
-							// probably a low-df term
-						}
-					}
-				}
-				int[] tt = new int[terms.size()];
-				int[] ff = new int[terms.size()];
-				int i = 0;
-				for (Entry<Integer, Integer> e : terms.entrySet()) {
-					tt[i] = e.getKey();
-					ff[i] = e.getValue();
-					i++;
-				}
-				corpus.setDocContent(mid, tt, ff);
-			} else {
-				debug("document " + m + " no term vector for mid " + mid);
-				corpus.setDocContent(mid, new int[0], new int[0]);
-			}
-		}
-	}
-
 	// summary copy routine
 
 	/**
@@ -655,39 +557,5 @@ public class SampleCorpusExtractor {
 	private void debug(String message) {
 		System.out.println(StopWatch.format(StopWatch.read()) + " " + message);
 
-	}
-
-	/**
-	 * debug the Lucene index by printing its contents
-	 * 
-	 * @param ir
-	 * @param term2id
-	 * @throws CorruptIndexException
-	 * @throws IOException
-	 */
-	protected void debugIndex(IndexReader ir,
-			BijectiveHashMap<String, Integer> term2id)
-			throws CorruptIndexException, IOException {
-		System.out.println("V = " + term2id.size());
-		System.out.println(term2id);
-		SimpleFSDirectory rd = new SimpleFSDirectory(new File(
-				Conf.get("indexer.files")));
-		IndexSearcher is = new IndexSearcher(rd);
-		int M = ir.numDocs();
-		System.out.println("M = " + M);
-		for (int m = 0; m < M; m++) {
-			Document d = is.doc(m);
-			System.out.println(m + ": did = " + d.get("mid")
-					+ "*****************************");
-			TermFreqVector[] tt = ir.getTermFreqVectors(m);
-			for (int field = 0; field < tt.length; field++) {
-				System.out.println("field " + field);
-				String[] dterms = tt[field].getTerms();
-				int[] freqs = tt[field].getTermFrequencies();
-				for (int term = 0; term < dterms.length; term++) {
-					System.out.println(dterms[term] + " " + freqs[term]);
-				}
-			}
-		}
 	}
 }

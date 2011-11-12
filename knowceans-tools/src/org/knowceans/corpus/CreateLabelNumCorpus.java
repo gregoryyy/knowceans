@@ -1,8 +1,9 @@
 package org.knowceans.corpus;
 
-import org.knowceans.corpus.CorpusResolver;
-import org.knowceans.corpus.Document;
-import org.knowceans.corpus.LabelNumCorpus;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
+import java.util.TreeSet;
 
 /**
  * As the name implies: create a LabelNumCorpus, in this case from the
@@ -83,6 +84,34 @@ public class CreateLabelNumCorpus extends LabelNumCorpus {
 		doc.compile();
 		docs[docId] = doc;
 		numWords += doc.getNumWords();
+	}
+
+	/**
+	 * sets the document content to the words (after normalisation). NumDocs is
+	 * incremented.
+	 * 
+	 * @param terms
+	 * @param frequencies
+	 */
+	public void setDocContent(int docId, String[] words) {
+		Map<Integer, Integer> term2freq = new TreeMap<Integer, Integer>();
+		for (String word : words) {
+			int term = cresolver.addAndResolve(ICorpusResolver.KTERMS, word);
+			Integer freq = term2freq.get(term2freq);
+			if (freq == null) {
+				freq = 0;
+			}
+			term2freq.put(term, freq + 1);
+		}
+		int[] terms = new int[term2freq.size()];
+		int[] freqs = new int[term2freq.size()];
+		int i = 0;
+		// create term and frequency arrays
+		for (Integer term : term2freq.keySet()) {
+			terms[i] = term;
+			freqs[i] = term2freq.get(term);
+		}
+		setDocContent(docId, terms, freqs);
 	}
 
 	/**

@@ -21,9 +21,8 @@ import java.util.TreeMap;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
-import org.knowceans.util.ArrayUtils;
 import org.knowceans.util.IndexQuickSort;
-import org.knowceans.util.Print;
+import org.knowceans.util.Vectors;
 
 /**
  * Searches an ICorpus using its resolver using inverted indices. This class is
@@ -339,6 +338,8 @@ public class CorpusSearcher {
 					System.out.println(corpus);
 				} else {
 					Query q = parseQuery(line);
+					System.out.println("Query parsed: "
+							+ Vectors.print(q.terms));
 					results = search(q);
 					lastQuery = q;
 					resultsPage = 0;
