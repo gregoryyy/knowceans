@@ -36,7 +36,7 @@ public class CreateCorpusResolver extends CorpusResolver {
 	}
 
 	/**
-	 * allocate the arry for the particular key type
+	 * allocate the array for the particular key type
 	 * 
 	 * @param keyType
 	 * @param size
@@ -82,7 +82,7 @@ public class CreateCorpusResolver extends CorpusResolver {
 	 * 
 	 * @param keyType
 	 */
-	private void initMapForKeyType(int keyType) {
+	public void initMapForKeyType(int keyType) {
 		keyMaps[keyType] = new BijectiveHashMap<String, Integer>();
 	}
 

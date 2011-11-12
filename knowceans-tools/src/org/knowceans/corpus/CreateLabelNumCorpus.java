@@ -97,7 +97,7 @@ public class CreateLabelNumCorpus extends LabelNumCorpus {
 		Map<Integer, Integer> term2freq = new TreeMap<Integer, Integer>();
 		for (String word : words) {
 			int term = cresolver.addAndResolve(ICorpusResolver.KTERMS, word);
-			Integer freq = term2freq.get(term2freq);
+			Integer freq = term2freq.get(term);
 			if (freq == null) {
 				freq = 0;
 			}

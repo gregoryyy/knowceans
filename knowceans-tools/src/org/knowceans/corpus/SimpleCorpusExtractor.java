@@ -17,6 +17,10 @@ import java.util.StringTokenizer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.knowceans.corpus.CorpusStemmer;
+import org.knowceans.corpus.CreateCorpusResolver;
+import org.knowceans.corpus.CreateLabelNumCorpus;
+import org.knowceans.corpus.ICorpusResolver;
 import org.knowceans.map.BijectiveHashMap;
 import org.knowceans.map.IMultiMap;
 import org.knowceans.map.InvertibleHashMultiMap;
@@ -29,7 +33,7 @@ import org.knowceans.util.UnHtml;
  * Driver for ACL Anthology Network extraction as example for Extraction.
  * Content is checked beforehand and gaps in ids directly set up and recognised.
  * <p>
- * No external dependencies: see LuceneCorpusExtractor for Lucene-based version
+ * No external dependencies: see SampleCorpusExtractor for Lucene-based version
  * 3.0
  * <p>
  * Works on 2009 and 2011 version on http://clair.si.umich.edu/clair/anthology/
@@ -125,7 +129,7 @@ public class SimpleCorpusExtractor {
 			createMetadata();
 			debug("reading and indexing content, creating corpus and vocabulary");
 			// save time: index = false
-			readAndIndexContent(aanid2mid, false);
+			readAndIndexContent(aanid2mid);
 			debug("checking corpus ");
 			debug(corpus.check(true, false));
 			debug("writing to " + destbase);
@@ -276,12 +280,10 @@ public class SimpleCorpusExtractor {
 	 * 
 	 * @param aanid2mid used to enforce the order of function calls, this one
 	 *        after the metadata
-	 * @param index
 	 * 
 	 * @throws IOException
 	 */
-	private void readAndIndexContent(
-			BijectiveHashMap<String, Integer> aanid2mid, boolean index)
+	private void readAndIndexContent(BijectiveHashMap<String, Integer> aanid2mid)
 			throws Exception {
 
 		// read and index documents
@@ -289,8 +291,7 @@ public class SimpleCorpusExtractor {
 		String[] ls = docdir.list();
 
 		// open Lucene
-		if (index)
-			startIndex();
+		startIndex();
 		StopWatch.lap();
 
 		int m = 0;
@@ -341,8 +342,7 @@ public class SimpleCorpusExtractor {
 				} else {
 					doc.content = sb.toString().trim();
 				}
-				if (index)
-					indexDocument(doc, sb.toString());
+				indexDocument(doc, sb.toString());
 				br.close();
 				if (m % 500 == 0) {
 					debug("lap time = " + StopWatch.lap() + ", m = " + m);
@@ -365,8 +365,7 @@ public class SimpleCorpusExtractor {
 					continue;
 				}
 				// index the document with only the title
-				if (index)
-					indexDocument(doc, null);
+				indexDocument(doc, null);
 				m++;
 			}
 			if (mid % 500 == 0) {
@@ -374,8 +373,7 @@ public class SimpleCorpusExtractor {
 			}
 		}
 		debug("documents with only metadata: " + m);
-		if (index)
-			finishIndex();
+		finishIndex();
 	}
 
 	// indexing routines
@@ -387,6 +385,10 @@ public class SimpleCorpusExtractor {
 	 */
 	private void startIndex() throws Exception {
 		stemmer = new CorpusStemmer("english");
+		// allocate map to resolve keys
+		resolver.initMapForKeyType(ICorpusResolver.KTERMS);
+		// allocate space for all documents in corpus
+		corpus.allocContent(mid2doc.size());
 	}
 
 	/**
@@ -446,6 +448,10 @@ public class SimpleCorpusExtractor {
 	private String normalise(String token) {
 		// TODO: stoplist (now done by df filtering in corpus)
 		String[] stopList = { "the" };
+		// too short
+		if (token.length() <= 2) {
+			return "";
+		}
 		// lower case filter
 		token = token.toLowerCase();
 		// stopwords
