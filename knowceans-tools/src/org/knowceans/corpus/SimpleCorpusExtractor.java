@@ -38,6 +38,8 @@ import org.knowceans.util.UnHtml;
  * <p>
  * Works on 2009 and 2011 version on http://clair.si.umich.edu/clair/anthology/
  * (Caveat: 2011 version has redundant full text content)
+ * <p>
+ * TODO: full test and debug.
  * 
  * @version 1.0 Supersedes AanConverter and AanConverter2. The difference is
  *          that all data are handled in a LabelNumCorpus and its

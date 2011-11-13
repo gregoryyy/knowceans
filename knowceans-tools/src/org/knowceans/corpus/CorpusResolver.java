@@ -15,6 +15,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 
+import org.knowceans.util.IndexQuickSort;
 import org.knowceans.util.Vectors;
 
 /**
@@ -320,6 +321,29 @@ public class CorpusResolver implements ICorpusResolver {
 		} else {
 			return null;
 		}
+	}
+
+	/**
+	 * create a string representation of the term statistics of the term and
+	 * frequency vectors
+	 * 
+	 * @param terms term vector
+	 * @param freqs frequency vector
+	 * @param limit limit the number of terms
+	 * @param cols columns to print
+	 * @return
+	 */
+	public String termStats(int[] terms, int[] freqs, int limit, int cols) {
+		int[] ranks = IndexQuickSort.reverse(IndexQuickSort.sort(freqs));
+		StringBuffer sb = new StringBuffer();
+		for (int t = 0; t < Math.min(limit, terms.length); t++) {
+			if (t % cols == 0 && t > 0) {
+				sb.append("\n");
+			}
+			sb.append(String.format("\t%25s:%d", resolveTerm(terms[ranks[t]]),
+					freqs[ranks[t]]));
+		}
+		return sb.toString();
 	}
 
 	/*

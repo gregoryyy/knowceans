@@ -478,19 +478,12 @@ public class CorpusSearcher {
 			System.out.println(wordWrap(content, 120));
 		}
 		if (content == null || printStats) {
+			int cols = 4;
 			corpus.getDoc(id);
+
 			int[] tt = corpus.getDoc(id).getTerms();
 			int[] ff = corpus.getDoc(id).getCounts();
-			int[] ranks = IndexQuickSort.reverse(IndexQuickSort.sort(ff));
-			for (int t = 0; t < Math.min(statsTerms, tt.length); t++) {
-				if (t % 4 == 0 && t > 0) {
-					System.out.println();
-				}
-				System.out
-						.print(String.format("\t%25s:%d", corpus.getResolver()
-								.resolveTerm(tt[ranks[t]]), ff[ranks[t]]));
-			}
-			System.out.println();
+			System.out.println(resolver.termStats(tt, ff, statsTerms, cols));
 		}
 		if (corpus.hasLabels(LabelNumCorpus.LREFERENCES) == 2) {
 			int[] refs = corpus.getDocLabels(LabelNumCorpus.LREFERENCES, id);
@@ -681,7 +674,7 @@ public class CorpusSearcher {
 	 * @param i
 	 * @return
 	 */
-	private String wordWrap(String content, int columns) {
+	public static String wordWrap(String content, int columns) {
 		if (content == null) {
 			return null;
 		}
