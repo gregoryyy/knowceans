@@ -492,7 +492,9 @@ public class LabelNumCorpus extends NumCorpus implements ILabelCorpus {
 	/**
 	 * transpose the sparse matrix with unit elements at positions (m, x[m][n]),
 	 * as used to represent an adjacency matrix. Correspondingly the sparse
-	 * transpose creates a set of inlinks from outlinks and vice versa.
+	 * transpose creates a set of inlinks from outlinks and vice versa. TODO:
+	 * this now assumes a quadratic matrix --> may use for non-quadratic such as
+	 * term-document matrices
 	 * 
 	 * @param x
 	 * @return

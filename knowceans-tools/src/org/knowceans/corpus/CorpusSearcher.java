@@ -750,16 +750,9 @@ public class CorpusSearcher {
 	 * @param corpus
 	 */
 	private void createIndex() {
-		termDocFreqIndex = new HashMap<Integer, Map<Integer, Integer>>();
-		docFreqs = new int[corpus.getNumTerms()];
+		termDocFreqIndex = corpus.getTermDocMap();
+		docFreqs = corpus.calcDocFreqs();
 
-		for (int m = 0; m < corpus.getNumDocs(); m++) {
-			Document document = corpus.docs[m];
-			// tokenize document
-			for (int i = 0; i < document.numTerms; i++) {
-				addTermDoc(m, document.getTerm(i), document.getCount(i));
-			}
-		}
 		if (corpus.hasLabels(LabelNumCorpus.LAUTHORS) == 2) {
 			authorIndex = indexLabels(LabelNumCorpus.LAUTHORS);
 		}
@@ -788,23 +781,6 @@ public class CorpusSearcher {
 			}
 		}
 		return index;
-	}
-
-	/**
-	 * add term-doc pair to inverted index
-	 * 
-	 * @param doc
-	 * @param term
-	 */
-	public void addTermDoc(int doc, int term, int freq) {
-		Map<Integer, Integer> doc2freq = termDocFreqIndex.get(term);
-		// term still unknown
-		if (doc2freq == null) {
-			doc2freq = new HashMap<Integer, Integer>();
-			termDocFreqIndex.put(term, doc2freq);
-		}
-		doc2freq.put(doc, freq);
-		docFreqs[term]++;
 	}
 
 	// ///// query stuff //////

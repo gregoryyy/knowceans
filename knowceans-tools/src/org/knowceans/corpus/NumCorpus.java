@@ -800,6 +800,32 @@ public class NumCorpus implements ICorpus, ITermCorpus, ISplitCorpus {
 	}
 
 	/**
+	 * create a map from term to documents, where documents are represented by
+	 * an id and the respective term frequency
+	 * 
+	 * @return
+	 */
+	public HashMap<Integer, Map<Integer, Integer>> getTermDocMap() {
+		HashMap<Integer, Map<Integer, Integer>> termDocFreqIndex = new HashMap<Integer, Map<Integer, Integer>>();
+
+		for (int m = 0; m < numDocs; m++) {
+			Document document = docs[m];
+			// tokenize document
+			for (int i = 0; i < document.numTerms; i++) {
+				Map<Integer, Integer> doc2freq = termDocFreqIndex.get(document
+						.getTerm(i));
+				// term still unknown
+				if (doc2freq == null) {
+					doc2freq = new HashMap<Integer, Integer>();
+					termDocFreqIndex.put(document.getTerm(i), doc2freq);
+				}
+				doc2freq.put(m, document.getCount(i));
+			}
+		}
+		return termDocFreqIndex;
+	}
+
+	/**
 	 * splits two child corpora of size 1/nsplit off the original corpus, which
 	 * itself is left unchanged (except storing the splits). The corpora can be
 	 * retrieved using getTrainCorpus and getTestCorpus after using this

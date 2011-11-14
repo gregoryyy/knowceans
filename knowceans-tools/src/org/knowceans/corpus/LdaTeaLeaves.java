@@ -17,7 +17,7 @@ import org.knowceans.util.RandomSamplers;
 import org.knowceans.util.Vectors;
 
 /**
- * LdaTeaLeaves shows presents documents and topics for evaluation of the
+ * LdaTeaLeaves presents documents and topics for evaluation of the
  * subjective topic coherence measures put forward by Chang et al. Reading Tea
  * Leaves -- How Humans Interpret Topic Models (NIPS 2009).
  * 
