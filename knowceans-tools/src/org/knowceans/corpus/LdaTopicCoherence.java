@@ -23,7 +23,6 @@ public class LdaTopicCoherence {
 	private int[][] docterms;
 	// to cache co-occurrence values
 	Map<Integer, Map<Integer, Integer>> term2term2df;
-	private int[][] topic2termrank;
 	private int[] df;
 	private NumCorpus corpus;
 
@@ -51,16 +50,13 @@ public class LdaTopicCoherence {
 	public double[] getCoherence(double[][] phi, int limit) {
 		int K = phi.length;
 		double[] tc = new double[K];
-		topic2termrank = new int[K][];
+		term2term2df = new HashMap<Integer, Map<Integer, Integer>>();
 		for (int k = 0; k < phi.length; k++) {
 			// get reverse ranking of terms by weight in phi
 			int[] rank = IndexQuickSort.revsort(phi[k]);
 			// ... and cut off at limit
-			topic2termrank[k] = Vectors.sub(rank, 0, limit);
-		}
-		term2term2df = new HashMap<Integer, Map<Integer, Integer>>();
-		for (int k = 0; k < K; k++) {
-			tc[k] = topicCoherence(topic2termrank[k]);
+			int[] rankedterms = Vectors.sub(rank, 0, limit);
+			tc[k] = topicCoherence(rankedterms);
 		}
 		return tc;
 	}
@@ -105,8 +101,7 @@ public class LdaTopicCoherence {
 			term2term2df.put(term1, t2f);
 		}
 		int freq = 0;
-		// TODO: this is overkill --> create co-occurrence for complete set of
-		// all terms considered in the topics
+		// TODO: co-occurrence for set of terms at once
 		for (int m = 0; m < docterms.length; m++) {
 			if (Arrays.binarySearch(docterms[m], term1) >= 0
 					&& Arrays.binarySearch(docterms[m], term2) >= 0) {
