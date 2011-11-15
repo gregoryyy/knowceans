@@ -114,10 +114,15 @@ public class LdaTopicCoherence {
 		}
 		t2f.put(term2, freq);
 		if (debug) {
-			System.out.println("coocc: "
-					+ corpus.getResolver().resolveTerm(term1) + " "
-					+ corpus.getResolver().resolveTerm(term2) + " = " + freq
-					+ " " + (freq + 1.) / df[term2]);
+			System.out
+					.println(String
+							.format("codf(%s, %s) = %d, df(%s) = %d, (codf + 1) / df = %2.5f, log(.) = %2.5f",
+									corpus.getResolver().resolveTerm(term1),
+									corpus.getResolver().resolveTerm(term2),
+									freq,
+									corpus.getResolver().resolveTerm(term2),
+									df[term2], (freq + 1.) / df[term2],
+									Math.log((freq + 1.) / df[term2])));
 		}
 		return freq;
 	}
