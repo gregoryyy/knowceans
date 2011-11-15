@@ -23,9 +23,11 @@ public class LdaTopicCoherence {
 	private int[][] docterms;
 	// to cache co-occurrence values
 	Map<Integer, Map<Integer, Integer>> term2term2df;
-	private int[][] topic2rank2term;
+	private int[][] topic2termrank;
 	private int[] df;
 	private NumCorpus corpus;
+
+	public static boolean debug = false;
 
 	/**
 	 * initialise with existing corpus
@@ -39,22 +41,26 @@ public class LdaTopicCoherence {
 	}
 
 	/**
+	 * compute coherence values for all topics in phi, using the limit strongest
+	 * terms.
 	 * 
 	 * @param phi
+	 * @param limit
 	 * @return
 	 */
 	public double[] getCoherence(double[][] phi, int limit) {
 		int K = phi.length;
 		double[] tc = new double[K];
-
-		topic2rank2term = new int[K][];
+		topic2termrank = new int[K][];
 		for (int k = 0; k < phi.length; k++) {
+			// get reverse ranking of terms by weight in phi
 			int[] rank = IndexQuickSort.revsort(phi[k]);
-			topic2rank2term[k] = Vectors.sub(rank, 0, limit);
+			// ... and cut off at limit
+			topic2termrank[k] = Vectors.sub(rank, 0, limit);
 		}
 		term2term2df = new HashMap<Integer, Map<Integer, Integer>>();
 		for (int k = 0; k < K; k++) {
-			tc[k] = topicCoherence(topic2rank2term[k]);
+			tc[k] = topicCoherence(topic2termrank[k]);
 		}
 		return tc;
 	}
@@ -108,9 +114,12 @@ public class LdaTopicCoherence {
 			}
 		}
 		t2f.put(term2, freq);
-		System.out.println("coocc: " + corpus.getResolver().resolveTerm(term1)
-				+ " " + corpus.getResolver().resolveTerm(term2) + " = " + freq
-				+ " " + (freq + 1.) / df[term2]);
+		if (debug) {
+			System.out.println("coocc: "
+					+ corpus.getResolver().resolveTerm(term1) + " "
+					+ corpus.getResolver().resolveTerm(term2) + " = " + freq
+					+ " " + (freq + 1.) / df[term2]);
+		}
 		return freq;
 	}
 }
