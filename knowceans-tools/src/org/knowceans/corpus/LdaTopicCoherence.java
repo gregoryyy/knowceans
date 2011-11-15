@@ -64,21 +64,33 @@ public class LdaTopicCoherence {
 			int[] rankedterms = Vectors.sub(rank, 0, limit);
 			tc[k] = topicCoherence(rankedterms);
 		}
+		return tc;
+	}
+
+	/**
+	 * get the sparsity of the co-occurrence matrix created by the top terms in
+	 * each topic. This method is used after getCoherence() and may be used to
+	 * weight its results. Otherwise random topics may become more coherent than
+	 * trained ones if there exist a lot of high-frequency terms in the corpus.
+	 */
+	public double getSparsity() {
+		int sum = 0;
+		Set<Integer> topterms = new HashSet<Integer>();
+		for (int t : term2term2df.keySet()) {
+			Map<Integer, Integer> tt = term2term2df.get(t);
+			sum += tt.size();
+			topterms.add(t);
+			topterms.addAll(tt.keySet());
+		}
+		// factor two as term2term2df is upper-triangular
+		double sparsity = 2. * sum / topterms.size() / topterms.size();
+
 		if (debug) {
-			int sum = 0;
-			Set<Integer> topterms = new HashSet<Integer>();
-			for (int t : term2term2df.keySet()) {
-				Map<Integer, Integer> tt = term2term2df.get(t);
-				sum += tt.size();
-				topterms.add(t);
-				topterms.addAll(tt.keySet());
-			}
 			System.out.println("number of co-occurrence pairs: " + sum
 					+ ", top terms = " + topterms.size() + " -> sparsity = "
-					// factor two as matrices are upper-triangluar
-					+ 2 * (sum / ((double) topterms.size() * topterms.size())));
+					+ sparsity);
 		}
-		return tc;
+		return sparsity;
 	}
 
 	/**
