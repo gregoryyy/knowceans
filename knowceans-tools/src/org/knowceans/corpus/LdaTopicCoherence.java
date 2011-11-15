@@ -26,7 +26,7 @@ public class LdaTopicCoherence {
 	private int[] df;
 	private NumCorpus corpus;
 
-	public static boolean debug = false;
+	public boolean debug = false;
 
 	/**
 	 * initialise with existing corpus
@@ -35,6 +35,10 @@ public class LdaTopicCoherence {
 	 */
 	public LdaTopicCoherence(NumCorpus corpus) {
 		this.docterms = corpus.getDocTermsFreqs()[0];
+		for (int m = 0; m < docterms.length; m++) {
+			// for binary cooccurrence search
+			Arrays.sort(docterms[m]);
+		}
 		this.df = corpus.calcDocFreqs();
 		this.corpus = corpus;
 	}
@@ -72,8 +76,8 @@ public class LdaTopicCoherence {
 		double tc = 0;
 		for (int i = 1; i < terms.length; i++) {
 			for (int j = 0; j < i - 1; j++) {
-				int cooc = coocDf(terms[i], terms[j]);
-				tc += Math.log((cooc + 1.) / df[terms[j]]);
+				int codf = coocDf(terms[i], terms[j]);
+				tc += Math.log((codf + 1.) / df[terms[j]]);
 			}
 		}
 		return tc;
