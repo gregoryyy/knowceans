@@ -5,7 +5,9 @@ package org.knowceans.corpus;
 
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 import org.knowceans.util.IndexQuickSort;
 import org.knowceans.util.Vectors;
@@ -61,6 +63,20 @@ public class LdaTopicCoherence {
 			// ... and cut off at limit
 			int[] rankedterms = Vectors.sub(rank, 0, limit);
 			tc[k] = topicCoherence(rankedterms);
+		}
+		if (debug) {
+			int sum = 0;
+			Set<Integer> topterms = new HashSet<Integer>();
+			for (int t : term2term2df.keySet()) {
+				Map<Integer, Integer> tt = term2term2df.get(t);
+				sum += tt.size();
+				topterms.add(t);
+				topterms.addAll(tt.keySet());
+			}
+			System.out.println("number of co-occurrence pairs: " + sum
+					+ ", top terms = " + topterms.size() + " -> sparsity = "
+					// factor two as matrices are upper-triangluar
+					+ 2 * (sum / ((double) topterms.size() * topterms.size())));
 		}
 		return tc;
 	}
