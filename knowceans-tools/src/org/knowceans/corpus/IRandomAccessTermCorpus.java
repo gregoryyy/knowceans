@@ -6,7 +6,6 @@ package org.knowceans.corpus;
 import java.util.ArrayList;
 import java.util.Map;
 
-import org.knowceans.corpus.ITermCorpus;
 import org.knowceans.map.IBijectiveMap;
 
 /**

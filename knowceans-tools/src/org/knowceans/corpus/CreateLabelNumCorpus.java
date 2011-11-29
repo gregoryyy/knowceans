@@ -1,9 +1,7 @@
 package org.knowceans.corpus;
 
 import java.util.Map;
-import java.util.Set;
 import java.util.TreeMap;
-import java.util.TreeSet;
 
 /**
  * As the name implies: create a LabelNumCorpus, in this case from the

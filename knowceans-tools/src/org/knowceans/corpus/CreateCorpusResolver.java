@@ -3,7 +3,6 @@ package org.knowceans.corpus;
 import java.util.Map.Entry;
 import java.util.TreeMap;
 
-import org.knowceans.corpus.CorpusResolver;
 import org.knowceans.map.BijectiveHashMap;
 
 /**

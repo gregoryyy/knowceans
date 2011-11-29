@@ -414,7 +414,7 @@ public class LabelNumCorpus extends NumCorpus implements ILabelCorpus {
 		DocPredicate filter = new DocPredicate() {
 			@Override
 			public boolean doesApply(NumCorpus self, int m) {
-				return inlinks[m].size() > 0 || references[m].length > 0;
+				return inlinks[m].length > 0 || references[m].length > 0;
 			}
 		};
 		pureRelational = true;
@@ -440,7 +440,7 @@ public class LabelNumCorpus extends NumCorpus implements ILabelCorpus {
 			inlinks[m] = new ArrayList<Integer>();
 		}
 
-		for (int m = 0; m < inlinks.length; m++) {
+		for (int m = 0; m < references.length; m++) {
 			for (int i = 0; i < references[m].length; i++) {
 				int r = references[m][i];
 				if (r >= 0) {
@@ -685,6 +685,7 @@ public class LabelNumCorpus extends NumCorpus implements ILabelCorpus {
 
 	// end document filtering
 
+	// FIXME: LabelNumCorpus with split. not working, labels are null.
 	@Override
 	public void split(int order, int split, Random rand) {
 		// get plain num corpora
@@ -726,7 +727,7 @@ public class LabelNumCorpus extends NumCorpus implements ILabelCorpus {
 		}
 
 		// rewrite reference data and cut links between training and test corpus
-		remapSplitDocIds(split, Mtest, mstart, trainLabels, testLabels,
+		remapSplitDocRefs(split, Mtest, mstart, trainLabels, testLabels,
 				cutRefsInSplit);
 
 		// construct subcorpora
@@ -764,7 +765,7 @@ public class LabelNumCorpus extends NumCorpus implements ILabelCorpus {
 	 *        and training corpus. If they are not cut, the index is set
 	 *        -newIndexInDualCorpus - 1.
 	 */
-	protected void remapSplitDocIds(int split, int Mtest, int mstart,
+	protected void remapSplitDocRefs(int split, int Mtest, int mstart,
 			int[][][] trainLabels, int[][][] testLabels,
 			boolean cutTestTrainRefs) {
 		// rewrite document references
@@ -806,7 +807,7 @@ public class LabelNumCorpus extends NumCorpus implements ILabelCorpus {
 						newX.add(-old2test[x[i]] - 1);
 					}
 				}
-				System.out.println("train: " + m + " " + newX);
+				// System.out.println("train: " + m + " " + newX);
 				trainLabels[type][m] = (int[]) ArrayUtils.asPrimitiveArray(
 						newX, int.class);
 			}
@@ -821,7 +822,7 @@ public class LabelNumCorpus extends NumCorpus implements ILabelCorpus {
 						newX.add(-old2train[x[i]] - 1);
 					}
 				}
-				System.out.println("test: " + m + " " + newX);
+				// System.out.println("test: " + m + " " + newX);
 				testLabels[type][m] = (int[]) ArrayUtils.asPrimitiveArray(newX,
 						int.class);
 			}

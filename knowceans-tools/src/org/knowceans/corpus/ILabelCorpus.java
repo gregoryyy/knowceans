@@ -22,6 +22,8 @@ public interface ILabelCorpus extends ICorpus {
 	public static final int LREFERENCES = 5;
 	public static final int LMENTIONS = 6;
 
+	// public static final int LCITATIONS = 7;
+
 	/**
 	 * array with label ids for documents
 	 * 

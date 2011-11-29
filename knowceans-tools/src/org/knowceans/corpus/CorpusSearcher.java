@@ -16,6 +16,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Random;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.zip.GZIPInputStream;
@@ -48,6 +49,12 @@ public class CorpusSearcher {
 		String outpath = "corpus-example/nips-out";
 		LabelNumCorpus corpus = new LabelNumCorpus(filebase);
 		corpus.loadAllLabels();
+
+		// FIXME: LabelNumCorpus with split. not working, labels are null.
+		// test splitting
+		((LabelNumCorpus) corpus).cutRefsInSplit = true;
+		corpus.split(10, 9, new Random());
+		corpus = (LabelNumCorpus) corpus.getTrainCorpus();
 
 		// ////// start preparing corpus ////////
 
