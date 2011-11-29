@@ -117,6 +117,10 @@ public class LabelNumCorpus extends NumCorpus implements ILabelCorpus {
 	// handled directly after filtering
 	public static final int[] relationalLabels = { LREFERENCES, LMENTIONS };
 
+	// labels that contain doc Ids, which therefore need to be re-mapped after
+	// document filtering
+	public static final int[] docIdLabels = { LREFERENCES };
+
 	/**
 	 * there are only documents with links
 	 */
@@ -134,6 +138,18 @@ public class LabelNumCorpus extends NumCorpus implements ILabelCorpus {
 	 * total range of labels
 	 */
 	protected int[] labelsV;
+
+	/**
+	 * number of documents of dual corpus after split
+	 */
+	protected int numDocsDual;
+
+	/**
+	 * when splitting the corpus, whether to cut references between test and
+	 * training corpus, thus reducing both to independent corpora. If they are
+	 * not cut, the index is set -newIndexInDualCorpus - 1.
+	 */
+	public boolean cutRefsInSplit = true;
 
 	/**
      * 
@@ -385,32 +401,64 @@ public class LabelNumCorpus extends NumCorpus implements ILabelCorpus {
 	 */
 	// , TODO: boolean usementions
 	public int[] reduceUnlinkedDocs() {
+		final int[][] references = labels[LREFERENCES];
+
 		// first create a list of incoming links by transposing the relation
 		@SuppressWarnings("unchecked")
-		final List<Integer>[] inlinks = new List[numDocs];
-		for (int m = 0; m < inlinks.length; m++) {
-			inlinks[m] = new ArrayList<Integer>();
-		}
+		final int[][] inlinks = createCitations(references);
 
-		final int[][] citations = labels[LREFERENCES];
 		// TODO: add mentions
 		// int[][] mentions = labels[LMENTIONS];
 		// int[][] authors = labels[LAUTHORS];
 
-		for (int m = 0; m < inlinks.length; m++) {
-			for (int i = 0; i < citations[m].length; i++) {
-				inlinks[citations[m][i]].add(m);
-			}
-		}
-
 		DocPredicate filter = new DocPredicate() {
 			@Override
 			public boolean doesApply(NumCorpus self, int m) {
-				return inlinks[m].size() > 0 || citations[m].length > 0;
+				return inlinks[m].size() > 0 || references[m].length > 0;
 			}
 		};
 		pureRelational = true;
 		return filterDocs(filter, null);
+	}
+
+	/**
+	 * creates the citations of this corpus as the incoming links. If
+	 * cutRefsInSplit is false, the array returned contains the corpus and in
+	 * elements numDoc ... numDoc + dualCorpus.numDoc - 1 the incoming links of
+	 * the dual corpus (test for train and vice versa). This is the main
+	 * difference to using getSparseTransform().
+	 * 
+	 * @param references
+	 * @return
+	 */
+	public int[][] createCitations(final int[][] references) {
+		@SuppressWarnings("unchecked")
+		// original + dual corpus (if exists)
+		final List<Integer>[] inlinks = new List[numDocs + numDocsDual];
+
+		for (int m = 0; m < inlinks.length; m++) {
+			inlinks[m] = new ArrayList<Integer>();
+		}
+
+		for (int m = 0; m < inlinks.length; m++) {
+			for (int i = 0; i < references[m].length; i++) {
+				int r = references[m][i];
+				if (r >= 0) {
+					inlinks[r].add(m);
+				} else {
+					// link to dual corpus
+					// r=-1 => m=0 => index numDocs
+					// r=-2 => m=1 => index numDocs + 1
+					inlinks[numDocs - r - 1].add(m);
+				}
+			}
+		}
+		int[][] cites = new int[numDocs + numDocsDual][];
+		for (int m = 0; m < inlinks.length; m++) {
+			cites[m] = (int[]) ArrayUtils.asPrimitiveArray(inlinks[m],
+					int.class);
+		}
+		return cites;
 	}
 
 	/**
@@ -652,6 +700,7 @@ public class LabelNumCorpus extends NumCorpus implements ILabelCorpus {
 		int[] testLabelsW = new int[labelExtensions.length];
 
 		int mstart = splitstarts[split];
+
 		// for each label type
 		for (int type = 0; type < labelExtensions.length; type++) {
 			if (labels[type] == null) {
@@ -675,6 +724,11 @@ public class LabelNumCorpus extends NumCorpus implements ILabelCorpus {
 			}
 			trainLabelsW[type] = labelsW[type] - testLabelsW[type];
 		}
+
+		// rewrite reference data and cut links between training and test corpus
+		remapSplitDocIds(split, Mtest, mstart, trainLabels, testLabels,
+				cutRefsInSplit);
+
 		// construct subcorpora
 		trainCorpus = new LabelNumCorpus((NumCorpus) getTrainCorpus());
 		testCorpus = new LabelNumCorpus((NumCorpus) getTestCorpus());
@@ -683,6 +737,7 @@ public class LabelNumCorpus extends NumCorpus implements ILabelCorpus {
 		train.labelsV = labelsV;
 		train.labelsW = trainLabelsW;
 		train.pureRelational = false;
+		train.numDocsDual = testCorpus.numDocs;
 		// readonly corpus we can copy this for split corpora, so the resolver
 		// can be created directly from train (and test, below)
 		train.dataFilebase = dataFilebase;
@@ -692,7 +747,85 @@ public class LabelNumCorpus extends NumCorpus implements ILabelCorpus {
 		test.labelsW = testLabelsW;
 		test.pureRelational = false;
 		test.dataFilebase = dataFilebase;
+		test.numDocsDual = trainCorpus.numDocs;
 
+	}
+
+	/**
+	 * map document ids as labels to new and remove non-existing ones. This
+	 * changes the dimensions of the labels
+	 * 
+	 * @param split
+	 * @param Mtest
+	 * @param mstart
+	 * @param trainLabels
+	 * @param testLabels
+	 * @param boolean cutTestTrainRefs whether to cut references between test
+	 *        and training corpus. If they are not cut, the index is set
+	 *        -newIndexInDualCorpus - 1.
+	 */
+	protected void remapSplitDocIds(int split, int Mtest, int mstart,
+			int[][][] trainLabels, int[][][] testLabels,
+			boolean cutTestTrainRefs) {
+		// rewrite document references
+		// filter doc ids for relational labels (LREFERENCES)
+		int[] old2train = new int[numDocs];
+		int[] old2test = new int[numDocs];
+
+		int mtrain = 0;
+		// before test split
+		for (int m = 0; m < splitstarts[split]; m++) {
+			old2train[splitperm[m]] = mtrain;
+			old2test[splitperm[m]] = -1;
+			mtrain++;
+		}
+		// after test split
+		for (int m = splitstarts[split + 1]; m < numDocs; m++) {
+			old2train[splitperm[m]] = mtrain;
+			old2test[splitperm[m]] = -1;
+			mtrain++;
+		}
+		// test split
+		for (int m = 0; m < Mtest; m++) {
+			old2train[splitperm[m + mstart]] = -1;
+			old2test[splitperm[m + mstart]] = m;
+		}
+		// for each document id label type
+		for (int type : docIdLabels) {
+			if (labels[type] == null) {
+				continue;
+			}
+			for (int m = 0; m < trainLabels[type].length; m++) {
+				int[] x = trainLabels[type][m];
+				List<Integer> newX = new ArrayList<Integer>();
+				for (int i = 0; i < x.length; i++) {
+					int a = old2train[x[i]];
+					if (a != -1) {
+						newX.add(a);
+					} else if (!cutTestTrainRefs) {
+						newX.add(-old2test[x[i]] - 1);
+					}
+				}
+				System.out.println("train: " + m + " " + newX);
+				trainLabels[type][m] = (int[]) ArrayUtils.asPrimitiveArray(
+						newX, int.class);
+			}
+			for (int m = 0; m < testLabels[type].length; m++) {
+				int[] x = testLabels[type][m];
+				List<Integer> newX = new ArrayList<Integer>();
+				for (int i = 0; i < x.length; i++) {
+					int a = old2test[x[i]];
+					if (a != -1) {
+						newX.add(a);
+					} else if (!cutTestTrainRefs) {
+						newX.add(-old2train[x[i]] - 1);
+					}
+				}
+				System.out.println("test: " + m + " " + newX);
+				testLabels[type][m] = (int[]) ArrayUtils.asPrimitiveArray(newX,
+						int.class);
+			}
+		}
 	}
 
 	@Override
@@ -845,6 +978,7 @@ public class LabelNumCorpus extends NumCorpus implements ILabelCorpus {
 								numDocsRef0[type]++;
 							}
 						}
+						// TODO: check split references
 					}
 					// TODO: fix
 					// if (Vectors.sum(numIdsGeV) > 0)
