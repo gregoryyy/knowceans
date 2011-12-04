@@ -17,10 +17,6 @@ import java.util.StringTokenizer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.knowceans.corpus.CorpusStemmer;
-import org.knowceans.corpus.CreateCorpusResolver;
-import org.knowceans.corpus.CreateLabelNumCorpus;
-import org.knowceans.corpus.ICorpusResolver;
 import org.knowceans.map.BijectiveHashMap;
 import org.knowceans.map.IMultiMap;
 import org.knowceans.map.InvertibleHashMultiMap;

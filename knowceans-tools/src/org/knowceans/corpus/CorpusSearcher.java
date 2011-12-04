@@ -52,7 +52,7 @@ public class CorpusSearcher {
 
 		// FIXME: LabelNumCorpus with split. not working, labels are null.
 		// test splitting
-		((LabelNumCorpus) corpus).cutRefsInSplit = true;
+		((LabelNumCorpus) corpus).cutRefsInSplit = false;
 		corpus.split(10, 9, new Random());
 		corpus = (LabelNumCorpus) corpus.getTrainCorpus();
 

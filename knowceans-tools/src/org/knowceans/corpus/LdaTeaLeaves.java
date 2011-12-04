@@ -9,9 +9,6 @@ import java.io.IOException;
 import java.util.HashSet;
 import java.util.Random;
 
-import org.knowceans.corpus.CorpusResolver;
-import org.knowceans.corpus.ILabelCorpus;
-import org.knowceans.corpus.LabelNumCorpus;
 import org.knowceans.util.IndexQuickSort;
 import org.knowceans.util.RandomSamplers;
 import org.knowceans.util.Vectors;
@@ -88,7 +85,7 @@ public class LdaTeaLeaves {
 		getTopicWeights();
 		getTopicRanks();
 		// these are the ids of the original corpus
-		theta2docId = corpus.getOrigDocIds()[0];
+		theta2docId = corpus.getSplit2corpusDocIds()[0];
 		term2dfRank = IndexQuickSort.inverse(IndexQuickSort.revsort(corpus
 				.calcDocFreqs()));
 

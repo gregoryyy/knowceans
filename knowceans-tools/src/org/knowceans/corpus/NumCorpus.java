@@ -58,7 +58,7 @@ public class NumCorpus implements ICorpus, ITermCorpus, ISplitCorpus {
 	 * @param args
 	 */
 	public static void main(String[] args) {
-		NumCorpus nc = new NumCorpus("berry95/berry95.corpus");
+		NumCorpus nc = new NumCorpus("corpus-example/berry95");
 		nc.split(10, 0, new Random());
 		System.out.println("train");
 		ICorpus ncc = nc.getTrainCorpus();
@@ -71,7 +71,8 @@ public class NumCorpus implements ICorpus, ITermCorpus, ISplitCorpus {
 		x = ncc.getDocWords(new Random());
 		System.out.println(Vectors.print(x));
 		System.out.println("document mapping");
-		System.out.println(Vectors.print(nc.getOrigDocIds()));
+		System.out.println(Vectors.print(nc.getSplit2corpusDocIds()));
+		System.out.println(Vectors.print(nc.getCorpus2splitDocIds()));
 	}
 
 	protected Document[] docs;
@@ -102,9 +103,14 @@ public class NumCorpus implements ICorpus, ITermCorpus, ISplitCorpus {
 
 	/**
 	 * for splitting, these are the original document ids [0] = training, [1] =
-	 * test.
+	 * test. previously called: origDocIds
 	 */
-	protected int[][] origDocIds;
+	protected int[][] split2corpusDocIds;
+	/**
+	 * these are the corpus ids to split ids, with training positive and test
+	 * using mtest = -mcorpus - 1
+	 */
+	protected int[] corpus2splitDocIds;
 
 	/**
 	 * term element before which a paragraph ends. Iterating through this allows
@@ -273,8 +279,8 @@ public class NumCorpus implements ICorpus, ITermCorpus, ISplitCorpus {
 					parbounds[m] = docs[m].getParBounds();
 				}
 			}
-			origDocIds = new int[2][];
-			origDocIds[0] = Vectors.range(0, nd - 1);
+			split2corpusDocIds = new int[2][];
+			split2corpusDocIds[0] = Vectors.range(0, nd - 1);
 			if (debug) {
 				System.out.println("number of docs    : " + nd);
 				System.out.println("number of terms   : " + nt);
@@ -831,9 +837,13 @@ public class NumCorpus implements ICorpus, ITermCorpus, ISplitCorpus {
 	 * retrieved using getTrainCorpus and getTestCorpus after using this
 	 * function.
 	 * <p>
-	 * IMPORTANT: if labels are used in the split corpora, the
-	 * getDocLabels(kind) method needs to be called to split these values
-	 * appropriately.
+	 * IMPORTANT: If labels are used in the split corpora, the
+	 * getDocLabels(kind) method needs to be called before split() to load the
+	 * data for splitting.
+	 * <p>
+	 * IMPORTANT: If resolvers are to be used in the split corpora, the
+	 * getResolver() method needs to be called before split() to create the
+	 * initial resolver.
 	 * 
 	 * @param order number of partitions
 	 * @param split 0-based split of corpus returned
@@ -843,7 +853,7 @@ public class NumCorpus implements ICorpus, ITermCorpus, ISplitCorpus {
 	public void split(int order, int split, Random rand) {
 
 		int Mtest;
-		int mstart;
+		int testStart, testEnd;
 		int numTestWords;
 		if (rand != null) {
 			RandomSamplers rs = new RandomSamplers(rand);
@@ -853,36 +863,43 @@ public class NumCorpus implements ICorpus, ITermCorpus, ISplitCorpus {
 		for (int p = 0; p <= order; p++) {
 			splitstarts[p] = Math.round(numDocs * (p / (float) order));
 		}
-		Mtest = splitstarts[split + 1] - splitstarts[split];
-		mstart = splitstarts[split];
-		origDocIds = new int[][] { new int[numDocs - Mtest], new int[Mtest] };
+		testStart = splitstarts[split];
+		testEnd = splitstarts[split + 1];
+		Mtest = testEnd - testStart;
+		split2corpusDocIds = new int[][] { new int[numDocs - Mtest],
+				new int[Mtest] };
+		corpus2splitDocIds = new int[numDocs];
 		Document[] trainDocs = new Document[numDocs - Mtest];
 		Document[] testDocs = new Document[Mtest];
 
 		int mtrain = 0;
-		// before test split
-		for (int m = 0; m < mstart; m++) {
-			trainDocs[mtrain] = docs[splitperm[m]];
-			origDocIds[0][mtrain] = splitperm[m];
-			mtrain++;
-		}
-		// after test split
-		for (int m = splitstarts[split + 1]; m < numDocs; m++) {
-			trainDocs[mtrain] = docs[splitperm[m]];
-			origDocIds[0][mtrain] = splitperm[m];
-			mtrain++;
-		}
-		// test split
+		int mtest = 0;
 		numTestWords = 0;
-		for (int m = 0; m < Mtest; m++) {
-			testDocs[m] = docs[splitperm[m + mstart]];
-			origDocIds[1][m] = splitperm[m + mstart];
-			numTestWords += testDocs[m].getNumWords();
+		for (int m = 0; m < numDocs; m++) {
+			// in test split?
+			if (m >= testStart && m < testEnd) {
+				testDocs[mtest] = docs[splitperm[m]];
+				split2corpusDocIds[1][mtest] = splitperm[m];
+				corpus2splitDocIds[splitperm[m]] = -mtest - 1;
+				numTestWords += testDocs[mtest].getNumWords();
+				mtest++;
+			} else {
+				trainDocs[mtrain] = docs[splitperm[m]];
+				split2corpusDocIds[0][mtrain] = splitperm[m];
+				corpus2splitDocIds[splitperm[m]] = mtrain;
+				mtrain++;
+			}
 		}
-
 		trainCorpus = new NumCorpus(trainDocs, numTerms, numWords
 				- numTestWords);
 		testCorpus = new NumCorpus(testDocs, numTerms, numTestWords);
+
+		if (resolver != null) {
+			trainCorpus.resolver = new CorpusResolver(resolver.data);
+			trainCorpus.resolver.splitDocRelatedKeys(split2corpusDocIds[0]);
+			testCorpus.resolver = new CorpusResolver(resolver.data);
+			testCorpus.resolver.splitDocRelatedKeys(split2corpusDocIds[1]);
+		}
 	}
 
 	/**
@@ -905,8 +922,18 @@ public class NumCorpus implements ICorpus, ITermCorpus, ISplitCorpus {
 	 * 
 	 * @return [training documents, test documents]
 	 */
-	public int[][] getOrigDocIds() {
-		return origDocIds;
+	public int[][] getSplit2corpusDocIds() {
+		return split2corpusDocIds;
+	}
+
+	/**
+	 * get the original ids of documents according to the corpus file read in.
+	 * If never split, null.
+	 * 
+	 * @return [training documents, test documents]
+	 */
+	public int[] getCorpus2splitDocIds() {
+		return corpus2splitDocIds;
 	}
 
 	/**

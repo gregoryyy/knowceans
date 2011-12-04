@@ -63,7 +63,7 @@ public class CorpusResolver implements ICorpusResolver {
 	private boolean parmode;
 
 	/**
-	 * only subclass use
+	 * only subclass and corpus use
 	 * 
 	 * @param filebase
 	 */
@@ -97,6 +97,20 @@ public class CorpusResolver implements ICorpusResolver {
 		}
 		// set up terms
 		setupTermIndex();
+	}
+
+	/**
+	 * create resolver with the data arrays referenced by a new wrapper array,
+	 * thus every type can be exchanged by a new array without compromising the
+	 * argument.
+	 * 
+	 * @param data2
+	 */
+	public CorpusResolver(String[][] data) {
+		this.data = new String[data.length][];
+		for (int i = 0; i < data.length; i++) {
+			this.data[i] = data[i];
+		}
 	}
 
 	/**
@@ -238,6 +252,21 @@ public class CorpusResolver implements ICorpusResolver {
 		}
 		// System.out.println("resolver docs = " + newData[KDOCS].length);
 		data = newData;
+	}
+
+	/**
+	 * replace the document related keys by a new array that maps the split ones
+	 * 
+	 * @param new2old mapping from new keys to those of the original corpus
+	 */
+	public void splitDocRelatedKeys(int[] new2old) {
+		for (int type : docRelatedKeys) {
+			String[] olddata = data[type];
+			data[type] = new String[new2old.length];
+			for (int m = 0; m < new2old.length; m++) {
+				data[type][m] = olddata[new2old[m]];
+			}
+		}
 	}
 
 	/**
@@ -658,4 +687,5 @@ public class CorpusResolver implements ICorpusResolver {
 					+ Vectors.print(keyNull) + "\n");
 		return sb.toString();
 	}
+
 }

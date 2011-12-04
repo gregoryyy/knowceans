@@ -27,8 +27,6 @@ import org.apache.lucene.index.TermEnum;
 import org.apache.lucene.index.TermFreqVector;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.store.SimpleFSDirectory;
-import org.knowceans.corpus.CreateCorpusResolver;
-import org.knowceans.corpus.CreateLabelNumCorpus;
 import org.knowceans.map.BijectiveHashMap;
 import org.knowceans.map.BijectiveTreeMap;
 import org.knowceans.map.IMultiMap;

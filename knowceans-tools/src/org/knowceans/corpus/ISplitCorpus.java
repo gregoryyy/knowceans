@@ -43,5 +43,5 @@ public interface ISplitCorpus {
      * 
      * @return [training documents, test documents]
      */
-    public int[][] getOrigDocIds();
+    public int[][] getSplit2corpusDocIds();
 }

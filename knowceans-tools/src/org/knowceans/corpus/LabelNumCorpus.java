@@ -60,6 +60,8 @@ public class LabelNumCorpus extends NumCorpus implements ILabelCorpus {
 		nc.getDocLabels(LAUTHORS);
 		nc.split(10, 0, new Random());
 
+		System.out.println(nc);
+
 		System.out.println("train");
 		LabelNumCorpus ncc = (LabelNumCorpus) nc.getTrainCorpus();
 		System.out.println(ncc);
@@ -79,7 +81,7 @@ public class LabelNumCorpus extends NumCorpus implements ILabelCorpus {
 		System.out.println(Vectors.print(a));
 
 		System.out.println("document mapping");
-		System.out.println(Vectors.print(nc.getOrigDocIds()));
+		System.out.println(Vectors.print(nc.getSplit2corpusDocIds()));
 	}
 
 	/**
@@ -283,9 +285,12 @@ public class LabelNumCorpus extends NumCorpus implements ILabelCorpus {
 	 * return the minimum number of labels in any document
 	 * 
 	 * @param kind
-	 * @return
+	 * @return value or -1 if labels of this type = null
 	 */
 	public int getLabelsMinN(int kind) {
+		if (labels[kind] == null) {
+			return -1;
+		}
 		int min = Integer.MAX_VALUE;
 		for (int m = 0; m < numDocs; m++) {
 			min = min < labels[kind][m].length ? min : labels[kind][m].length;
@@ -297,9 +302,12 @@ public class LabelNumCorpus extends NumCorpus implements ILabelCorpus {
 	 * return the maximum number of labels in any document
 	 * 
 	 * @param kind
-	 * @return
+	 * @return value or -1 if labels of this type = null
 	 */
 	public int getLabelsMaxN(int kind) {
+		if (labels[kind] == null) {
+			return -1;
+		}
 		int max = 0;
 		for (int m = 0; m < numDocs; m++) {
 			max = max < labels[kind][m].length ? labels[kind][m].length : max;
@@ -685,146 +693,75 @@ public class LabelNumCorpus extends NumCorpus implements ILabelCorpus {
 
 	// end document filtering
 
-	// FIXME: LabelNumCorpus with split. not working, labels are null.
 	@Override
+	// FIXME: LabelNumCorpus with split. not working, labels are null.
 	public void split(int order, int split, Random rand) {
-		// get plain num corpora
+
+		// get plain num corpora and split data
 		super.split(order, split, rand);
 
-		// now also split labels
+		// convert to subclass
+		trainCorpus = new LabelNumCorpus((NumCorpus) getTrainCorpus());
+		testCorpus = new LabelNumCorpus((NumCorpus) getTestCorpus());
+		LabelNumCorpus train = (LabelNumCorpus) trainCorpus;
+		LabelNumCorpus test = (LabelNumCorpus) testCorpus;
+
 		int Mtest = splitstarts[split + 1] - splitstarts[split];
-		labelsW = new int[labelExtensions.length];
+		train.labels = new int[labelExtensions.length][numDocs - Mtest][];
+		train.labelsW = new int[labelExtensions.length];
+		train.labelsV = labelsV;
+		train.pureRelational = false;
+		train.numDocsDual = testCorpus.numDocs;
+		train.dataFilebase = dataFilebase;
+		test.labels = new int[labelExtensions.length][Mtest][];
+		test.labelsW = new int[labelExtensions.length];
+		test.labelsV = labelsV;
+		test.pureRelational = false;
+		test.numDocsDual = trainCorpus.numDocs;
+		test.dataFilebase = dataFilebase;
 
-		int[][][] trainLabels = new int[labelExtensions.length][numDocs - Mtest][];
-		int[][][] testLabels = new int[labelExtensions.length][Mtest][];
-		int[] trainLabelsW = new int[labelExtensions.length];
-		int[] testLabelsW = new int[labelExtensions.length];
-
-		int mstart = splitstarts[split];
-
-		// for each label type
 		for (int type = 0; type < labelExtensions.length; type++) {
 			if (labels[type] == null) {
 				continue;
 			}
-			int mtrain = 0;
-			// before test split
-			for (int m = 0; m < splitstarts[split]; m++) {
-				trainLabels[type][mtrain] = labels[type][splitperm[m]];
-				mtrain++;
-			}
-			// after test split
-			for (int m = splitstarts[split + 1]; m < numDocs; m++) {
-				trainLabels[type][mtrain] = labels[type][splitperm[m]];
-				mtrain++;
-			}
-			// test split
-			for (int m = 0; m < Mtest; m++) {
-				testLabels[type][m] = labels[type][splitperm[m + mstart]];
-				testLabelsW[type] += testLabels[type][m].length;
-			}
-			trainLabelsW[type] = labelsW[type] - testLabelsW[type];
-		}
-
-		// rewrite reference data and cut links between training and test corpus
-		remapSplitDocRefs(split, Mtest, mstart, trainLabels, testLabels,
-				cutRefsInSplit);
-
-		// construct subcorpora
-		trainCorpus = new LabelNumCorpus((NumCorpus) getTrainCorpus());
-		testCorpus = new LabelNumCorpus((NumCorpus) getTestCorpus());
-		LabelNumCorpus train = (LabelNumCorpus) trainCorpus;
-		train.labels = trainLabels;
-		train.labelsV = labelsV;
-		train.labelsW = trainLabelsW;
-		train.pureRelational = false;
-		train.numDocsDual = testCorpus.numDocs;
-		// readonly corpus we can copy this for split corpora, so the resolver
-		// can be created directly from train (and test, below)
-		train.dataFilebase = dataFilebase;
-		LabelNumCorpus test = (LabelNumCorpus) testCorpus;
-		test.labels = testLabels;
-		test.labelsV = labelsV;
-		test.labelsW = testLabelsW;
-		test.pureRelational = false;
-		test.dataFilebase = dataFilebase;
-		test.numDocsDual = trainCorpus.numDocs;
-
-	}
-
-	/**
-	 * map document ids as labels to new and remove non-existing ones. This
-	 * changes the dimensions of the labels
-	 * 
-	 * @param split
-	 * @param Mtest
-	 * @param mstart
-	 * @param trainLabels
-	 * @param testLabels
-	 * @param boolean cutTestTrainRefs whether to cut references between test
-	 *        and training corpus. If they are not cut, the index is set
-	 *        -newIndexInDualCorpus - 1.
-	 */
-	protected void remapSplitDocRefs(int split, int Mtest, int mstart,
-			int[][][] trainLabels, int[][][] testLabels,
-			boolean cutTestTrainRefs) {
-		// rewrite document references
-		// filter doc ids for relational labels (LREFERENCES)
-		int[] old2train = new int[numDocs];
-		int[] old2test = new int[numDocs];
-
-		int mtrain = 0;
-		// before test split
-		for (int m = 0; m < splitstarts[split]; m++) {
-			old2train[splitperm[m]] = mtrain;
-			old2test[splitperm[m]] = -1;
-			mtrain++;
-		}
-		// after test split
-		for (int m = splitstarts[split + 1]; m < numDocs; m++) {
-			old2train[splitperm[m]] = mtrain;
-			old2test[splitperm[m]] = -1;
-			mtrain++;
-		}
-		// test split
-		for (int m = 0; m < Mtest; m++) {
-			old2train[splitperm[m + mstart]] = -1;
-			old2test[splitperm[m + mstart]] = m;
-		}
-		// for each document id label type
-		for (int type : docIdLabels) {
-			if (labels[type] == null) {
-				continue;
-			}
-			for (int m = 0; m < trainLabels[type].length; m++) {
-				int[] x = trainLabels[type][m];
-				List<Integer> newX = new ArrayList<Integer>();
-				for (int i = 0; i < x.length; i++) {
-					int a = old2train[x[i]];
-					if (a != -1) {
-						newX.add(a);
-					} else if (!cutTestTrainRefs) {
-						newX.add(-old2test[x[i]] - 1);
-					}
+			for (int m = 0; m < numDocs; m++) {
+				int msplit = corpus2splitDocIds[m];
+				if (msplit >= 0) {
+					train.labels[type][msplit] = labels[type][m];
+				} else {
+					test.labels[type][-msplit - 1] = labels[type][m];
 				}
-				// System.out.println("train: " + m + " " + newX);
-				trainLabels[type][m] = (int[]) ArrayUtils.asPrimitiveArray(
-						newX, int.class);
 			}
-			for (int m = 0; m < testLabels[type].length; m++) {
-				int[] x = testLabels[type][m];
-				List<Integer> newX = new ArrayList<Integer>();
-				for (int i = 0; i < x.length; i++) {
-					int a = old2test[x[i]];
-					if (a != -1) {
-						newX.add(a);
-					} else if (!cutTestTrainRefs) {
-						newX.add(-old2train[x[i]] - 1);
+
+			// replace document ids in split corpora
+			if (Arrays.binarySearch(docIdLabels, type) >= 0) {
+				int[][] doclabels = train.labels[type];
+				for (int m = 0; m < doclabels.length; m++) {
+					List<Integer> doc = new ArrayList<Integer>();
+					for (int n = 0; n < doclabels[m].length; n++) {
+						int msplit = corpus2splitDocIds[doclabels[m][n]];
+						// if in train corpus or no cut between train and test
+						if (msplit >= 0 || !cutRefsInSplit) {
+							doc.add(msplit);
+						}
 					}
+					doclabels[m] = (int[]) ArrayUtils.asPrimitiveArray(doc,
+							int.class);
 				}
-				// System.out.println("test: " + m + " " + newX);
-				testLabels[type][m] = (int[]) ArrayUtils.asPrimitiveArray(newX,
-						int.class);
+				doclabels = test.labels[type];
+				for (int m = 0; m < doclabels.length; m++) {
+					List<Integer> doc = new ArrayList<Integer>();
+					for (int n = 0; n < doclabels[m].length; n++) {
+						// test index complement
+						int msplit = -corpus2splitDocIds[doclabels[m][n]] - 1;
+						// if in test corpus or no cut between train and test
+						if (msplit >= 0 || !cutRefsInSplit) {
+							doc.add(msplit);
+						}
+					}
+					doclabels[m] = (int[]) ArrayUtils.asPrimitiveArray(doc,
+							int.class);
+				}
 			}
 		}
 	}
@@ -862,11 +799,11 @@ public class LabelNumCorpus extends NumCorpus implements ILabelCorpus {
 		// corpus statistics
 		sb.append(super.toString());
 		sb.append(String
-				.format("labels (0 = not available, 1 = available, 2 = loaded):\n"));
+				.format("labels (0 = not available, 1 = available, 2 = loaded, -1 = no resolver):\n"));
 		for (int i = 0; i < LabelNumCorpus.labelExtensions.length; i++) {
 			sb.append(String.format(" %s = %d, .keys = %d\n",
 					LabelNumCorpus.labelExtensions[i], hasLabels(i),
-					resolver.hasLabelKeys(i + 2)));
+					(resolver != null) ? resolver.hasLabelKeys(i + 2) : -1));
 			if (hasLabels(i) >= 2) {
 				sb.append(String.format(
 						"    V = %d, W = %d, N[m] = [%d, %d]\n", getLabelsV(i),
@@ -925,17 +862,20 @@ public class LabelNumCorpus extends NumCorpus implements ILabelCorpus {
 							numDocsLblNull[type]++;
 							continue;
 						}
-						for (int n = 0; n < row.length; n++) {
-							if (row[n] < labelsV[type]) {
-								ll[row[n]]++;
-							} else {
-								if (verbose) {
-									sb.append(String
-											.format("label type %s [%d][%d]  %d > V = %d\n",
-													labelNames[type], m, n,
-													row[n], V));
+						// not for document ids as labels
+						if (Arrays.binarySearch(docIdLabels, type) < 0) {
+							for (int n = 0; n < row.length; n++) {
+								if (row[n] < labelsV[type]) {
+									ll[row[n]]++;
+								} else {
+									if (verbose) {
+										sb.append(String
+												.format("label type %s [%d][%d]  %d > V = %d\n",
+														labelNames[type], m, n,
+														row[n], V));
+									}
+									numIdsGeV[type]++;
 								}
-								numIdsGeV[type]++;
 							}
 						}
 						if (((exactlyOne || needOne) && labels[type][m].length == 0)
