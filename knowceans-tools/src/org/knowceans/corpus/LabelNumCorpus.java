@@ -58,13 +58,18 @@ public class LabelNumCorpus extends NumCorpus implements ILabelCorpus {
 		// LabelNumCorpus nc = new LabelNumCorpus("berry95/berry95");
 		LabelNumCorpus nc = new LabelNumCorpus("corpus-example/nips");
 		nc.getDocLabels(LAUTHORS);
+		nc.getResolver();
 		nc.split(10, 0, new Random());
+
+		CorpusResolver rr = nc.trainCorpus.resolver;
+		System.out.println(rr);
 
 		System.out.println(nc);
 
 		System.out.println("train");
 		LabelNumCorpus ncc = (LabelNumCorpus) nc.getTrainCorpus();
 		System.out.println(ncc);
+		System.out.println(ncc.getResolver().resolveDocRef(0));
 		int[][] x = ncc.getDocWords(new Random());
 		System.out.println(Vectors.print(x));
 		System.out.println("labels");
@@ -74,6 +79,7 @@ public class LabelNumCorpus extends NumCorpus implements ILabelCorpus {
 		System.out.println("test");
 		ncc = (LabelNumCorpus) nc.getTestCorpus();
 		System.out.println(ncc);
+		System.out.println(ncc.getResolver().resolveDocRef(0));
 		x = ncc.getDocWords(new Random());
 		System.out.println(Vectors.print(x));
 		System.out.println("labels");
@@ -193,7 +199,8 @@ public class LabelNumCorpus extends NumCorpus implements ILabelCorpus {
 	}
 
 	/**
-	 * create label corpus from standard one
+	 * create label corpus from standard one, using references to all fields of
+	 * the NumCorpus argument and initialising new label data
 	 * 
 	 * @param corp
 	 */
@@ -202,6 +209,18 @@ public class LabelNumCorpus extends NumCorpus implements ILabelCorpus {
 		this.numDocs = corp.numDocs;
 		this.numTerms = corp.numTerms;
 		this.numWords = corp.numWords;
+		this.resolver = corp.resolver;
+		this.dataFilebase = corp.dataFilebase;
+		this.parbounds = corp.parbounds;
+		this.debug = corp.debug;
+		this.split2corpusDocIds = corp.split2corpusDocIds;
+		this.corpus2splitDocIds = corp.corpus2splitDocIds;
+		this.readlimit = corp.readlimit;
+		this.splitperm = corp.splitperm;
+		this.splitstarts = corp.splitstarts;
+		this.testCorpus = corp.testCorpus;
+		this.trainCorpus = corp.trainCorpus;
+		this.wordparbounds = corp.wordparbounds;
 		init();
 	}
 
@@ -694,7 +713,6 @@ public class LabelNumCorpus extends NumCorpus implements ILabelCorpus {
 	// end document filtering
 
 	@Override
-	// FIXME: LabelNumCorpus with split. not working, labels are null.
 	public void split(int order, int split, Random rand) {
 
 		// get plain num corpora and split data

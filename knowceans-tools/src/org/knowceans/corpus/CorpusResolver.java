@@ -353,6 +353,13 @@ public class CorpusResolver implements ICorpusResolver {
 	}
 
 	/**
+	 * convenience method to resolve multiple labels
+	 */
+	public String[] resolveWords(int[] w) {
+		return resolveLabels(KTERMS, w);
+	}
+
+	/**
 	 * create a string representation of the term statistics of the term and
 	 * frequency vectors
 	 * 
@@ -540,6 +547,17 @@ public class CorpusResolver implements ICorpusResolver {
 			return resolveTermSource(id);
 		}
 		return null;
+	}
+
+	/**
+	 * convenience method to resolve multiple labels
+	 */
+	public String[] resolveLabels(int type, int[] id) {
+		String[] labels = new String[id.length];
+		for (int i = 0; i < id.length; i++) {
+			labels[i] = resolveLabel(type, id[i]);
+		}
+		return labels;
 	}
 
 	/**
