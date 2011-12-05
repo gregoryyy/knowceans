@@ -39,6 +39,7 @@ import java.util.Random;
 import java.util.Set;
 
 import org.knowceans.util.ArrayUtils;
+import org.knowceans.util.CokusRandom;
 import org.knowceans.util.Vectors;
 
 /**
@@ -55,36 +56,58 @@ public class LabelNumCorpus extends NumCorpus implements ILabelCorpus {
 	 * @param args
 	 */
 	public static void main(String[] args) {
-		// LabelNumCorpus nc = new LabelNumCorpus("berry95/berry95");
-		LabelNumCorpus nc = new LabelNumCorpus("corpus-example/nips");
-		nc.getDocLabels(LAUTHORS);
-		nc.getResolver();
-		nc.split(10, 0, new Random());
+		LabelNumCorpus nc = new LabelNumCorpus("corpus-example/berry95");
+		// LabelNumCorpus nc = new LabelNumCorpus("corpus-example/nips");
 
-		CorpusResolver rr = nc.trainCorpus.resolver;
-		System.out.println(rr);
+		boolean dofilter = true;
+		boolean doresolve = true;
+
+		// LabelNumCorpus nc = new LabelNumCorpus("corpus-example/nips");
+		nc.getDocLabels(LAUTHORS);
+		nc.getDocLabels(LREFERENCES);
+		nc.getResolver();
+		Random rand = new CokusRandom();
+		nc.split(2, 0, rand);
 
 		System.out.println(nc);
 
 		System.out.println("train");
 		LabelNumCorpus ncc = (LabelNumCorpus) nc.getTrainCorpus();
 		System.out.println(ncc);
-		System.out.println(ncc.getResolver().resolveDocRef(0));
-		int[][] x = ncc.getDocWords(new Random());
-		System.out.println(Vectors.print(x));
+		CorpusResolver ncr = ncc.getResolver();
+		int[][] x = ncc.getDocWords(rand);
+		for (int m = 0; m < x.length; m++) {
+			String ref = ncr.resolveDocRef(m);
+			System.out.println(String.format("%s: %s",
+					ref != null ? ref : ncr.resolveDocTitle(m),
+					Vectors.print(ncr.resolveWords(x[m]))));
+		}
+		// System.out.println(Vectors.print(x));
 		System.out.println("labels");
 		int[][] a = ncc.getDocLabels(LAUTHORS);
 		System.out.println(Vectors.print(a));
+		System.out.println("references");
+		int[][] c = ncc.getDocLabels(LREFERENCES);
+		System.out.println(Vectors.print(c));
 
 		System.out.println("test");
 		ncc = (LabelNumCorpus) nc.getTestCorpus();
 		System.out.println(ncc);
-		System.out.println(ncc.getResolver().resolveDocRef(0));
-		x = ncc.getDocWords(new Random());
-		System.out.println(Vectors.print(x));
+		ncr = ncc.getResolver();
+		x = ncc.getDocWords(rand);
+		for (int m = 0; m < x.length; m++) {
+			String ref = ncr.resolveDocRef(m);
+			System.out.println(String.format("%s: %s",
+					ref != null ? ref : ncr.resolveDocTitle(m),
+					Vectors.print(ncr.resolveWords(x[m]))));
+		}
+		// System.out.println(Vectors.print(x));
 		System.out.println("labels");
 		a = ncc.getDocLabels(LAUTHORS);
 		System.out.println(Vectors.print(a));
+		System.out.println("references");
+		c = ncc.getDocLabels(LREFERENCES);
+		System.out.println(Vectors.print(c));
 
 		System.out.println("document mapping");
 		System.out.println(Vectors.print(nc.getSplit2corpusDocIds()));
@@ -157,7 +180,7 @@ public class LabelNumCorpus extends NumCorpus implements ILabelCorpus {
 	 * training corpus, thus reducing both to independent corpora. If they are
 	 * not cut, the index is set -newIndexInDualCorpus - 1.
 	 */
-	public boolean cutRefsInSplit = true;
+	protected boolean cutRefsInSplit = false;
 
 	/**
      * 
@@ -712,6 +735,14 @@ public class LabelNumCorpus extends NumCorpus implements ILabelCorpus {
 
 	// end document filtering
 
+	/**
+	 * splits the corpus. See superclass method. Note that the references and
+	 * other labels with document ids are being rewritten in the label set. By
+	 * default, the references to the "dual" corpus, i.e., training for test and
+	 * vice versa, are written as -m-1, that is, checking for negative indices
+	 * will allow to identify links across corpus boundaries. If these links are
+	 * to be filtered, set the cutRefsInSplit property to true.
+	 */
 	@Override
 	public void split(int order, int split, Random rand) {
 
@@ -961,5 +992,13 @@ public class LabelNumCorpus extends NumCorpus implements ILabelCorpus {
 			}
 		}
 		return sb.toString();
+	}
+
+	public boolean isCutRefsInSplit() {
+		return cutRefsInSplit;
+	}
+
+	public void setCutRefsInSplit(boolean cutRefsInSplit) {
+		this.cutRefsInSplit = cutRefsInSplit;
 	}
 }

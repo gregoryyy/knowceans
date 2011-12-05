@@ -261,10 +261,12 @@ public class CorpusResolver implements ICorpusResolver {
 	 */
 	public void splitDocRelatedKeys(int[] new2old) {
 		for (int type : docRelatedKeys) {
-			String[] olddata = data[type];
-			data[type] = new String[new2old.length];
-			for (int m = 0; m < new2old.length; m++) {
-				data[type][m] = olddata[new2old[m]];
+			if (data[type] != null) {
+				String[] olddata = data[type];
+				data[type] = new String[new2old.length];
+				for (int m = 0; m < new2old.length; m++) {
+					data[type][m] = olddata[new2old[m]];
+				}
 			}
 		}
 	}

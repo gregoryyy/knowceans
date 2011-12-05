@@ -40,6 +40,7 @@ import java.util.Set;
 import java.util.TreeSet;
 
 import org.knowceans.util.ArrayUtils;
+import org.knowceans.util.CokusRandom;
 import org.knowceans.util.RandomSamplers;
 import org.knowceans.util.Vectors;
 
@@ -59,20 +60,57 @@ public class NumCorpus implements ICorpus, ITermCorpus, ISplitCorpus {
 	 */
 	public static void main(String[] args) {
 		NumCorpus nc = new NumCorpus("corpus-example/berry95");
-		nc.split(10, 0, new Random());
+		CokusRandom rand = new CokusRandom();
+
+		boolean dofilter = true;
+		boolean doresolve = false;
+
+		if (doresolve) {
+			nc.getResolver();
+		}
+
+		if (dofilter) {
+			// filterTest(nc, rand);
+		}
+
+		nc.split(10, 0, rand);
 		System.out.println("train");
-		ICorpus ncc = nc.getTrainCorpus();
+		NumCorpus ncc = (NumCorpus) nc.getTrainCorpus();
 		System.out.println(ncc);
-		int[][] x = ncc.getDocWords(new Random());
+		if (dofilter) {
+			filterTest(ncc, rand);
+		}
+		System.out.println(ncc);
+		int[][] x = ncc.getDocWords(rand);
 		System.out.println(Vectors.print(x));
 		System.out.println("test");
-		ncc = nc.getTestCorpus();
+		ncc = (NumCorpus) nc.getTestCorpus();
 		System.out.println(ncc);
-		x = ncc.getDocWords(new Random());
+		x = ncc.getDocWords(rand);
 		System.out.println(Vectors.print(x));
 		System.out.println("document mapping");
 		System.out.println(Vectors.print(nc.getSplit2corpusDocIds()));
 		System.out.println(Vectors.print(nc.getCorpus2splitDocIds()));
+	}
+
+	protected static void filterTest(NumCorpus corpus, CokusRandom rand) {
+		// filter all short documents
+		final int mint = corpus.getMinDocTerms();
+		System.out.println("orig numdocs = " + corpus.numDocs);
+		corpus.filterDocs(new DocPredicate() {
+			@Override
+			public boolean doesApply(NumCorpus self, int m) {
+				if (self.docs[m].numWords <= mint) {
+					return false;
+				}
+				return true;
+			}
+		}, rand);
+		System.out.println("new numdocs = " + corpus.numDocs);
+
+		System.out.println("orig numterms = " + corpus.numTerms);
+		corpus.filterTermsDf(3, 10);
+		System.out.println("new numterms = " + corpus.numTerms);
 	}
 
 	protected Document[] docs;
@@ -130,6 +168,12 @@ public class NumCorpus implements ICorpus, ITermCorpus, ISplitCorpus {
 	protected int readlimit = -1;
 
 	protected CorpusResolver resolver;
+
+	/**
+	 * is this corpus derived from another one, i.e., we should not save to the
+	 * original corpus
+	 */
+	protected boolean derived = false;
 
 	/**
 	 * @param dataFilebase (without .corpus)
@@ -617,6 +661,9 @@ public class NumCorpus implements ICorpus, ITermCorpus, ISplitCorpus {
 	/**
 	 * filter terms by frequency. TODO: paragraph support. The corpus resolver
 	 * obtained by getResolver() is updated to the new term mapping.
+	 * <p>
+	 * If resolver is to be updated, it needs to be loaded prior to calling
+	 * filterDocs();
 	 * 
 	 * @param minDf all more scarce terms are excluded
 	 * @param maxDf all more frequent terms are excluded
@@ -655,7 +702,9 @@ public class NumCorpus implements ICorpus, ITermCorpus, ISplitCorpus {
 		numTerms = newIndex;
 		numWords = W;
 		// map to novel term indices
-		getResolver().filterTerms(indices);
+		if (resolver != null) {
+			resolver.filterTerms(indices);
+		}
 		return indices;
 	}
 
@@ -745,6 +794,9 @@ public class NumCorpus implements ICorpus, ITermCorpus, ISplitCorpus {
 	/**
 	 * filter documents. Also updates the resolver. Vocabulary must be rebuilt
 	 * separately because frequencies change: use filterTermsDf().
+	 * <p>
+	 * If resolver is to be updated, it needs to be loaded prior to calling
+	 * filterDocs();
 	 * 
 	 * @param filter predicate to keep documents in list
 	 * @param rand random number generator to be used generate a random
@@ -782,8 +834,9 @@ public class NumCorpus implements ICorpus, ITermCorpus, ISplitCorpus {
 		numDocs = newDocs.length;
 		numWords = newW;
 
-		CorpusResolver cr = getResolver();
-		cr.filterDocs(old2new);
+		if (resolver != null) {
+			resolver.filterDocs(old2new);
+		}
 
 		return old2new;
 	}
