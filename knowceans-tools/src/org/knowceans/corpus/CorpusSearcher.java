@@ -50,12 +50,6 @@ public class CorpusSearcher {
 		LabelNumCorpus corpus = new LabelNumCorpus(filebase);
 		corpus.loadAllLabels();
 
-		// FIXME: LabelNumCorpus with split. not working, labels are null.
-		// test splitting
-		((LabelNumCorpus) corpus).cutRefsInSplit = false;
-		corpus.split(10, 9, new Random());
-		corpus = (LabelNumCorpus) corpus.getTrainCorpus();
-
 		// ////// start preparing corpus ////////
 
 		// stemming of vocabulary

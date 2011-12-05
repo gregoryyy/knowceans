@@ -625,6 +625,8 @@ public class LabelNumCorpus extends NumCorpus implements ILabelCorpus {
 	 * transpose creates a set of inlinks from outlinks and vice versa. TODO:
 	 * this now assumes a quadratic matrix --> may use for non-quadratic such as
 	 * term-document matrices
+	 * <p>
+	 * this method ignores any negative matrix entries
 	 * 
 	 * @param x
 	 * @return
@@ -638,7 +640,10 @@ public class LabelNumCorpus extends NumCorpus implements ILabelCorpus {
 		}
 		for (int m = 0; m < x.length; m++) {
 			for (int i = 0; i < x[m].length; i++) {
-				inrefs[x[m][i]].add(m);
+				// no links in dual corpus
+				if (x[m][i] >= 0) {
+					inrefs[x[m][i]].add(m);
+				}
 			}
 		}
 		int[][] xtransp = new int[x.length][];
@@ -735,7 +740,11 @@ public class LabelNumCorpus extends NumCorpus implements ILabelCorpus {
 
 	/**
 	 * rewrite the labels of given type throughout the corpus, using mapping
-	 * old2new
+	 * old2new. If labels are negative, they are simply copied (because negative
+	 * labels are reserved to represent document ids in the dual corpus, which
+	 * are not filtered at this point.There is currently no method to filter
+	 * these labels in the dual corpus, so filtering should be done before
+	 * splitting.)
 	 * 
 	 * @param type
 	 * @param old2new
@@ -749,14 +758,20 @@ public class LabelNumCorpus extends NumCorpus implements ILabelCorpus {
 			// System.out.println("*** doc " + m);
 			for (int i = 0; i < ll.length; i++) {
 				int label = ll[i];
-				if (old2new[label] >= 0) {
-					tt.add(old2new[label]);
-					W++;
-					// System.out.println("add " + label + "->" +
-					// old2new[label]);
+				if (label > 0) {
+					if (old2new[label] >= 0) {
+						tt.add(old2new[label]);
+						W++;
+						// System.out.println("add " + label + "->" +
+						// old2new[label]);
+					} else {
+						// System.out.println("dump " + label + "->" +
+						// old2new[label]);
+					}
 				} else {
-					// System.out.println("dump " + label + "->" +
-					// old2new[label]);
+					// doc id in dual corpus --> keep original (negative id)
+					tt.add(label);
+					W++;
 				}
 			}
 			labels[type][m] = (int[]) ArrayUtils
