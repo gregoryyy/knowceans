@@ -35,6 +35,8 @@ This package provides a couple of helper classes for diverse programming problem
      elements.
      
    o StopWatch, Which : runtime introspection for memory, running time and stack traces.
+   
+   o 
      
    o ...
    
@@ -88,6 +90,8 @@ This package provides a couple of helper classes for diverse programming problem
      for labels, cross-validation, term lookup with the CorpusResolver.
      
    o CorpusResolver: class used to actually resolve indices of items into names.
+   
+   o CorpusSearcher: interactive full-text search engine
    
  - org.knowceans.sandbox.* 
    some classes for quick playing around

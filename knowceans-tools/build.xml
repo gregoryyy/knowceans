@@ -35,17 +35,25 @@
 			<fileset dir=".">
 				<include name="src/org/knowceans/map/*.java" />
 				<include name="src/org/knowceans/util/*.java" />
-  				<include name="src/org/knowceans/sandbox/*.java" />
+				<include name="src/org/knowceans/corpus/*.java" />
+				<include name="src/org/knowceans/data/*.java" />
+				<include name="src/org/tartarus/snowball/*.java" />
 				<include name=".classpath" />
 				<include name=".project" />
 				<include name="license.txt" />
-				<include name="corpus-example/*" />
 				<include name="build.xml" />
 				<include name="readme.txt" />
 			</fileset>
 		</zip>
 	</target>
 
+	<target name="corpus-distribution" depends="init">
+		<zip destfile="nips-corpus-${DSTAMP}.zip">
+			<fileset dir=".">
+				<include name="corpus-example/*" />
+			</fileset>
+		</zip>
+	</target>
 
 	<target name="clean">
 		<delete file="knowceans-tools.jar">
