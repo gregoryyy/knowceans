@@ -56,10 +56,10 @@ public class LabelNumCorpus extends NumCorpus implements ILabelCorpus {
 	 * @param args
 	 */
 	public static void main(String[] args) {
-		// LabelNumCorpus nc = new LabelNumCorpus("corpus-example/berry95");
-		LabelNumCorpus nc = new LabelNumCorpus("corpus-example/nips");
+		LabelNumCorpus nc = new LabelNumCorpus("corpus-example/berry95");
+		// LabelNumCorpus nc = new LabelNumCorpus("corpus-example/nips");
 
-		boolean dofilter = true;
+		boolean dofilter = false;
 		boolean doresolve = true;
 
 		nc.getDocLabels(LAUTHORS);
@@ -115,8 +115,14 @@ public class LabelNumCorpus extends NumCorpus implements ILabelCorpus {
 		a = ncc.getDocLabels(LAUTHORS);
 		System.out.println(Vectors.print(a));
 		System.out.println("references");
-		c = ncc.getDocLabels(LREFERENCES);
+		int[][] cq = ncc.getDocLabels(LREFERENCES);
 		System.out.println(Vectors.print(c));
+
+		int[][][] cc = LabelNumCorpus.getSparseTransposeDual(c, cq);
+		System.out.println("citations train");
+		System.out.println(Vectors.print(cc[0]));
+		System.out.println("citations test");
+		System.out.println(Vectors.print(cc[1]));
 
 		System.out.println("document mapping");
 		System.out.println(Vectors.print(nc.getSplit2corpusDocIds()));
@@ -365,8 +371,11 @@ public class LabelNumCorpus extends NumCorpus implements ILabelCorpus {
 		if (labels[kind] == null) {
 			return -1;
 		}
-		int min = Integer.MAX_VALUE;
-		for (int m = 0; m < numDocs; m++) {
+		int min = 0;
+		if (labels[kind].length > 0) {
+			min = labels[kind][0].length;
+		}
+		for (int m = 1; m < numDocs; m++) {
 			min = min < labels[kind][m].length ? min : labels[kind][m].length;
 		}
 		return min;
@@ -640,15 +649,65 @@ public class LabelNumCorpus extends NumCorpus implements ILabelCorpus {
 		}
 		for (int m = 0; m < x.length; m++) {
 			for (int i = 0; i < x[m].length; i++) {
-				// no links in dual corpus
-				if (x[m][i] >= 0) {
-					inrefs[x[m][i]].add(m);
-				}
+				inrefs[x[m][i]].add(m);
 			}
 		}
 		int[][] xtransp = new int[x.length][];
 		for (int m = 0; m < x.length; m++) {
 			xtransp[m] = (int[]) ArrayUtils.asPrimitiveArray(inrefs[m],
+					int.class);
+		}
+		return xtransp;
+	}
+
+	/**
+	 * transpose the reference labels to citations, optionally using the dual
+	 * corpus to transpose negative labels (references in dual split corpora)
+	 * 
+	 * @param x with negative references into dual y
+	 * @param y with negative references into dual x
+	 * @return {transpose of x with added values from y, transpose of y
+	 *         analogous}
+	 */
+	public static int[][][] getSparseTransposeDual(int[][] x, int[][] y) {
+
+		@SuppressWarnings("unchecked")
+		List<Integer>[][] inrefs = new List[][] { new List[x.length],
+				new List[y.length] };
+		for (int m = 0; m < x.length; m++) {
+			inrefs[0][m] = new ArrayList<Integer>();
+		}
+		for (int m = 0; m < y.length; m++) {
+			inrefs[1][m] = new ArrayList<Integer>();
+		}
+		for (int m = 0; m < x.length; m++) {
+			for (int i = 0; i < x[m].length; i++) {
+				if (x[m][i] >= 0) {
+					inrefs[0][x[m][i]].add(m);
+				} else {
+					// index in dual array
+					inrefs[1][-x[m][i] - 1].add(-m - 1);
+				}
+			}
+		}
+		for (int m = 0; m < y.length; m++) {
+			for (int i = 0; i < y[m].length; i++) {
+				if (y[m][i] >= 0) {
+					inrefs[1][y[m][i]].add(m);
+				} else {
+					// index in main array (which again is dual to the dual)
+					inrefs[0][-y[m][i] - 1].add(-m - 1);
+				}
+			}
+		}
+		int[][][] xtransp = new int[][][] { new int[x.length][],
+				new int[y.length][] };
+		for (int m = 0; m < x.length; m++) {
+			xtransp[0][m] = (int[]) ArrayUtils.asPrimitiveArray(inrefs[0][m],
+					int.class);
+		}
+		for (int m = 0; m < y.length; m++) {
+			xtransp[1][m] = (int[]) ArrayUtils.asPrimitiveArray(inrefs[1][m],
 					int.class);
 		}
 		return xtransp;

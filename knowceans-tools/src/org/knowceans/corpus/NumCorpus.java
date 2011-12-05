@@ -568,8 +568,11 @@ public class NumCorpus implements ICorpus, ITermCorpus, ISplitCorpus {
 	 * @return
 	 */
 	public int getMinDocWords() {
-		int min = Integer.MAX_VALUE;
-		for (int m = 0; m < numDocs; m++) {
+		int min = 0;
+		if (docs.length > 0) {
+			min = docs[0].numWords;
+		}
+		for (int m = 1; m < numDocs; m++) {
 			min = min < docs[m].numWords ? min : docs[m].numWords;
 		}
 		return min;
@@ -594,8 +597,11 @@ public class NumCorpus implements ICorpus, ITermCorpus, ISplitCorpus {
 	 * @return
 	 */
 	public int getMinDocTerms() {
-		int min = Integer.MAX_VALUE;
-		for (int m = 0; m < numDocs; m++) {
+		int min = 0;
+		if (docs.length > 0) {
+			min = docs[0].numTerms;
+		}
+		for (int m = 1; m < numDocs; m++) {
 			min = min < docs[m].numTerms ? min : docs[m].numTerms;
 		}
 		return min;
