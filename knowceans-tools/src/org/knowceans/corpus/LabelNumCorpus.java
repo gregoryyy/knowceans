@@ -56,8 +56,8 @@ public class LabelNumCorpus extends NumCorpus implements ILabelCorpus {
 	 * @param args
 	 */
 	public static void main(String[] args) {
-		LabelNumCorpus nc = new LabelNumCorpus("corpus-example/berry95");
-		// LabelNumCorpus nc = new LabelNumCorpus("corpus-example/nips");
+		// LabelNumCorpus nc = new LabelNumCorpus("corpus-example/berry95");
+		LabelNumCorpus nc = new LabelNumCorpus("corpus-example/nips");
 
 		boolean dofilter = true;
 		boolean doresolve = true;
@@ -73,6 +73,7 @@ public class LabelNumCorpus extends NumCorpus implements ILabelCorpus {
 
 		if (dofilter) {
 			filterTest(nc, rand);
+			nc.reduceUnlinkedDocs();
 		}
 
 		System.out.println(nc);
@@ -119,6 +120,7 @@ public class LabelNumCorpus extends NumCorpus implements ILabelCorpus {
 
 		System.out.println("document mapping");
 		System.out.println(Vectors.print(nc.getSplit2corpusDocIds()));
+		System.out.println(Vectors.print(nc.getCorpus2splitDocIds()));
 	}
 
 	protected static void filterTest(NumCorpus corpus, Random rand) {
@@ -128,8 +130,8 @@ public class LabelNumCorpus extends NumCorpus implements ILabelCorpus {
 		corpus.filterDocs(new DocPredicate() {
 			@Override
 			public boolean doesApply(NumCorpus self, int m) {
-				// if (self.docs[m].numWords <= mint + 100) {
-				if (self.docs[m].numWords <= mint + 1) {
+				if (self.docs[m].numWords <= mint + 100) {
+					// if (self.docs[m].numWords <= mint + 1) {
 					return false;
 				}
 				return true;
@@ -138,8 +140,8 @@ public class LabelNumCorpus extends NumCorpus implements ILabelCorpus {
 		System.out.println("new numdocs = " + corpus.numDocs);
 
 		System.out.println("orig numterms = " + corpus.numTerms);
-		// corpus.filterTermsDf(20, 100);
-		corpus.filterTermsDf(4, 10);
+		corpus.filterTermsDf(20, 100);
+		// corpus.filterTermsDf(4, 10);
 		System.out.println("new numterms = " + corpus.numTerms);
 	}
 

@@ -59,7 +59,8 @@ public class NumCorpus implements ICorpus, ITermCorpus, ISplitCorpus {
 	 * @param args
 	 */
 	public static void main(String[] args) {
-		NumCorpus nc = new NumCorpus("corpus-example/berry95");
+		// NumCorpus nc = new NumCorpus("corpus-example/berry95");
+		NumCorpus nc = new NumCorpus("corpus-example/nips");
 		CokusRandom rand = new CokusRandom();
 
 		boolean dofilter = true;
@@ -93,7 +94,7 @@ public class NumCorpus implements ICorpus, ITermCorpus, ISplitCorpus {
 		System.out.println(Vectors.print(nc.getCorpus2splitDocIds()));
 	}
 
-	protected static void filterTest(NumCorpus corpus, CokusRandom rand) {
+	protected static void filterTest(NumCorpus corpus, Random rand) {
 		// filter all short documents
 		final int mint = corpus.getMinDocTerms();
 		System.out.println("orig numdocs = " + corpus.numDocs);
