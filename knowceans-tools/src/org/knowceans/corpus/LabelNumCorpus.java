@@ -707,13 +707,13 @@ public class LabelNumCorpus extends NumCorpus implements ILabelCorpus {
 		LabelNumCorpus test = (LabelNumCorpus) testCorpus;
 
 		int Mtest = splitstarts[split + 1] - splitstarts[split];
-		train.labels = new int[labelExtensions.length][numDocs - Mtest][];
+		train.labels = new int[labelExtensions.length][][];
 		train.labelsW = new int[labelExtensions.length];
 		train.labelsV = labelsV;
 		train.pureRelational = false;
 		train.numDocsDual = testCorpus.numDocs;
 		train.dataFilebase = dataFilebase;
-		test.labels = new int[labelExtensions.length][Mtest][];
+		test.labels = new int[labelExtensions.length][][];
 		test.labelsW = new int[labelExtensions.length];
 		test.labelsV = labelsV;
 		test.pureRelational = false;
@@ -724,6 +724,8 @@ public class LabelNumCorpus extends NumCorpus implements ILabelCorpus {
 			if (labels[type] == null) {
 				continue;
 			}
+			train.labels[type] = new int[numDocs - Mtest][];
+			test.labels[type] = new int[Mtest][];
 			for (int m = 0; m < numDocs; m++) {
 				int msplit = corpus2splitDocIds[m];
 				if (msplit >= 0) {
