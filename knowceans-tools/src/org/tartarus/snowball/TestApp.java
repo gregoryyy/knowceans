@@ -1,15 +1,14 @@
 package org.tartarus.snowball;
 
-import java.lang.reflect.Method;
-import java.io.Reader;
-import java.io.Writer;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.FileInputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
-import java.io.OutputStream;
 import java.io.FileOutputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.io.Reader;
+import java.io.Writer;
 
 /**
  * Used under BSD-license [1] from Snowball package [2]. Copyright (c) 2001, Dr

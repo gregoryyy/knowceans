@@ -20,7 +20,6 @@
 package org.knowceans.util;
 
 import java.lang.reflect.Array;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -216,6 +215,7 @@ public class ArrayUtils {
 	 * 
 	 * @param objects
 	 * @param sample object (instantiate primitive array[0] if objects.size = 0)
+	 * @param type element type
 	 * @return array of primitive types or null if invalid.
 	 */
 	public static Object asPrimitiveArray(List<? extends Object> objects,

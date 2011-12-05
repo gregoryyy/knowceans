@@ -48,7 +48,7 @@ public class Print {
 	public static void setToStderr() {
 		sout = System.err;
 	}
-	
+
 	/**
 	 * setup the Print object for a new string output
 	 */
@@ -119,18 +119,34 @@ public class Print {
 	}
 
 	/**
-	 * checks whether there are arrays in the objects
+	 * checks whether there are arrays in the objects. Adds the separator to
+	 * each of the
+	 * 
+	 * @param
+	 * @param b
+	 */
+	public static void arraysRowSep(String rowSep, Object... b) {
+		// FIXME: rowsep and colsep must be handled differently
+		arraysRowColSep(rowSep, "\n", b);
+	}
+
+	/**
+	 * checks whether there are arrays in the objects. Adds the separator to
+	 * each of the
 	 * 
 	 * @param a
 	 * @param b
 	 */
-	public static void arraysSep(String sep, Object... b) {
+	public static void arraysRowColSep(String rowSep, String colSep,
+			Object... b) {
 		if (sout == null)
 			return;
 		StringBuffer sb = new StringBuffer();
 		for (Object s : b) {
-			sb.append(sep);
-			printarray(sb, s);
+			// FIXME: rowsep and colsep must be handled differently
+			// for array elements that are themselves arrays
+			printarrayRowColSep(sb, colSep, colSep, s);
+			sb.append(rowSep);
 		}
 		sout.println(sb);
 	}
@@ -200,6 +216,11 @@ public class Print {
 	}
 
 	private static void printarray(StringBuffer sb, Object s) {
+		printarrayRowColSep(sb, " ", ";\n ", s);
+	}
+
+	private static void printarrayRowColSep(StringBuffer sb, String rowSep,
+			String colSep, Object s) {
 		if (ArrayUtils.isArray(s)) {
 			// nested arrays?
 			Object z = getElement0(s);
@@ -209,10 +230,19 @@ public class Print {
 				for (int i = 0; i < Array.getLength(s); i++) {
 					printarray(sb, Array.get(s, i));
 					// sb.append("; ");
-					sb.append(";\n ");
+					sb.append(colSep);
 				}
 			} else {
-				sb.append(Vectors.print(s));
+				// not using Vectors.print as we control the separator
+				// sb.append(Vectors.print(s));
+				// onedimensional array
+				Object[] ss = ArrayUtils.convert(s);
+				for (int i = 0; i < ss.length; i++) {
+					if (i > 0) {
+						sb.append(rowSep);
+					}
+					sb.append(ss[i]);
+				}
 			}
 		} else {
 			sb.append(s);
@@ -292,6 +322,5 @@ public class Print {
 		Print.string();
 		Print.newString();
 	}
-
 
 }
