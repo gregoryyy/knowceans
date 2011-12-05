@@ -62,14 +62,22 @@ public class LabelNumCorpus extends NumCorpus implements ILabelCorpus {
 		boolean dofilter = true;
 		boolean doresolve = true;
 
-		// LabelNumCorpus nc = new LabelNumCorpus("corpus-example/nips");
 		nc.getDocLabels(LAUTHORS);
 		nc.getDocLabels(LREFERENCES);
 		nc.getResolver();
 		Random rand = new CokusRandom();
-		nc.split(2, 0, rand);
+
+		if (doresolve) {
+			nc.getResolver();
+		}
+
+		if (dofilter) {
+			filterTest(nc, rand);
+		}
 
 		System.out.println(nc);
+
+		nc.split(2, 0, rand);
 
 		System.out.println("train");
 		LabelNumCorpus ncc = (LabelNumCorpus) nc.getTrainCorpus();
@@ -111,6 +119,28 @@ public class LabelNumCorpus extends NumCorpus implements ILabelCorpus {
 
 		System.out.println("document mapping");
 		System.out.println(Vectors.print(nc.getSplit2corpusDocIds()));
+	}
+
+	protected static void filterTest(NumCorpus corpus, Random rand) {
+		// filter all short documents
+		final int mint = corpus.getMinDocTerms();
+		System.out.println("orig numdocs = " + corpus.numDocs);
+		corpus.filterDocs(new DocPredicate() {
+			@Override
+			public boolean doesApply(NumCorpus self, int m) {
+				// if (self.docs[m].numWords <= mint + 100) {
+				if (self.docs[m].numWords <= mint + 1) {
+					return false;
+				}
+				return true;
+			}
+		}, rand);
+		System.out.println("new numdocs = " + corpus.numDocs);
+
+		System.out.println("orig numterms = " + corpus.numTerms);
+		// corpus.filterTermsDf(20, 100);
+		corpus.filterTermsDf(4, 10);
+		System.out.println("new numterms = " + corpus.numTerms);
 	}
 
 	/**
@@ -742,6 +772,11 @@ public class LabelNumCorpus extends NumCorpus implements ILabelCorpus {
 	 * vice versa, are written as -m-1, that is, checking for negative indices
 	 * will allow to identify links across corpus boundaries. If these links are
 	 * to be filtered, set the cutRefsInSplit property to true.
+	 * <p>
+	 * IMPORTANT: Use split cautiously, as references to child corpora are
+	 * shared. Filtering may produce inpredictable results if the label and word
+	 * data are not actually copied, which must be done explicitly. The typical
+	 * use case is, however, to filter subcorpora before splitting the corpus.
 	 */
 	@Override
 	public void split(int order, int split, Random rand) {
