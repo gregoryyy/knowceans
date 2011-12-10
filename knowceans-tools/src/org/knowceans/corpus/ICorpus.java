@@ -7,14 +7,14 @@ import java.util.Random;
 
 public interface ICorpus {
 
-    int getNumTerms();
-    
-    int getNumDocs();
-    
-    int getNumWords();
+	int getNumTerms();
 
-    int[][] getDocWords(Random rand);
-    
-    int[] getDocWords(int i, Random rand);
+	int getNumDocs();
+
+	int getNumWords();
+
+	int[][] getDocWords(Random rand);
+
+	int[] getDocWords(int i, Random rand);
 
 }

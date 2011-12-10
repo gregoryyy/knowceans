@@ -56,10 +56,10 @@ public class LabelNumCorpus extends NumCorpus implements ILabelCorpus {
 	 * @param args
 	 */
 	public static void main(String[] args) {
-		LabelNumCorpus nc = new LabelNumCorpus("corpus-example/berry95");
-		// LabelNumCorpus nc = new LabelNumCorpus("corpus-example/nips");
+		// LabelNumCorpus nc = new LabelNumCorpus("corpus-example/berry95");
+		LabelNumCorpus nc = new LabelNumCorpus("corpus-example/nips");
 
-		boolean dofilter = false;
+		boolean dofilter = true;
 		boolean doresolve = true;
 
 		nc.getDocLabels(LAUTHORS);
@@ -118,6 +118,7 @@ public class LabelNumCorpus extends NumCorpus implements ILabelCorpus {
 		int[][] cq = ncc.getDocLabels(LREFERENCES);
 		System.out.println(Vectors.print(c));
 
+		// create citations for both corpora jointly
 		int[][][] cc = LabelNumCorpus.getSparseTransposeDual(c, cq);
 		System.out.println("citations train");
 		System.out.println(Vectors.print(cc[0]));
@@ -518,6 +519,8 @@ public class LabelNumCorpus extends NumCorpus implements ILabelCorpus {
 	 * elements numDoc ... numDoc + dualCorpus.numDoc - 1 the incoming links of
 	 * the dual corpus (test for train and vice versa). This is the main
 	 * difference to using getSparseTransform().
+	 * <p>
+	 * TODO: difference with getSparseTranspose/getSparseTransposeDual
 	 * 
 	 * @param references
 	 * @return
@@ -629,11 +632,26 @@ public class LabelNumCorpus extends NumCorpus implements ILabelCorpus {
 	}
 
 	/**
+	 * "semantic overload" of getSparseTranspose: References are given as they
+	 * are output from the labels[LREFERENCES] of train and test corpora before
+	 * a split, or after a split with negative indices ignored, i.e., breaking
+	 * references between dual corpora. To preserve dual references, use
+	 * getCitesFromRefsDual().
+	 * 
+	 * @param refs from labels[LREFERENCES]
+	 * @return citations
+	 */
+	public static int[][] getCitesFromRefs(int[][] refs) {
+		return getSparseTranspose(refs);
+	}
+
+	/**
 	 * transpose the sparse matrix with unit elements at positions (m, x[m][n]),
 	 * as used to represent an adjacency matrix. Correspondingly the sparse
-	 * transpose creates a set of inlinks from outlinks and vice versa. TODO:
-	 * this now assumes a quadratic matrix --> may use for non-quadratic such as
-	 * term-document matrices
+	 * transpose creates a set of inlinks from outlinks and vice versa.
+	 * <p>
+	 * TODO: this now assumes a quadratic matrix --> may use for non-quadratic
+	 * such as term-document matrices
 	 * <p>
 	 * this method ignores any negative matrix entries
 	 * 
@@ -658,6 +676,21 @@ public class LabelNumCorpus extends NumCorpus implements ILabelCorpus {
 					int.class);
 		}
 		return xtransp;
+	}
+
+	/**
+	 * "semantic overload" of getSparseTransposeDual: The training references
+	 * and test references are given as arguments as they are output from the
+	 * labels[LREFERENCES] of train and test corpora after a split with negative
+	 * indices indicating references into other corpus.
+	 * 
+	 * @param trainRefs from trainCorpus.labels[LREFERENCES]
+	 * @param testRefs from testCorpus.labels[LREFERENCES]
+	 * @return {citations in trainCorpus, citations in testCorpus}
+	 */
+	public static int[][][] getCitesFromRefsTrainTest(int[][] trainRefs,
+			int[][] testRefs) {
+		return getSparseTransposeDual(trainRefs, testRefs);
 	}
 
 	/**

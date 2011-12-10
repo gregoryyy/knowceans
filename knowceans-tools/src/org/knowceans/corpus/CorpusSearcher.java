@@ -16,7 +16,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Random;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.zip.GZIPInputStream;
@@ -501,7 +500,7 @@ public class CorpusSearcher {
 		int[][] allrefs = corpus.getDocLabels(LabelNumCorpus.LREFERENCES);
 		if (allrefs != null) {
 			if (citations == null) {
-				citations = LabelNumCorpus.getSparseTranspose(allrefs);
+				citations = LabelNumCorpus.getCitesFromRefs(allrefs);
 			}
 			if (citations[id].length > 0) {
 				System.out.println("Citations:");
