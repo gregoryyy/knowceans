@@ -1,6 +1,7 @@
 /*
- * (C) Copyright 2005, Gregor Heinrich (gregor :: arbylon : net) (This file is
- * part of the lda-j (org.knowceans.lda.*) experimental software package.)
+ * (C) Copyright 2004-2009, Gregor Heinrich (gregor :: arbylon : net) 
+ * (This file is part of the lda-j (org.knowceans.ldaj.*) experimental software 
+ * package, a port of lda-c Copyright David Blei.)
  */
 /*
  * lda-j is free software; you can redistribute it and/or modify it under the
@@ -45,6 +46,8 @@ public class Corpus {
 
     private int numDocs;
 
+    private int maxCorpusLength = 0;
+
     public Corpus(String dataFilename) {
         read(dataFilename);
     }
@@ -57,13 +60,14 @@ public class Corpus {
      * 
      * @param dataFilename
      */
+    // 2009: corpus* read_data(char* data_filename)
     public void read(String dataFilename) {
         int length, count, word, n, nd, nw;
 
         System.out.println("reading data from " + dataFilename);
 
         try {
-            Vector cdocs = new Vector<Document>();
+            Vector<Document> cdocs = new Vector<Document>();
             BufferedReader br = new BufferedReader(new FileReader(dataFilename));
             nd = 0;
             nw = 0;
@@ -95,12 +99,16 @@ public class Corpus {
                         nw = word + 1;
                     }
                 }
+                // 2009: int max_corpus_length(corpus* c)
+                if (d.getLength() > maxCorpusLength) {
+                    maxCorpusLength = d.getLength();
+                }
 
                 nd++;
             }
             numDocs = nd;
             numTerms = nw;
-            docs = (Document[]) cdocs.toArray(new Document[] {});
+            docs = cdocs.toArray(new Document[] {});
             System.out.println("number of docs    : " + nd);
             System.out.println("number of terms   : " + nw);
         } catch (NumberFormatException e) {
@@ -175,12 +183,21 @@ public class Corpus {
 
     /*
      * (non-Javadoc)
-     * 
      * @see java.lang.Object#toString()
      */
     public String toString() {
         StringBuffer b = new StringBuffer();
         b.append("Corpus {numDocs=" + numDocs + " numTerms=" + numTerms + "}");
         return b.toString();
+    }
+
+    /**
+     * get maximum length of a document
+     * 
+     * @return
+     */
+    // 2009: int max_corpus_length(corpus* c)
+    public int getMaxCorpusLength() {
+        return maxCorpusLength;
     }
 }

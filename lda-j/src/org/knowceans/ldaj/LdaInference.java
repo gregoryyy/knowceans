@@ -1,6 +1,7 @@
 /*
- * (C) Copyright 2005, Gregor Heinrich (gregor :: arbylon : net) (This file is
- * part of the lda-j (org.knowceans.lda.*) experimental software package.)
+ * (C) Copyright 2004-2009, Gregor Heinrich (gregor :: arbylon : net) 
+ * (This file is part of the lda-j (org.knowceans.ldaj.*) experimental software 
+ * package, a port of lda-c Copyright David Blei.)
  */
 /*
  * lda-j is free software; you can redistribute it and/or modify it under the
@@ -22,11 +23,15 @@
 /*
  * Created on Jan 4, 2005
  */
-package org.knowceans.lda;
+package org.knowceans.ldaj;
 
-import static org.knowceans.lda.Utils.*;
-import static java.lang.Math.*;
-import static java.lang.Double.*;
+import static java.lang.Math.exp;
+import static java.lang.Math.log;
+import static org.knowceans.lda.Utils.digamma;
+import static org.knowceans.lda.Utils.lgamma;
+import static org.knowceans.lda.Utils.logSum;
+
+import org.knowceans.lda.Document;
 
 /**
  * lda inference functions
@@ -44,36 +49,37 @@ public class LdaInference {
     /*
      * variational inference
      */
+    // 2009: double lda_inference(document* doc, lda_model* model, double* var_gamma, double** phi)
     public static double ldaInference(Document doc, LdaModel model,
         double[] varGamma, double[][] phi) {
         double converged = 1;
-        double phisum = 0, likelihood = 0, likelihoodOld = Double.NEGATIVE_INFINITY;
+        double phisum = 0, likelihood = 0, likelihoodOld = 0;
         double[] oldphi = new double[model.getNumTopics()];
         int k, n, varIter;
+        double[] digammaGam = new double[model.getNumTopics()];
 
-        assert model.getNumTopics() > 0;
+        // compute posterior dirichlet
         for (k = 0; k < model.getNumTopics(); k++) {
             varGamma[k] = model.getAlpha() + doc.getTotal()
                 / (double) model.getNumTopics();
+            digammaGam[k] = digamma(varGamma[k]);
             for (n = 0; n < doc.getLength(); n++)
                 phi[n][k] = 1.0 / model.getNumTopics();
         }
         varIter = 0;
-        while ((converged > VAR_CONVERGED) && (varIter < VAR_MAX_ITER)) {
+
+        while ((converged > VAR_CONVERGED) && (varIter < VAR_MAX_ITER)
+            || (VAR_MAX_ITER == -1)) {
             varIter++;
             for (n = 0; n < doc.getLength(); n++) {
                 phisum = 0;
                 for (k = 0; k < model.getNumTopics(); k++) {
                     oldphi[k] = phi[n][k];
+
                     assert varGamma[k] != 0;
-                    if (model.getClassWord(k, doc.getWord(n)) > 0) {
-                        assert model.getClassTotal(k) != 0;
-                        phi[n][k] = digamma(varGamma[k])
-                            + log(model.getClassWord(k, doc.getWord(n)))
-                            - log(model.getClassTotal(k));
-                    } else {
-                        phi[n][k] = digamma(varGamma[k]) - 100;
-                    }
+                    phi[n][k] = digammaGam[k]
+                        + model.logProbW[k][doc.getWord(n)];
+
                     if (k > 0) {
                         phisum = logSum(phisum, phi[n][k]);
                     } else {
@@ -87,7 +93,7 @@ public class LdaInference {
                 }
             }
             likelihood = computeLikelihood(doc, model, phi, varGamma);
-            assert likelihoodOld != 0;
+            assert !Double.isNaN(likelihood);
             converged = (likelihoodOld - likelihood) / likelihoodOld;
             likelihoodOld = likelihood;
         }
@@ -108,46 +114,22 @@ public class LdaInference {
             varGammaSum += varGamma[k];
         }
         digsum = digamma(varGammaSum);
+
         likelihood = lgamma(model.getAlpha() * model.getNumTopics())
             - model.getNumTopics() * lgamma(model.getAlpha())
             - (lgamma(varGammaSum));
+
         assert likelihood != Double.NaN;
-        if ((isNaN(likelihood)) && (message == 0)) {
-            // printf("(1) : %5.5f %5.5f\n", var_gamma_sum, likelihood);
-            System.out.println("(1) : " + varGammaSum + " " + likelihood);
-            message = 1;
-        }
         for (k = 0; k < model.getNumTopics(); k++) {
             likelihood += (model.getAlpha() - 1) * (dig[k] - digsum)
                 + lgamma(varGamma[k]) - (varGamma[k] - 1) * (dig[k] - digsum);
-            assert likelihood != Double.NaN;
-            if ((isNaN(likelihood)) && (message == 0)) {
-                // printf("(2 %d) : %5.5f\n", k, likelihood);
-                System.out.println("(2 " + k + ") : " + likelihood);
-                message = 1;
-            }
+
             for (n = 0; n < doc.getLength(); n++) {
-                if (model.getClassWord(k, doc.getWord(n)) > 0) {
-                    if (phi[n][k] > 0) {
-                        // likelihood += doc->counts[n]*
-                        // (phi[n][k]*((dig[k] - digsum) - log(phi[n][k])
-                        // + log(model->class_word[k][doc->words[n]])
-                        // - log(model->class_total[k])));
-                        assert phi[n][k] > 0;
-                        assert model.getClassTotal(k) > 0;
-                        likelihood += doc.getCount(n)
-                            * (phi[n][k] * ((dig[k] - digsum) - log(phi[n][k])
-                                + log(model.getClassWord(k, doc.getWord(n))) - log(model
-                                .getClassTotal(k))));
-                        assert likelihood != Double.NaN;
-                        if ((isNaN(likelihood)) && (message == 0)) {
-                            // printf("(2 %d) : %5.5f\n", k, likelihood);
-                            // printf("(3 %d %d) : %5.5f\n", k, n, likelihood);
-                            System.out.println("(2 " + k + ") : " + likelihood);
-                            System.out.println("(3 " + k + " " + n + ") : "
-                                + likelihood);
-                        }
-                    }
+                if (phi[n][k] > 0) {
+                    likelihood += doc.getCount(n)
+                        * (phi[n][k] * ((dig[k] - digsum) - log(phi[n][k])
+                            + log(phi[n][k]) - model.logProbW[k][doc.getWord(n)]));
+
                 }
             }
         }

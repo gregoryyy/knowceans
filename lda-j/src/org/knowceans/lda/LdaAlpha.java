@@ -104,5 +104,6 @@ public class LdaAlpha {
         s = gradientAscent(model.getAlpha() * model.getNumTopics(), suffStats,
             numDocs, model.getNumTopics());
         model.setAlpha(s / model.getNumTopics());
+        System.out.println("alpha = " + s / model.getNumTopics());
     }
 }

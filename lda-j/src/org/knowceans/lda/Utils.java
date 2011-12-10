@@ -1,6 +1,7 @@
 /*
- * (C) Copyright 2005, Gregor Heinrich (gregor :: arbylon : net) (This file is
- * part of the lda-j (org.knowceans.lda.*) experimental software package.)
+ * (C) Copyright 2004-2009, Gregor Heinrich (gregor :: arbylon : net) 
+ * (This file is part of the lda-j (org.knowceans.ldaj.*) experimental software 
+ * package, a port of lda-c Copyright David Blei.)
  */
 /*
  * lda-j is free software; you can redistribute it and/or modify it under the
@@ -27,22 +28,10 @@ package org.knowceans.lda;
 import static java.lang.Math.exp;
 import static java.lang.Math.log;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipFile;
-import java.util.zip.ZipOutputStream;
 
-import org.knowceans.util.MatrixIo;
+import org.knowceans.util.ArrayIo;
 
 /**
  * Utility functions
@@ -159,8 +148,8 @@ public class Utils {
 
     public static void main(String[] args) {
         double[][] a = { {25, 4, 1, 5}, {34, 3, 23, 55}};
-        MatrixIo.saveBinaryMatrix("test.zip", a);
-        double[][] b = MatrixIo.loadBinaryMatrix("test.zip");
+        ArrayIo.saveBinaryMatrix("test.zip", a);
+        double[][] b = ArrayIo.loadBinaryMatrix("test.zip");
         for (int i = 0; i < b.length; i++) {
             for (int j = 0; j < b[i].length; j++) {
                 if (j > 0)
@@ -169,5 +158,18 @@ public class Utils {
             }
             System.out.println();
         }
+    }
+
+    public static int argmax(double[] x, int n) {
+        int i;
+        double max = x[0];
+        int argmax = 0;
+        for (i = 1; i < n; i++) {
+            if (x[i] > max) {
+                max = x[i];
+                argmax = i;
+            }
+        }
+        return (argmax);
     }
 }

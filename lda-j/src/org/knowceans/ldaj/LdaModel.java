@@ -1,6 +1,7 @@
 /*
- * (C) Copyright 2005, Gregor Heinrich (gregor :: arbylon : net) (This file is
- * part of the lda-j (org.knowceans.lda.*) experimental software package.)
+ * (C) Copyright 2004-2009, Gregor Heinrich (gregor :: arbylon : net) 
+ * (This file is part of the lda-j (org.knowceans.ldaj.*) experimental software 
+ * package, a port of lda-c Copyright David Blei.)
  */
 /*
  * lda-j is free software; you can redistribute it and/or modify it under the
@@ -22,7 +23,7 @@
 /*
  * Created on Dec 3, 2004
  */
-package org.knowceans.lda;
+package org.knowceans.ldaj;
 
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
@@ -34,6 +35,10 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 
+import org.knowceans.lda.Utils;
+
+import static java.lang.Math.*;
+
 /**
  * wrapper for an LDA model.
  * <p>
@@ -44,53 +49,29 @@ import java.io.IOException;
  */
 public class LdaModel {
 
+    double[][] logProbW;
     private double alpha;
-
-    private double[][] classWord;
-
-    private double[] classTotal;
-
     private int numTopics;
-
     private int numTerms;
 
-    public static boolean SAVEBINARY = true;
+    LdaSuffStats ss;
 
-    public static boolean SAVETXT = false;
+    public static boolean SAVEBINARY = false;
+
+    public static boolean SAVETXT = true;
 
     /**
      * create an empty lda model with parameters:
      * 
-     * @param numTerms
-     *            number of terms in dictionary
-     * @param numTopics
-     *            number of topics
+     * @param numTerms number of terms in dictionary
+     * @param numTopics number of topics
      */
+    // 2009: lda_model* new_lda_model(int num_terms, int num_topics)
     LdaModel(int numTerms, int numTopics) {
-        int i, j;
         this.numTopics = numTopics;
         this.numTerms = numTerms;
         this.alpha = 1;
-
-        initArrays(numTerms, numTopics);
-    }
-
-    /**
-     * initialise data array in the model.
-     * 
-     * @param numTerms
-     * @param numTopics
-     */
-    private void initArrays(int numTerms, int numTopics) {
-
-        classTotal = new double[numTopics];
-        classWord = new double[numTopics][numTerms];
-        for (int i = 0; i < numTopics; i++) {
-            this.classTotal[i] = 0;
-            for (int j = 0; j < numTerms; j++) {
-                this.classWord[i][j] = 0;
-            }
-        }
+        logProbW = new double[numTopics][numTerms];
     }
 
     /**
@@ -99,7 +80,8 @@ public class LdaModel {
      * 
      * @param modelRoot
      */
-    LdaModel(String modelRoot) {
+    // 2009: lda_model* load_lda_model(char* model_root)
+    public LdaModel(String modelRoot) {
         String filename;
         int i, j;
         double x, alpha = 0;
@@ -122,20 +104,18 @@ public class LdaModel {
                 }
             }
             br.close();
-            initArrays(numTerms, numTopics);
+            ss = new LdaSuffStats(this);
             this.alpha = alpha;
             filename = modelRoot + ".beta";
             System.out.println("loading " + filename);
             br = new BufferedReader(new FileReader(filename));
             for (i = 0; i < numTopics; i++) {
-                this.classTotal[i] = 0;
                 line = br.readLine();
                 String[] fields = line.trim().split(" ");
                 for (j = 0; j < numTerms; j++) {
                     // fscanf(fileptr, "%f", &x);
                     x = Double.parseDouble(fields[j]);
-                    this.classWord[i][j] = x;
-                    this.classTotal[i] += this.classWord[i][j];
+                    logProbW[i][j] = x;
                 }
             }
             br.close();
@@ -148,9 +128,34 @@ public class LdaModel {
         }
     }
 
+    // 2009: void lda_mle(lda_model* model, lda_suffstats* ss, int estimate_alpha)
+    void mle(boolean estAlpha) {
+        int k;
+        int w;
+
+        for (k = 0; k < numTopics; k++) {
+            for (w = 0; w < numTerms; w++) {
+                if (ss.classWord[k][w] > 0) {
+                    logProbW[k][w] = log(ss.classWord[k][w])
+                        - log(ss.classTotal[k]);
+                } else {
+                    logProbW[k][w] = -100;
+                }
+            }
+        }
+        if (estAlpha) {
+            alpha = LdaAlpha
+                .opt_alpha(ss.alphaSuffstats, ss.numDocs, numTopics);
+
+            //printf("new alpha = %5.5f\n", model->alpha);
+            System.out.println("new alpha = " + alpha + "\n");
+        }
+    }
+
     /**
      * deallocate lda model (dummy)
      */
+    // 2009: void free_lda_model(lda_model*);
     public void free() {
         // nothing to do in Java
     }
@@ -160,6 +165,7 @@ public class LdaModel {
      * 
      * @param modelRoot
      */
+    // 2009: void save_lda_model(lda_model*, char*);
     public void save(String modelRoot) {
         int i, j;
 
@@ -177,8 +183,7 @@ public class LdaModel {
                 for (j = 0; j < this.numTerms; j++) {
                     if (j > 0)
                         bw.write(' ');
-                    bw.write(Utils.formatDouble(this.classWord[i][j]
-                        / this.classTotal[i]));
+                    bw.write(Utils.formatDouble(this.logProbW[i][j]));
                 }
                 bw.newLine();
             }
@@ -212,8 +217,7 @@ public class LdaModel {
             dos.writeInt(numTerms);
             for (i = 0; i < this.numTopics; i++) {
                 for (j = 0; j < this.numTerms; j++) {
-                    dos
-                        .writeFloat((float) (this.classWord[i][j] / this.classTotal[i]));
+                    dos.writeFloat((float) (this.logProbW[i][j]));
                 }
             }
             dos.close();
@@ -239,7 +243,7 @@ public class LdaModel {
      * @return
      */
     public double[] getClassTotal() {
-        return classTotal;
+        return ss.classTotal;
     }
 
     /**
@@ -247,7 +251,7 @@ public class LdaModel {
      * @return
      */
     public double getClassTotal(int cls) {
-        return classTotal[cls];
+        return ss.classTotal[cls];
     }
 
     /**
@@ -255,7 +259,7 @@ public class LdaModel {
      * @param total
      */
     public void setClassTotal(int cls, double total) {
-        classTotal[cls] = total;
+        ss.classTotal[cls] = total;
     }
 
     /**
@@ -263,14 +267,14 @@ public class LdaModel {
      * @param total
      */
     public void addClassTotal(int cls, double total) {
-        classTotal[cls] += total;
+        ss.classTotal[cls] += total;
     }
 
     /**
      * @return
      */
     public double[][] getClassWord() {
-        return classWord;
+        return ss.classWord;
     }
 
     /**
@@ -279,7 +283,7 @@ public class LdaModel {
      * @return
      */
     public double getClassWord(int cls, int word) {
-        return classWord[cls][word];
+        return ss.classWord[cls][word];
     }
 
     /**
@@ -288,7 +292,7 @@ public class LdaModel {
      * @param value
      */
     public void setClassWord(int cls, int word, double value) {
-        classWord[cls][word] = value;
+        ss.classWord[cls][word] = value;
     }
 
     /**
@@ -297,7 +301,7 @@ public class LdaModel {
      * @param value
      */
     public void addClassWord(int cls, int word, double value) {
-        classWord[cls][word] += value;
+        ss.classWord[cls][word] += value;
     }
 
     /**
@@ -325,14 +329,14 @@ public class LdaModel {
      * @param ds
      */
     public void setClassTotal(double[] ds) {
-        classTotal = ds;
+        ss.classTotal = ds;
     }
 
     /**
      * @param ds
      */
     public void setClassWord(double[][] ds) {
-        classWord = ds;
+        ss.classWord = ds;
     }
 
     /**
@@ -351,7 +355,6 @@ public class LdaModel {
 
     /*
      * (non-Javadoc)
-     * 
      * @see java.lang.Object#toString()
      */
     public String toString() {
