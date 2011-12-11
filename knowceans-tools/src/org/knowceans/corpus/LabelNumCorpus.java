@@ -56,10 +56,10 @@ public class LabelNumCorpus extends NumCorpus implements ILabelCorpus {
 	 * @param args
 	 */
 	public static void main(String[] args) {
-		// LabelNumCorpus nc = new LabelNumCorpus("corpus-example/berry95");
-		LabelNumCorpus nc = new LabelNumCorpus("corpus-example/nips");
+		LabelNumCorpus nc = new LabelNumCorpus("corpus-example/berry95");
+		// LabelNumCorpus nc = new LabelNumCorpus("corpus-example/nips");
 
-		boolean dofilter = true;
+		boolean dofilter = false;
 		boolean doresolve = true;
 
 		nc.getDocLabels(LAUTHORS);
@@ -119,7 +119,7 @@ public class LabelNumCorpus extends NumCorpus implements ILabelCorpus {
 		System.out.println(Vectors.print(c));
 
 		// create citations for both corpora jointly
-		int[][][] cc = LabelNumCorpus.getSparseTransposeDual(c, cq);
+		int[][][] cc = LabelNumCorpus.getCitesFromRefsTrainTest(c, cq);
 		System.out.println("citations train");
 		System.out.println(Vectors.print(cc[0]));
 		System.out.println("citations test");
@@ -194,7 +194,7 @@ public class LabelNumCorpus extends NumCorpus implements ILabelCorpus {
 	/**
 	 * there are only documents with links
 	 */
-	public boolean pureRelational = false;
+	public boolean noUnconnectedDocs = false;
 
 	/**
 	 * array of labels. Elements are filled as soon as readlabels is called.
@@ -509,7 +509,7 @@ public class LabelNumCorpus extends NumCorpus implements ILabelCorpus {
 				return inlinks[m].length > 0 || references[m].length > 0;
 			}
 		};
-		pureRelational = true;
+		noUnconnectedDocs = true;
 		return filterDocs(filter, null);
 	}
 
@@ -600,7 +600,7 @@ public class LabelNumCorpus extends NumCorpus implements ILabelCorpus {
 			// gaps allowed...
 			labelsV[LREFERENCES] = numDocs;
 		}
-		pureRelational = false;
+		noUnconnectedDocs = false;
 		return old2new;
 	}
 
@@ -691,6 +691,33 @@ public class LabelNumCorpus extends NumCorpus implements ILabelCorpus {
 	public static int[][][] getCitesFromRefsTrainTest(int[][] trainRefs,
 			int[][] testRefs) {
 		return getSparseTransposeDual(trainRefs, testRefs);
+	}
+
+	/**
+	 * split the references into a main and a dual set, transforming the
+	 * negative indices via -m - 1
+	 * 
+	 * @param mixedRefs
+	 * @return { main indices; transformed dual indices }
+	 */
+	public static int[][] splitDualRefs(int[] mixedRefs) {
+		int[] isplit = new int[2];
+		for (int i = 0; i < mixedRefs.length; i++) {
+			isplit[mixedRefs[i] >= 0 ? 0 : 1]++;
+		}
+		int[][] split = new int[][] { new int[isplit[0]], new int[isplit[1]] };
+		isplit[0] = 0;
+		isplit[1] = 0;
+		for (int i = 0; i < mixedRefs.length; i++) {
+			if (mixedRefs[i] >= 0) {
+				split[0][isplit[0]] = mixedRefs[i];
+				isplit[0]++;
+			} else {
+				split[1][isplit[1]] = -mixedRefs[i] - 1;
+				isplit[1]++;
+			}
+		}
+		return split;
 	}
 
 	/**
@@ -903,13 +930,13 @@ public class LabelNumCorpus extends NumCorpus implements ILabelCorpus {
 		train.labels = new int[labelExtensions.length][][];
 		train.labelsW = new int[labelExtensions.length];
 		train.labelsV = labelsV;
-		train.pureRelational = false;
+		train.noUnconnectedDocs = false;
 		train.numDocsDual = testCorpus.numDocs;
 		train.dataFilebase = dataFilebase;
 		test.labels = new int[labelExtensions.length][][];
 		test.labelsW = new int[labelExtensions.length];
 		test.labelsV = labelsV;
-		test.pureRelational = false;
+		test.noUnconnectedDocs = false;
 		test.numDocsDual = trainCorpus.numDocs;
 		test.dataFilebase = dataFilebase;
 
@@ -1099,7 +1126,7 @@ public class LabelNumCorpus extends NumCorpus implements ILabelCorpus {
 							}
 						}
 					}
-					if (pureRelational && type == LREFERENCES) {
+					if (noUnconnectedDocs && type == LREFERENCES) {
 						int[][] references = labels[type];
 						int[][] citations = getSparseTranspose(references);
 						for (int m = 0; m < numDocs; m++) {

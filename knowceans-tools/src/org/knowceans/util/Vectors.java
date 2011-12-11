@@ -932,6 +932,17 @@ public class Vectors {
 	}
 
 	/**
+	 * Print the array of objects via their toString() methods, add a newline
+	 * between them.
+	 * 
+	 * @param x
+	 * @return
+	 */
+	public static String println(Object[] x) {
+		return print(x, "\n");
+	}
+
+	/**
 	 * Print the array of objects via their toString() methods, using the
 	 * delimiter.
 	 * 
