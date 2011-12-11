@@ -1,0 +1,23 @@
+Code in the knowceans package was extended and modified by David Dunkley (david.dunkley@sri.com).
+
+@date 20091012
+
+None of modifications have changed the LDA logic.
+
+ 1) Created CokusFactory and the ICokus interface to allow the all-Java version of cokus to be loaded if the
+DLL version is not available. LdaEstimate has been modified to call the factory, rather than being hard-coded
+to load the DLL. The CokusFactory uses log4j to log an informational message if the DLL cannot be found. This
+is the only 3rd party dependency that was added and can be commented-out or removed as desired.
+
+2) Allow the code to be reentrant; converted updatable global statics to locals, etc.
+
+3) A couple of minor bug fixes and performance enhancements.
+
+4) Make LdaEstimate useable without requiring or creating disk files.
+
+5) Commented-out System print statements from non-test code.
+
+6) Allow client access to 'beta' results without requiring or creating disk files.
+
+7) Allow multiple LDA engines to be run concurrently within the same VM.
+

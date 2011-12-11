@@ -19,15 +19,18 @@
 .SUFFIXES: .c .u
 CC= gcc
 #CFLAGS= -O3
-CFLAGS= -g -mno-cygwin -I ${JAVA_HOME}/include -I ${JAVA_HOME}/include/win32 -shared -Wl,--add-stdcall-alias 
-LDFLAGS= -lm -mno-cygwin
+#CFLAGS= -g -mno-cygwin -I ${JAVA_HOME}/include -I ${JAVA_HOME}/include/win32 -shared -Wl,--add-stdcall-alias
+CFLAGS= -g -I ${JAVA_HOME}/include -I ${JAVA_HOME}/include/win32 -shared -Wall 
+#LDFLAGS= -lm -mno-cygwin
+LDFLAGS= -lm
 
 LOBJECTS= cokus.o
 
 LSOURCE= cokus.c
 
 all: $(LOBJECTS)
-	$(CC) $(CFLAGS) $(LOBJECTS) -o ../mtcokus.dll $(LDFLAGS)
+#	$(CC) $(CFLAGS) $(LOBJECTS) -o ../mtcokus.dll $(LDFLAGS)
+	$(CC) $(CFLAGS) $(LOBJECTS) -o ../mtcokus.so $(LDFLAGS)
 
 clean:
-	-rm -f *.o
+	-rm -f *.o ../mtcokus.dll ../mtcokus.so
