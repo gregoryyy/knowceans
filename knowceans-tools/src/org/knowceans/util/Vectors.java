@@ -1057,6 +1057,19 @@ public class Vectors {
 		return b.toString();
 	}
 
+	public static String printInline(int[][] x) {
+		if (x == null)
+			return "null";
+		StringBuffer b = new StringBuffer();
+		for (int i = 0; i < x.length; i++) {
+			if (i > 0) {
+				b.append(", ");
+			}
+			b.append(i).append(":{").append(print(x[i])).append("}");
+		}
+		return b.toString();
+	}
+
 	/**
 	 * prints a double representation of an array.
 	 * 
@@ -1980,4 +1993,5 @@ public class Vectors {
 		System.arraycopy(x, 0, u, 0, Math.min(newlen, x.length));
 		return u;
 	}
+
 }
