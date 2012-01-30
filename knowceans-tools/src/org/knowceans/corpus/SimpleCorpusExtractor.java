@@ -89,6 +89,7 @@ public class SimpleCorpusExtractor {
 	protected CreateCorpusResolver resolver;
 	protected int docSize;
 	protected CorpusStemmer stemmer;
+	protected HashSet<String> stoplist;
 
 	public SimpleCorpusExtractor() {
 		srcbase = Conf.get("source.filebase");
@@ -382,7 +383,19 @@ public class SimpleCorpusExtractor {
 	 * @throws FileNotFoundException
 	 */
 	protected void startIndex() throws Exception {
-		stemmer = new CorpusStemmer("english");
+		String stopfile = Conf.get("indexer.stoplist");
+		System.out.println(Conf.get());
+		stoplist = new HashSet<String>();
+		if (stopfile != null) {
+			BufferedReader br = new BufferedReader(new FileReader(stopfile));
+			String line = null;
+			while ((line = br.readLine()) != null) {
+				stoplist.add(line.trim());
+			}
+			br.close();
+		}
+		String lang = Conf.get("indexer.stemming.language");
+		stemmer = new CorpusStemmer(lang != null ? lang : "english");
 		// allocate map to resolve keys
 		resolver.initMapForKeyType(ICorpusResolver.KTERMS);
 		// allocate space for all documents in corpus
@@ -445,7 +458,6 @@ public class SimpleCorpusExtractor {
 	 */
 	protected String normalise(String token) {
 		// TODO: stoplist (now done by df filtering in corpus)
-		String[] stopList = { "the" };
 		// too short
 		if (token.length() <= 2) {
 			return "";
@@ -453,7 +465,8 @@ public class SimpleCorpusExtractor {
 		// lower case filter
 		token = token.toLowerCase();
 		// stopwords
-		if (Arrays.binarySearch(stopList, token) >= 0) {
+		String trimmed = token.replaceAll("[^\\w\\d'\\-]", "");
+		if (stoplist.contains(trimmed)) {
 			return "";
 		}
 		// num filter

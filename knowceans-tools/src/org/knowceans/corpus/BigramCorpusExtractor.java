@@ -7,6 +7,7 @@ import java.util.StringTokenizer;
 
 import org.knowceans.map.BijectiveHashMap;
 import org.knowceans.util.Conf;
+import org.knowceans.util.Vectors;
 
 /**
  * Driver for ACL Anthology Network extraction with bigram extraction.
@@ -42,19 +43,6 @@ public class BigramCorpusExtractor extends SimpleCorpusExtractor {
 		mid2doc = new BijectiveHashMap<Integer, AanDocument>();
 		aanid2mid = new BijectiveHashMap<String, Integer>();
 	}
-	
-	/**
-	 * create an index of the corpus
-	 * 
-	 * @throws FileNotFoundException
-	 */
-	protected void startIndex() throws Exception {
-		stemmer = new CorpusStemmer("english");
-		// allocate map to resolve keys
-		resolver.initMapForKeyType(ICorpusResolver.KTERMS);
-		// allocate space for all documents in corpus
-		corpus.allocContent(mid2doc.size());
-	}
 
 	/**
 	 * index document in the given document writer
@@ -88,12 +76,20 @@ public class BigramCorpusExtractor extends SimpleCorpusExtractor {
 			if (word != null && !word.equals("")) {
 				wordlist.add(word);
 				if (prevword != null) {
-					// This is brute-force ignoring interpunction
 					wordlist.add(prevword + "+" + word);
 				}
-				prevword = word;
+				// no bigrams around punctuation (which misses some abbreviations)
+				if (token.matches(".+[\\.\\,\\-].*")) {
+					prevword = null;
+				} else {
+					prevword = word;
+				}
+			} else {
+				// no bigram construction after stop word
+				prevword = null;
 			}
 		}
+		//System.out.println("words in document " + aandoc.mid + ": " + wordlist);
 		corpus.setDocContent(aandoc.mid, wordlist.toArray(new String[0]));
 	}
 
