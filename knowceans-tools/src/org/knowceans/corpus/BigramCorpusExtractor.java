@@ -1,5 +1,6 @@
 package org.knowceans.corpus;
 
+import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.StringTokenizer;
@@ -40,6 +41,19 @@ public class BigramCorpusExtractor extends SimpleCorpusExtractor {
 
 		mid2doc = new BijectiveHashMap<Integer, AanDocument>();
 		aanid2mid = new BijectiveHashMap<String, Integer>();
+	}
+	
+	/**
+	 * create an index of the corpus
+	 * 
+	 * @throws FileNotFoundException
+	 */
+	protected void startIndex() throws Exception {
+		stemmer = new CorpusStemmer("english");
+		// allocate map to resolve keys
+		resolver.initMapForKeyType(ICorpusResolver.KTERMS);
+		// allocate space for all documents in corpus
+		corpus.allocContent(mid2doc.size());
 	}
 
 	/**
