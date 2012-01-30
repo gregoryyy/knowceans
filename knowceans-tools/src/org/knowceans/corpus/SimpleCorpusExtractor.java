@@ -76,19 +76,19 @@ public class SimpleCorpusExtractor {
 	/**
 	 * AAN has string indices, thus additional mapping is needed
 	 */
-	private BijectiveHashMap<String, Integer> aanid2mid;
-	private BijectiveHashMap<Integer, AanDocument> mid2doc;
+	protected BijectiveHashMap<String, Integer> aanid2mid;
+	protected BijectiveHashMap<Integer, AanDocument> mid2doc;
 
-	private String srcbase;
-	private String destbase;
-	private String metadataFile;
-	private String contentDir;
-	private String citationFile;
-	private CreateLabelNumCorpus corpus;
+	protected String srcbase;
+	protected String destbase;
+	protected String metadataFile;
+	protected String contentDir;
+	protected String citationFile;
+	protected CreateLabelNumCorpus corpus;
 
-	private CreateCorpusResolver resolver;
-	private int docSize;
-	private CorpusStemmer stemmer;
+	protected CreateCorpusResolver resolver;
+	protected int docSize;
+	protected CorpusStemmer stemmer;
 
 	public SimpleCorpusExtractor() {
 		srcbase = Conf.get("source.filebase");
@@ -148,7 +148,7 @@ public class SimpleCorpusExtractor {
 	 * @throws IOException
 	 * @throws NumberFormatException
 	 */
-	private BijectiveHashMap<String, Integer> readMetadata()
+	protected BijectiveHashMap<String, Integer> readMetadata()
 			throws NumberFormatException, IOException {
 
 		// read the metadata file and set up the respective fields in the
@@ -210,7 +210,7 @@ public class SimpleCorpusExtractor {
 	 * @param aanid
 	 * @return
 	 */
-	private int addAanid(String aanid) {
+	protected int addAanid(String aanid) {
 		Integer mid = aanid2mid.get(aanid);
 		if (mid == null) {
 			// last index + 1
@@ -220,7 +220,7 @@ public class SimpleCorpusExtractor {
 		return mid;
 	}
 
-	private void readCitations() throws FileNotFoundException, IOException {
+	protected void readCitations() throws FileNotFoundException, IOException {
 		BufferedReader br;
 		String line;
 		// read citations
@@ -281,7 +281,7 @@ public class SimpleCorpusExtractor {
 	 * 
 	 * @throws IOException
 	 */
-	private void readAndIndexContent(BijectiveHashMap<String, Integer> aanid2mid)
+	protected void readAndIndexContent(BijectiveHashMap<String, Integer> aanid2mid)
 			throws Exception {
 
 		// read and index documents
@@ -381,7 +381,7 @@ public class SimpleCorpusExtractor {
 	 * 
 	 * @throws FileNotFoundException
 	 */
-	private void startIndex() throws Exception {
+	protected void startIndex() throws Exception {
 		stemmer = new CorpusStemmer("english");
 		// allocate map to resolve keys
 		resolver.initMapForKeyType(ICorpusResolver.KTERMS);
@@ -443,7 +443,7 @@ public class SimpleCorpusExtractor {
 	 * @param token
 	 * @return normalised token or "" for filtered one
 	 */
-	private String normalise(String token) {
+	protected String normalise(String token) {
 		// TODO: stoplist (now done by df filtering in corpus)
 		String[] stopList = { "the" };
 		// too short
@@ -472,7 +472,7 @@ public class SimpleCorpusExtractor {
 	/**
 	 * close and optimise lucene index
 	 */
-	private void finishIndex() throws Exception {
+	protected void finishIndex() throws Exception {
 		// nothing done here
 	}
 
@@ -483,7 +483,7 @@ public class SimpleCorpusExtractor {
 	 * LabelNumCorpus.
 	 */
 	@SuppressWarnings("static-access")
-	private void createMetadata() {
+	protected void createMetadata() {
 		int[] labelTypes = { corpus.LAUTHORS, corpus.LVOLS, corpus.LYEARS,
 				corpus.LREFERENCES };
 		int M = aanid2mid.size();
@@ -514,7 +514,7 @@ public class SimpleCorpusExtractor {
 
 	// index postprocessing routines
 
-	private String getDocRef(AanDocument doc) {
+	protected String getDocRef(AanDocument doc) {
 		StringBuffer sb = new StringBuffer();
 		String authors = doc.authors[0];
 		for (int i = 1; i < doc.authors.length; i++) {
@@ -533,7 +533,7 @@ public class SimpleCorpusExtractor {
 	 * 
 	 * @throws Exception
 	 */
-	private void writeDocs() throws Exception {
+	protected void writeDocs() throws Exception {
 		BufferedWriter bw = new BufferedWriter(new FileWriter(destbase
 				+ ".text"));
 		int mid = 0;
@@ -558,7 +558,7 @@ public class SimpleCorpusExtractor {
 	/**
 	 * print a debug message
 	 */
-	private void debug(String message) {
+	protected void debug(String message) {
 		System.out.println(StopWatch.format(StopWatch.read()) + " " + message);
 
 	}
