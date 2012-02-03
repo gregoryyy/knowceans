@@ -1,6 +1,7 @@
 package org.knowceans.corpus;
 
 import java.util.Map;
+import java.util.Random;
 import java.util.TreeMap;
 
 /**
@@ -108,6 +109,7 @@ public class CreateLabelNumCorpus extends LabelNumCorpus {
 		for (Integer term : term2freq.keySet()) {
 			terms[i] = term;
 			freqs[i] = term2freq.get(term);
+			i++;
 		}
 		setDocContent(docId, terms, freqs);
 	}
@@ -169,6 +171,23 @@ public class CreateLabelNumCorpus extends LabelNumCorpus {
 	 * vocabulary size is set using setNumTerms because data are higher here.
 	 */
 	public void compile() {
+		// normal values
+		if (numDocs == 0) {
+			numDocs = docs.length;
+		}
+
+		if (numWords == 0) {
+			// set null entries to zero-length arrays
+			for (int m = 0; m < numDocs; m++) {
+				numWords += docs[m].getNumWords();
+			}
+		}
+
+		if (numTerms == 0) {
+			int[][] w = getDocWords(new Random());
+			numTerms = getVocabSize(w);
+		}
+
 		for (int type = 0; type < labelExtensions.length; type++) {
 			if (labels[type] != null) {
 				// set null entries to zero-length arrays
