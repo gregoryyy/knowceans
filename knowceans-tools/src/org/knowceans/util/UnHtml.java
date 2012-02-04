@@ -25,7 +25,6 @@ package org.knowceans.util;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
-import java.io.StringReader;
 import java.net.URL;
 import java.net.URLConnection;
 
@@ -138,7 +137,7 @@ public class UnHtml {
 
 	//
 
-	// /////////// from apache commons lang, APL 2.0 //////////////
+	// /////////// adapted from apache commons lang, APL 2.0 //////////////
 	/*
 	 * Copyright 2002-2004 The Apache Software Foundation.
 	 * 
@@ -191,24 +190,31 @@ public class UnHtml {
 					continue;
 				}
 				String entityName = str.substring(i + 1, semi);
-				int entityValue;
-				if (entityName.charAt(0) == '#') {
+				Integer entityValue = null;
+				if (entityName.length() > 0 && entityName.charAt(0) == '#') {
 					char charAt1 = entityName.charAt(1);
 					if (charAt1 == 'x' || charAt1 == 'X') {
 						entityValue = Integer.valueOf(entityName.substring(2),
 								16).intValue();
 					} else {
-						entityValue = Integer.parseInt(entityName.substring(1));
+						try {
+							entityValue = Integer.parseInt(entityName
+									.substring(1));
+						} catch (NumberFormatException e) {
+							// quiet handling of invalid numeric entity
+							// try name
+							entityValue = entityMap.get(entityName);
+						}
 					}
 				} else {
 					entityValue = entityMap.get(entityName);
 				}
-				if (entityValue == -1) {
+				if (entityValue == null) {
 					buf.append('&');
 					buf.append(entityName);
 					buf.append(';');
 				} else {
-					buf.append((char) (entityValue));
+					buf.append((char) (entityValue.intValue()));
 				}
 				i = semi;
 			} else {
