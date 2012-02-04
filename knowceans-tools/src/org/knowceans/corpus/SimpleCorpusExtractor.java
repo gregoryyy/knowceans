@@ -384,7 +384,6 @@ public class SimpleCorpusExtractor {
 	 */
 	protected void startIndex() throws Exception {
 		String stopfile = Conf.get("indexer.stoplist");
-		System.out.println(Conf.get());
 		stoplist = new HashSet<String>();
 		if (stopfile != null) {
 			BufferedReader br = new BufferedReader(new FileReader(stopfile));
