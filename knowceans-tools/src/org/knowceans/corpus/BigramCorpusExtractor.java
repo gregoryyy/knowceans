@@ -24,12 +24,29 @@ public class BigramCorpusExtractor extends SimpleCorpusExtractor {
 
 	public static void main(String[] args) {
 		Conf.setPropFile("/data/workspace/knowceans-lda-simple/conf/aanx-bigram.conf");
-		// LabelNumCorpus lnc = new LabelNumCorpus();
-		// lnc.setDataFilebase(dest);
 
-		BigramCorpusExtractor a = new BigramCorpusExtractor();
-		// create svmlight-based corpus
-		a.run();
+		// BigramCorpusExtractor a = new BigramCorpusExtractor();
+		// // create svmlight-based corpus
+		// a.run();
+
+		LabelNumCorpus c = new LabelNumCorpus(Conf.get("corpus.filebase"));
+		System.out.println("original corpus");
+		System.out.println(c);
+		System.out.println("filter with mindf = 5, maxdf = 5000");
+		c.filterTermsDf(5, 5000);
+		System.out.println("filtered corpus");
+		System.out.println(c);
+		int numbi = 0;
+		CorpusResolver r = c.getResolver();
+		int[] df = c.calcDocFreqs();
+		for (int i = 0; i < c.numTerms; i++) {
+			String term = r.resolveTerm(i);
+			if (term.contains("+")) {
+				numbi++;
+				System.out.println(String.format("%d bigram = %s, df = %d", i,
+						term, df[i]));
+			}
+		}
 	}
 
 	public BigramCorpusExtractor() {
@@ -61,11 +78,17 @@ public class BigramCorpusExtractor extends SimpleCorpusExtractor {
 
 			StopWatch.start();
 
-			debug("reading metadata");
+			// TODO: SimpleCorpusExtract is too complex and error-prone because
+			// of the
+			// separate handling of metadata and content with all possible
+			// exceptions.
+			// This approach is more direct and should be used in the future.
+
+			debug("reading metadata and content");
 			aanid2mid = readMetadata();
 			debug("setting up corpus");
 			createMetadata();
-			debug("reading and indexing content, creating corpus and vocabulary");
+			debug("indexing content, creating corpus and vocabulary");
 			startIndex();
 			readAndIndexContent(aanid2mid);
 			finishIndex();
@@ -88,7 +111,8 @@ public class BigramCorpusExtractor extends SimpleCorpusExtractor {
 	}
 
 	/**
-	 * read data for the resolver and authorship information
+	 * read data for the resolver and authorship information, as well as the
+	 * content. More direct approach than in {@link SimpleCorpusExtractor}
 	 * 
 	 * @return
 	 * 
@@ -113,7 +137,7 @@ public class BigramCorpusExtractor extends SimpleCorpusExtractor {
 			line = UnHtml.getText(line);
 			line = line.trim();
 			if (line.startsWith("id = ")) {
-				
+
 				skipdoc = false;
 				String aanid = line.trim().substring(6, line.length() - 1);
 
@@ -124,10 +148,14 @@ public class BigramCorpusExtractor extends SimpleCorpusExtractor {
 					continue;
 				}
 				int mid = addAanid(aanid);
-				if (mid >= 100) {
-					// aanid will be one element larger --> use mid2doc to determine M 
-					break;
+				if (mid % 500 == 0) {
+					debug("m = " + mid);
 				}
+				// if (mid >= 100) {
+				// // aanid will be one element larger --> use mid2doc to
+				// determine M
+				// break;
+				// }
 				doc = new AanDocument();
 				doc.mid = mid;
 				doc.aanid = aanid;
@@ -145,7 +173,7 @@ public class BigramCorpusExtractor extends SimpleCorpusExtractor {
 				}
 				brc.close();
 				doc.content = UnHtml.getText(sb.toString());
-			}  else if (!skipdoc) {
+			} else if (!skipdoc) {
 				if (line.startsWith("author = ")) {
 					line = line.trim().substring(10, line.length() - 1);
 					String[] aa = line.split("\\;");
@@ -189,9 +217,6 @@ public class BigramCorpusExtractor extends SimpleCorpusExtractor {
 			AanDocument doc = mid2doc.get(mid);
 			resolver.setValue(resolver.KDOCS, mid, doc.title);
 			resolver.setValue(resolver.KDOCNAME, mid, doc.aanid);
-			if (mid % 500 == 0) {
-				// debug("m = " + mid);
-			}
 		}
 
 		// can remove all maps by now (indexing is done separately)
@@ -199,14 +224,16 @@ public class BigramCorpusExtractor extends SimpleCorpusExtractor {
 	}
 
 	/**
-	 * only uses information created in the mid2doc field
+	 * only uses information created in the mid2doc field, does not read !
 	 */
 	@Override
 	protected void readAndIndexContent(
 			BijectiveHashMap<String, Integer> aanid2mid) throws Exception {
-		// TODO Auto-generated method stub
-
+		int i = 0;
 		for (int mid : mid2doc.keySet()) {
+			if (i++ % 500 == 0) {
+				debug("i = " + i + " mid = " + mid);
+			}
 			AanDocument doc = mid2doc.get(mid);
 			indexDocument(doc, doc.content);
 		}
