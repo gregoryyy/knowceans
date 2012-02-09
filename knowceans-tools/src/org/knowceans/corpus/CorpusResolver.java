@@ -425,6 +425,20 @@ public class CorpusResolver implements ICorpusResolver {
 	/*
 	 * (non-Javadoc)
 	 * 
+	 * @see org.knowceans.corpus.IResolver#getLabel(int)
+	 */
+	@Override
+	public String resolveTag(int i) {
+		if (data[KTAGS] != null) {
+			return data[KTAGS][i];
+		} else {
+			return null;
+		}
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * 
 	 * @see org.knowceans.corpus.IResolver#getAuthor(int)
 	 */
 	@Override
@@ -533,6 +547,8 @@ public class CorpusResolver implements ICorpusResolver {
 			return resolveAuthor(id);
 		} else if (type == KCATEGORIES) {
 			return resolveCategory(id);
+		} else if (type == KTAGS) {
+			return resolveTag(id);
 		} else if (type == KVOLS) {
 			return resolveVolume(id);
 		} else if (type == KYEARS) {

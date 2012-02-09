@@ -27,6 +27,14 @@ public interface ICorpusResolver extends ICorpusIdResolver {
 	public abstract String resolveCategory(int i);
 
 	/**
+	 * resolve the numeric tag id
+	 * 
+	 * @param i
+	 * @return
+	 */
+	public abstract String resolveTag(int i);
+
+	/**
 	 * resolve the numeric author id
 	 * 
 	 * @param i
