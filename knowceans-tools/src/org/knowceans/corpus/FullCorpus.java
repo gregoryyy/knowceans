@@ -286,4 +286,10 @@ public class FullCorpus extends LabelNumCorpus implements ICorpusResolver {
 		return sb.toString();
 
 	}
+
+	@Override
+	public String resolveTag(int i) {
+		// TODO Auto-generated method stub
+		return null;
+	}
 }

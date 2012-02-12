@@ -782,10 +782,24 @@ public class LabelNumCorpus extends NumCorpus implements ILabelCorpus {
 	public int[] calcLabelDocFreqs(int type) {
 		// we construct term frequencies manually even if there may
 		// be another source
-		int[] df = new int[labelsV[type]];
-		for (int m = 0; m < numDocs; m++) {
-			for (int t = 0; t < labels[type][m].length; t++) {
-				df[labels[type][m][t]]++;
+		return calcDocFreqs(labels[type], labelsV[type]);
+	}
+
+	/**
+	 * calculate the document frequency of the items
+	 * 
+	 * @param items, considered unique within documents
+	 * @param V
+	 * @return df vector of length V
+	 */
+	public static int[] calcDocFreqs(int[][] items, int V) {
+		// we construct term frequencies manually even if there may
+		// be another source
+
+		int[] df = new int[V];
+		for (int m = 0; m < items.length; m++) {
+			for (int t = 0; t < items[m].length; t++) {
+				df[items[m][t]]++;
 			}
 		}
 		return df;
